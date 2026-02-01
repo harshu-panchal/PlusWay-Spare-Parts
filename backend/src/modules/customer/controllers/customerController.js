@@ -28,6 +28,7 @@ export const registerCustomer = async (req, res) => {
       _id: customer._id,
       name: customer.name,
       mobile: customer.mobile,
+      email: customer.email,
       token: generateToken(customer._id, "customer"),
     });
   } else {
@@ -52,6 +53,7 @@ export const authCustomer = async (req, res) => {
       _id: customer._id,
       name: customer.name,
       mobile: customer.mobile,
+      email: customer.email,
       token: generateToken(customer._id, "customer"),
     });
   } else {

@@ -11,6 +11,13 @@ import {
   updateCustomerProfile,
 } from "../controllers/customerController.js";
 import {
+  getAddresses,
+  addAddress,
+  updateAddress,
+  deleteAddress,
+  setDefaultAddress,
+} from "../controllers/addressController.js";
+import {
   getProducts,
   getProductById,
 } from "../controllers/productController.js";
@@ -34,6 +41,17 @@ router.post("/login", authCustomer);
 
 // Profile routes (Protected)
 router.put("/profile", protect, updateCustomerProfile);
+
+// Address routes (Protected)
+router.route("/addresses")
+  .get(protect, getAddresses)
+  .post(protect, addAddress);
+
+router.route("/addresses/:id")
+  .put(protect, updateAddress)
+  .delete(protect, deleteAddress);
+
+router.put("/addresses/:id/default", protect, setDefaultAddress);
 
 // Product & Content routes
 router.get("/products", getProducts);

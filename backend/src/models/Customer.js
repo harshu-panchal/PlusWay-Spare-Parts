@@ -21,13 +21,25 @@ const customerSchema = new mongoose.Schema(
       type: String,
       // Optional for customers if using OTP, but available for traditional login
     },
-    address: {
-      street: String,
-      city: String,
-      state: String,
-      pincode: String,
-      country: { type: String, default: "India" },
-    },
+    addresses: [
+      {
+        type: {
+          type: String,
+          enum: ["Home", "Work", "Other"],
+          default: "Home",
+        },
+        name: String,
+        mobile: String,
+        street: String,
+        city: String,
+        state: String,
+        pincode: String,
+        isDefault: {
+          type: Boolean,
+          default: false,
+        },
+      },
+    ],
     orders: [
       {
         type: mongoose.Schema.Types.ObjectId,

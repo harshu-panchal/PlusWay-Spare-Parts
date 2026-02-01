@@ -51,6 +51,11 @@ export const API_ENDPOINTS = {
     CART: `${API_BASE_URL}/api/customer/cart`,
     CART_ITEM: (id) => `${API_BASE_URL}/api/customer/cart/${id}`,
 
+    // Addresses
+    ADDRESSES: `${API_BASE_URL}/api/customer/addresses`,
+    ADDRESS_DETAIL: (id) => `${API_BASE_URL}/api/customer/addresses/${id}`,
+    ADDRESS_DEFAULT: (id) => `${API_BASE_URL}/api/customer/addresses/${id}/default`,
+
     // Admin Auth
     ADMIN_LOGIN: `${API_BASE_URL}/api/admin/login`,
 
