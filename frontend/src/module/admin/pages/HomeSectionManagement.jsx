@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { API_ENDPOINTS, API_BASE_URL } from "../../../config/api";
 import { Plus, Edit2, Trash2, Save, X, ChevronDown, ChevronUp } from "lucide-react";
 
 const HomeSectionManagement = () => {
@@ -24,10 +25,10 @@ const HomeSectionManagement = () => {
     const fetchData = async () => {
         try {
             const [sectionsRes, categoriesRes] = await Promise.all([
-                axios.get("http://localhost:5001/api/admin/home-sections", {
+                axios.get(API_ENDPOINTS.ADMIN_HOME_SECTIONS, {
                     headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
                 }),
-                axios.get("http://localhost:5001/api/customer/categories"), // Reusing public endpoint for ease
+                axios.get(`${API_BASE_URL}/api/customer/categories`), // Reusing public endpoint for ease
             ]);
             setSections(sectionsRes.data);
             setCategories(categoriesRes.data.filter(c => !c.parent)); // Only parent categories or all? Let's show all
@@ -46,13 +47,13 @@ const HomeSectionManagement = () => {
 
             if (editingSection) {
                 await axios.put(
-                    `http://localhost:5001/api/admin/home-sections/${editingSection._id}`,
+                    API_ENDPOINTS.ADMIN_HOME_SECTION_DETAIL(editingSection._id),
                     formData,
                     config
                 );
             } else {
                 await axios.post(
-                    "http://localhost:5001/api/admin/home-sections",
+                    API_ENDPOINTS.ADMIN_HOME_SECTIONS,
                     formData,
                     config
                 );
@@ -71,7 +72,7 @@ const HomeSectionManagement = () => {
     const handleDelete = async (id) => {
         if (window.confirm("Are you sure you want to delete this section?")) {
             try {
-                await axios.delete(`http://localhost:5001/api/admin/home-sections/${id}`, {
+                await axios.delete(API_ENDPOINTS.ADMIN_HOME_SECTION_DETAIL(id), {
                     headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
                 });
                 fetchData();

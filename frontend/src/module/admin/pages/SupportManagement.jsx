@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { API_ENDPOINTS } from "../../../config/api";
 import {
   Search,
   Filter,
@@ -37,7 +38,7 @@ const SupportManagement = () => {
         },
       };
       const { data } = await axios.get(
-        "http://localhost:5001/api/admin/tickets",
+        API_ENDPOINTS.ADMIN_TICKETS,
         config
       );
 
@@ -84,7 +85,7 @@ const SupportManagement = () => {
       };
 
       await axios.put(
-        `http://localhost:5001/api/admin/tickets/${selectedTicket.id}`,
+        API_ENDPOINTS.ADMIN_TICKET_DETAIL(selectedTicket.id),
         {
           status: newStatus,
           adminReply: replyMessage,

@@ -12,6 +12,7 @@ import {
   Upload,
 } from "lucide-react";
 import ImageUpload from "../../../components/ImageUpload";
+import { API_ENDPOINTS, API_BASE_URL } from "../../../config/api";
 
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -48,7 +49,7 @@ const CategoryBrandManagement = () => {
     try {
       const token = localStorage.getItem("adminToken");
       const { data } = await axios.get(
-        `http://localhost:5001/api/admin/${activeTab}`,
+        `${API_BASE_URL}/api/admin/${activeTab}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -91,13 +92,13 @@ const CategoryBrandManagement = () => {
 
       if (editingItem) {
         await axios.put(
-          `http://localhost:5001/api/admin/${activeTab}/${editingItem._id}`,
+          `${API_BASE_URL}/api/admin/${activeTab}/${editingItem._id}`,
           formData,
           config,
         );
       } else {
         await axios.post(
-          `http://localhost:5001/api/admin/${activeTab}`,
+          `${API_BASE_URL}/api/admin/${activeTab}`,
           formData,
           config,
         );
@@ -117,7 +118,7 @@ const CategoryBrandManagement = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("adminToken");
-      await axios.delete(`http://localhost:5001/api/admin/${activeTab}/${id}`, {
+      await axios.delete(`${API_BASE_URL}/api/admin/${activeTab}/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchItems();

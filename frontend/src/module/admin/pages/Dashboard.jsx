@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { API_ENDPOINTS } from "../../../config/api";
 import {
   Package,
   ShoppingCart,
@@ -36,7 +37,7 @@ const Dashboard = () => {
         };
 
         const { data } = await axios.get(
-          "http://localhost:5001/api/admin/dashboard-stats",
+          API_ENDPOINTS.ADMIN_DASHBOARD_STATS,
           config
         );
 

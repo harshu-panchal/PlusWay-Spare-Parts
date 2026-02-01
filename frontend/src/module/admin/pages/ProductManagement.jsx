@@ -16,6 +16,7 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import ImageUpload from "../../../components/ImageUpload";
+import { API_ENDPOINTS } from "../../../config/api";
 
 const ProductManagement = () => {
   const [products, setProducts] = useState([]);
@@ -35,10 +36,10 @@ const ProductManagement = () => {
       const config = { headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}` } };
 
       const [prodRes, catRes, brandRes, modelRes] = await Promise.all([
-        axios.get("http://localhost:5001/api/admin/products", config),
-        axios.get("http://localhost:5001/api/admin/categories", config),
-        axios.get("http://localhost:5001/api/admin/brands", config),
-        axios.get("http://localhost:5001/api/admin/models", config)
+        axios.get(API_ENDPOINTS.ADMIN_PRODUCTS, config),
+        axios.get(API_ENDPOINTS.ADMIN_CATEGORIES, config),
+        axios.get(API_ENDPOINTS.ADMIN_BRANDS, config),
+        axios.get(API_ENDPOINTS.ADMIN_MODELS, config)
       ]);
 
       setProducts(prodRes.data.products || prodRes.data || []); // Handle paginated response
@@ -209,9 +210,9 @@ const ProductManagement = () => {
       };
 
       if (editingProduct) {
-        await axios.put(`http://localhost:5001/api/admin/products/${editingProduct._id}`, payload, config);
+        await axios.put(API_ENDPOINTS.ADMIN_PRODUCT_DETAIL(editingProduct._id), payload, config);
       } else {
-        await axios.post("http://localhost:5001/api/admin/products", payload, config);
+        await axios.post(API_ENDPOINTS.ADMIN_PRODUCTS, payload, config);
       }
       setIsModalOpen(false);
       // Refresh products (need to lift state or fetch here)

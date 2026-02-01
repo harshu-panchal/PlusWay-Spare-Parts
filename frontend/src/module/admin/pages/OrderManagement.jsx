@@ -11,6 +11,7 @@ import {
   XCircle,
 } from "lucide-react";
 import axios from "axios";
+import { API_ENDPOINTS } from "../../../config/api";
 
 const OrderManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,7 +29,7 @@ const OrderManagement = () => {
       setLoading(true);
       const token = localStorage.getItem("adminToken");
       const { data } = await axios.get(
-        "http://localhost:5001/api/admin/orders",
+        API_ENDPOINTS.ADMIN_ORDERS,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -47,7 +48,7 @@ const OrderManagement = () => {
     try {
       const token = localStorage.getItem("adminToken");
       await axios.put(
-        `http://localhost:5001/api/admin/orders/${orderId}/status`,
+        API_ENDPOINTS.ADMIN_ORDER_STATUS(orderId),
         { status: newStatus },
         {
           headers: {
@@ -65,7 +66,7 @@ const OrderManagement = () => {
     try {
       const token = localStorage.getItem("adminToken");
       const response = await axios.get(
-        `http://localhost:5001/api/admin/orders/${orderId}/invoice`,
+        API_ENDPOINTS.ADMIN_ORDER_INVOICE(orderId),
         {
           headers: {
             Authorization: `Bearer ${token}`,

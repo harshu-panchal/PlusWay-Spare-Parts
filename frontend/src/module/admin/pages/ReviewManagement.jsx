@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { API_ENDPOINTS } from "../../../config/api";
 import {
   Star,
   CheckCircle,
@@ -32,7 +33,7 @@ const ReviewManagement = () => {
         },
       };
       const { data } = await axios.get(
-        "http://localhost:5001/api/admin/reviews",
+        API_ENDPOINTS.ADMIN_REVIEWS,
         config
       );
 
@@ -74,7 +75,7 @@ const ReviewManagement = () => {
         headers: { Authorization: `Bearer ${token}` },
       };
       await axios.put(
-        `http://localhost:5001/api/admin/reviews/${reviewId}`,
+        API_ENDPOINTS.ADMIN_REVIEW_DETAIL(reviewId),
         { status: newStatus },
         config
       );
@@ -92,7 +93,7 @@ const ReviewManagement = () => {
         headers: { Authorization: `Bearer ${token}` },
       };
       await axios.put(
-        `http://localhost:5001/api/admin/reviews/${selectedReview.id}`,
+        API_ENDPOINTS.ADMIN_REVIEW_DETAIL(selectedReview.id),
         {
           adminReply: replyText,
           status: "Approved"
@@ -115,7 +116,7 @@ const ReviewManagement = () => {
         headers: { Authorization: `Bearer ${token}` },
       };
       await axios.delete(
-        `http://localhost:5001/api/admin/reviews/${reviewId}`,
+        API_ENDPOINTS.ADMIN_REVIEW_DETAIL(reviewId),
         config
       );
       fetchReviews();

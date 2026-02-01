@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { API_ENDPOINTS } from "../../../config/api";
 import {
   Search,
   User,
@@ -36,7 +37,7 @@ const CustomerManagement = () => {
         },
       };
       const { data } = await axios.get(
-        "http://localhost:5001/api/admin/customers",
+        API_ENDPOINTS.ADMIN_CUSTOMERS,
         config
       );
 
@@ -113,13 +114,13 @@ const CustomerManagement = () => {
 
       if (editingCustomer) {
         await axios.put(
-          `http://localhost:5001/api/admin/customers/${editingCustomer.id}`,
+          API_ENDPOINTS.ADMIN_CUSTOMER_DETAIL(editingCustomer.id),
           formData,
           config
         );
       } else {
         await axios.post(
-          "http://localhost:5001/api/admin/customers",
+          API_ENDPOINTS.ADMIN_CUSTOMERS,
           {
             ...formData,
             mobile: formData.phone // Mapping phone to mobile for backend

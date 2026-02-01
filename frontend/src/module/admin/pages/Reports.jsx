@@ -14,6 +14,7 @@ import {
 import { brands, categories } from '../../customer/data/mockData';
 
 import axios from "axios";
+import { API_ENDPOINTS } from "../../../config/api";
 
 const Reports = () => {
   const [dateRange, setDateRange] = useState("7d");
@@ -32,7 +33,7 @@ const Reports = () => {
         };
 
         const { data } = await axios.get(
-          "http://localhost:5001/api/admin/reports-stats",
+          API_ENDPOINTS.ADMIN_REPORTS_STATS,
           config
         );
 

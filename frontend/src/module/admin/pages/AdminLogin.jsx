@@ -10,6 +10,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import axios from "axios";
+import { API_ENDPOINTS } from "../../../config/api";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
@@ -26,7 +27,7 @@ const AdminLogin = () => {
 
     try {
       const { data } = await axios.post(
-        "http://localhost:5001/api/admin/login",
+        API_ENDPOINTS.ADMIN_LOGIN,
         {
           email,
           password,

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { API_ENDPOINTS } from "../../../config/api";
 import {
   Search,
   ArrowUp,
@@ -29,7 +30,7 @@ const StockManagement = () => {
         },
       };
       const { data } = await axios.get(
-        "http://localhost:5001/api/admin/products",
+        API_ENDPOINTS.ADMIN_PRODUCTS,
         config
       );
       setProducts(data);
@@ -94,7 +95,7 @@ const StockManagement = () => {
       };
 
       await axios.put(
-        `http://localhost:5001/api/admin/products/${pid}/stock`,
+        API_ENDPOINTS.ADMIN_PRODUCT_STOCK(pid),
         {
           quantity: qty,
           type: formData.type,

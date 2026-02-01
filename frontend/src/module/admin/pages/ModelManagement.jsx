@@ -13,6 +13,7 @@ import {
   Calendar,
 } from "lucide-react";
 import ImageUpload from "../../../components/ImageUpload";
+import { API_ENDPOINTS } from "../../../config/api";
 
 
 const ModelManagement = () => {
@@ -38,8 +39,8 @@ const ModelManagement = () => {
     try {
       const config = { headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}` } };
       const [modelRes, brandRes] = await Promise.all([
-        axios.get("http://localhost:5001/api/admin/models", config),
-        axios.get("http://localhost:5001/api/admin/brands", config)
+        axios.get(API_ENDPOINTS.ADMIN_MODELS, config),
+        axios.get(API_ENDPOINTS.ADMIN_BRANDS, config)
       ]);
       setModels(modelRes.data);
       setBrands(brandRes.data);
@@ -93,9 +94,9 @@ const ModelManagement = () => {
     try {
       const config = { headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}` } };
       if (editingModel) {
-        await axios.put(`http://localhost:5001/api/admin/models/${editingModel._id}`, formData, config);
+        await axios.put(API_ENDPOINTS.ADMIN_MODEL_DETAIL(editingModel._id), formData, config);
       } else {
-        await axios.post("http://localhost:5001/api/admin/models", formData, config);
+        await axios.post(API_ENDPOINTS.ADMIN_MODELS, formData, config);
       }
       fetchData();
       handleCloseModal();
@@ -109,7 +110,7 @@ const ModelManagement = () => {
     if (!window.confirm("Are you sure?")) return;
     try {
       const config = { headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}` } };
-      await axios.delete(`http://localhost:5001/api/admin/models/${id}`, config);
+      await axios.delete(API_ENDPOINTS.ADMIN_MODEL_DETAIL(id), config);
       fetchData();
     } catch (error) {
       console.error(error);

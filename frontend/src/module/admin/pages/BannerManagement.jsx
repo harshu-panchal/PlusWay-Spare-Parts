@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Plus, Trash, ExternalLink, Image as ImageIcon } from "lucide-react";
 import axios from "axios";
 import ImageUpload from "../../../components/ImageUpload";
+import { API_ENDPOINTS } from "../../../config/api";
 
 const BannerManagement = () => {
     const [banners, setBanners] = useState([]);
@@ -17,7 +18,7 @@ const BannerManagement = () => {
     const fetchBanners = async () => {
         try {
             const { data } = await axios.get(
-                "http://localhost:5001/api/admin/banners",
+                API_ENDPOINTS.ADMIN_BANNERS,
                 {
                     headers: {
                         Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo")).token}`,
@@ -38,7 +39,7 @@ const BannerManagement = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            await axios.post("http://localhost:5001/api/admin/banners", formData, {
+            await axios.post(API_ENDPOINTS.ADMIN_BANNERS, formData, {
                 headers: {
                     Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo")).token}`,
                 },
@@ -56,7 +57,7 @@ const BannerManagement = () => {
     const handleDelete = async (id) => {
         if (window.confirm("Are you sure you want to delete this banner?")) {
             try {
-                await axios.delete(`http://localhost:5001/api/admin/banners/${id}`, {
+                await axios.delete(API_ENDPOINTS.ADMIN_BANNER_DETAIL(id), {
                     headers: {
                         Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo")).token}`,
                     },
@@ -71,7 +72,7 @@ const BannerManagement = () => {
     const handleToggleActive = async (banner) => {
         try {
             await axios.put(
-                `http://localhost:5001/api/admin/banners/${banner._id}`,
+                API_ENDPOINTS.ADMIN_BANNER_DETAIL(banner._id),
                 { isActive: !banner.isActive },
                 {
                     headers: {
