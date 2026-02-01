@@ -40,25 +40,53 @@ const Cart = () => {
                     {/* Cart Items */}
                     <div className="lg:col-span-8 space-y-4">
                         {cartItems.map((item) => (
-                            <div key={item._id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-6 relative group">
+                            <div key={item._id} className="bg-white p-3 md:p-6 rounded-lg md:rounded-2xl shadow-sm border border-gray-100 flex gap-3 md:gap-6 relative group">
                                 <button
                                     onClick={() => removeFromCart(item._id)}
-                                    className="absolute top-4 right-4 text-gray-300 hover:text-red-500 transition-colors"
+                                    className="absolute top-2 right-2 md:top-4 md:right-4 text-gray-300 hover:text-red-500 transition-colors z-10"
                                 >
-                                    <Trash2 size={20} />
+                                    <Trash2 size={18} className="md:w-5 md:h-5" />
                                 </button>
 
-                                <div className="w-full md:w-32 aspect-square bg-gray-50 rounded-xl overflow-hidden p-4">
+                                {/* Product Image - Smaller on mobile */}
+                                <div className="w-20 h-20 md:w-32 md:h-32 flex-shrink-0 bg-gray-50 rounded-lg md:rounded-xl overflow-hidden p-2 md:p-4">
                                     <img src={item.image} alt={item.name} className="w-full h-full object-contain" />
                                 </div>
 
-                                <div className="flex-1">
-                                    <Link to={`/product/${item._id}`} className="font-bold text-secondary hover:text-primary transition-colors block mb-1 uppercase tracking-tight text-sm">
+                                {/* Product Info */}
+                                <div className="flex-1 min-w-0 pr-6 md:pr-0">
+                                    <Link to={`/product/${item._id}`} className="font-bold text-secondary hover:text-primary transition-colors block mb-1 uppercase tracking-tight text-xs md:text-sm line-clamp-2">
                                         {item.name}
                                     </Link>
-                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-4">SKU: MAX-{item._id}</p>
+                                    <p className="text-[9px] md:text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-2 md:mb-4">SKU: MAX-{item._id.slice(-6)}</p>
 
-                                    <div className="flex flex-wrap items-center justify-between gap-4">
+                                    {/* Mobile: Compact layout */}
+                                    <div className="flex flex-col gap-2 md:hidden">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
+                                                <button
+                                                    onClick={() => updateQuantity(item._id, item.quantity - 1)}
+                                                    className="w-7 h-7 flex items-center justify-center font-bold text-gray-500 hover:text-secondary"
+                                                >
+                                                    <Minus size={12} />
+                                                </button>
+                                                <span className="w-8 text-center font-black text-secondary text-xs">{item.quantity}</span>
+                                                <button
+                                                    onClick={() => updateQuantity(item._id, item.quantity + 1)}
+                                                    className="w-7 h-7 flex items-center justify-center font-bold text-gray-500 hover:text-secondary"
+                                                >
+                                                    <Plus size={12} />
+                                                </button>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-base font-black text-secondary tracking-tighter">₹{(item.price * item.quantity).toLocaleString()}</p>
+                                                <p className="text-[9px] text-gray-400 font-bold">₹{item.price.toLocaleString()} / Unit</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Desktop: Original layout */}
+                                    <div className="hidden md:flex flex-wrap items-center justify-between gap-4">
                                         <div className="flex items-center gap-4">
                                             <div className="flex items-center bg-gray-100 rounded-lg p-1">
                                                 <button
