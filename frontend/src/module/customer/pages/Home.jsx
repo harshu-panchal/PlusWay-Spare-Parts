@@ -12,6 +12,7 @@ import {
 import axios from "axios";
 import { API_ENDPOINTS } from "../../../config/api";
 import LazyImage from "../../../components/LazyImage";
+import ProductCard from "../components/ProductCard";
 
 const CategoryCard = ({ category }) => {
   return (
@@ -183,28 +184,11 @@ const Home = () => {
               Recently Viewed
             </h2>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="flex gap-3 md:gap-4 overflow-x-auto pb-4 -mx-[2%] px-[2%] md:mx-0 md:px-0 scroll-smooth">
             {recentlyViewed.map((item) => (
-              <Link to={`/product/${item._id}`} key={item._id} className="bg-white p-3 border border-gray-100 rounded group cursor-pointer hover:border-primary transition-all">
-                <div className="relative aspect-square mb-2 overflow-hidden bg-gray-50 p-2 rounded">
-                  <LazyImage
-                    src={item.image}
-                    alt={item.name}
-                    className="w-full h-full object-contain group-hover:scale-105 transition-transform"
-                  />
-                  {item.mrp > item.price && (
-                    <div className="absolute top-0 right-0 bg-red-600 text-[9px] text-white font-black px-1.5 py-0.5 rounded-l">
-                      Save {Math.round(((item.mrp - item.price) / item.mrp) * 100)}%
-                    </div>
-                  )}
-                </div>
-                <p className="text-[10px] font-bold text-gray-700 line-clamp-2 uppercase leading-tight group-hover:text-primary transition-colors">
-                  {item.name}
-                </p>
-                <div className="mt-1">
-                  <span className="text-xs font-black text-secondary">₹{item.price.toLocaleString()}</span>
-                </div>
-              </Link>
+              <div key={item._id} className="w-[150px] md:w-[240px] flex-shrink-0">
+                <ProductCard product={item} />
+              </div>
             ))}
           </div>
         </div>
