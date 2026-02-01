@@ -58,3 +58,32 @@ export const authCustomer = async (req, res) => {
     res.status(401).json({ message: "Invalid mobile number" });
   }
 };
+
+// @desc    Update customer profile
+// @route   PUT /api/customer/profile
+// @access  Private
+export const updateCustomerProfile = async (req, res) => {
+  try {
+    const customer = await Customer.findById(req.user._id);
+
+    if (customer) {
+      customer.name = req.body.name || customer.name;
+      customer.email = req.body.email || customer.email;
+      // Mobile cannot be changed as it's the primary identifier
+
+      const updatedCustomer = await customer.save();
+
+      res.json({
+        _id: updatedCustomer._id,
+        name: updatedCustomer.name,
+        email: updatedCustomer.email,
+        mobile: updatedCustomer.mobile,
+        token: generateToken(updatedCustomer._id, "customer"),
+      });
+    } else {
+      res.status(404).json({ message: "Customer not found" });
+    }
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};

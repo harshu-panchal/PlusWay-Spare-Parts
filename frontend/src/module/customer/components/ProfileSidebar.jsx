@@ -88,11 +88,10 @@ const ProfileSidebar = () => {
               onClick={() =>
                 item.action ? item.action() : navigate(item.path)
               }
-              className={`w-full flex items-center justify-between p-4 rounded-xl transition-all font-bold text-sm uppercase tracking-wider ${
-                item.active
+              className={`w-full flex items-center justify-between p-4 rounded-xl transition-all font-bold text-sm uppercase tracking-wider ${item.active
                   ? "bg-secondary text-white"
                   : "hover:bg-gray-50 text-gray-400 hover:text-secondary"
-              }`}>
+                }`}>
               <div className={`flex items-center gap-3 ${item.color || ""}`}>
                 {item.icon}
                 {item.name}
@@ -104,22 +103,6 @@ const ProfileSidebar = () => {
             </button>
           ))}
         </nav>
-      </div>
-
-      <div className="bg-primary p-8 rounded-[32px] shadow-lg shadow-orange-500/20 text-white relative overflow-hidden group">
-        <div className="relative z-10">
-          <ShieldCheck size={32} className="mb-4" />
-          <h3 className="text-xl font-black uppercase italic tracking-tighter mb-2">
-            Plusway <span className="text-secondary italic">Premium</span>
-          </h3>
-          <p className="text-xs font-bold uppercase tracking-widest opacity-80 mb-6 underline">
-            Join Member's Club
-          </p>
-          <button className="bg-secondary text-white text-[10px] font-black py-2 px-4 rounded-lg uppercase tracking-[0.2em] shadow-lg">
-            Upgrade Now
-          </button>
-        </div>
-        <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/10 rounded-full group-hover:scale-110 transition-transform"></div>
       </div>
     </aside>
   );

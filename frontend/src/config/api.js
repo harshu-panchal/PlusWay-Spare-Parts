@@ -24,6 +24,7 @@ export const API_ENDPOINTS = {
     // Customer Auth
     CUSTOMER_LOGIN: `${API_BASE_URL}/api/customer/login`,
     CUSTOMER_REGISTER: `${API_BASE_URL}/api/customer/register`,
+    CUSTOMER_PROFILE: `${API_BASE_URL}/api/customer/profile`,
 
     // Products
     PRODUCTS: `${API_BASE_URL}/api/customer/products`,

@@ -8,6 +8,7 @@ import {
 import {
   registerCustomer,
   authCustomer,
+  updateCustomerProfile,
 } from "../controllers/customerController.js";
 import {
   getProducts,
@@ -30,6 +31,9 @@ const router = express.Router();
 // Auth routes
 router.post("/register", registerCustomer);
 router.post("/login", authCustomer);
+
+// Profile routes (Protected)
+router.put("/profile", protect, updateCustomerProfile);
 
 // Product & Content routes
 router.get("/products", getProducts);
