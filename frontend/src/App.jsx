@@ -29,7 +29,8 @@ import ScrollToTop from "./components/ScrollToTop";
 import AdminLayout from "./module/admin/layout/AdminLayout";
 import AdminLogin from "./module/admin/pages/AdminLogin";
 import Dashboard from "./module/admin/pages/Dashboard";
-import CategoryBrandManagement from "./module/admin/pages/CategoryBrandManagement";
+import CategoryManagement from "./module/admin/pages/CategoryManagement";
+import BrandManagement from "./module/admin/pages/BrandManagement";
 import ModelManagement from "./module/admin/pages/ModelManagement";
 import ProductManagement from "./module/admin/pages/ProductManagement";
 import StockManagement from "./module/admin/pages/StockManagement";
@@ -90,8 +91,8 @@ const App = () => {
               </AdminProtectedRoute>
             }>
             <Route index element={<Dashboard />} />
-            <Route path="categories" element={<CategoryBrandManagement />} />
-            <Route path="brands" element={<CategoryBrandManagement />} />
+            <Route path="categories" element={<CategoryManagement />} />
+            <Route path="brands" element={<BrandManagement />} />
             <Route path="models" element={<ModelManagement />} />
             <Route path="products" element={<ProductManagement />} />
             <Route path="stock" element={<StockManagement />} />

@@ -24,8 +24,32 @@ export const updateReview = asyncHandler(async (req, res) => {
 
         const updatedReview = await review.save();
 
-        // Optional: Recalculate product rating if Approved
-        // Not strictly required for this task but good practice.
+        // Sync with Product's embedded review
+        const product = await Product.findById(review.product);
+        if (product) {
+            let pReview = product.reviews.id(review._id);
+
+            // 1. Try matching by User ID (Primary)
+            if (!pReview) {
+                pReview = product.reviews.find(r => r.user.toString() === review.user.toString());
+            }
+
+            // 2. Try matching by Content/Name (Fallback)
+            if (!pReview) {
+                pReview = product.reviews.find(r =>
+                    r.comment === review.comment &&
+                    r.name === review.name
+                );
+            }
+
+            if (pReview) {
+                pReview.status = review.status;
+                pReview.adminReply = review.adminReply;
+                await product.save();
+            } else {
+                console.log(`[ReviewSync] Failed to find embedded review for ${review._id} in Product ${product._id}`);
+            }
+        }
 
         res.json(updatedReview);
     } else {

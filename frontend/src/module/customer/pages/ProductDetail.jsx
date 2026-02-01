@@ -617,6 +617,12 @@ const ProductDetail = () => {
                             <span className="text-[10px] text-gray-400 font-bold uppercase">{rev.createdAt?.substring(0, 10)}</span>
                           </div>
                           <p className="text-sm text-gray-600 font-bold mt-2">"{rev.comment}"</p>
+                          {rev.adminReply && (
+                            <div className="mt-4 bg-gray-50 border-l-4 border-secondary p-3">
+                              <p className="text-[10px] font-black text-secondary uppercase mb-1">Response from Plusway</p>
+                              <p className="text-xs text-gray-600">{rev.adminReply}</p>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

@@ -10,6 +10,7 @@ const reviewSchema = new mongoose.Schema(
       required: true,
       ref: 'Customer', // referencing Customer model instead of User
     },
+    adminReply: { type: String },
   },
   {
     timestamps: true,

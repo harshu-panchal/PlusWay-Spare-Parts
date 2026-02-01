@@ -42,6 +42,7 @@ export const API_ENDPOINTS = {
     // Orders
     ORDERS: `${API_BASE_URL}/api/customer/orders`,
     MY_ORDERS: `${API_BASE_URL}/api/customer/orders/myorders`,
+    MY_REVIEWS: `${API_BASE_URL}/api/customer/reviews`,
     ORDER_DETAIL: (id) => `${API_BASE_URL}/api/customer/orders/${id}`,
     ORDER_PAY: (id) => `${API_BASE_URL}/api/customer/orders/${id}/pay`,
 

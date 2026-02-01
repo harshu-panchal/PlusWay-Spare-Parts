@@ -1,4 +1,5 @@
 import Product from "../../../models/Product.js";
+import Review from "../../../models/Review.js";
 import asyncHandler from "../../../middleware/asyncHandler.js";
 
 // @desc    Get all products
@@ -87,15 +88,24 @@ export const createProductReview = asyncHandler(async (req, res) => {
             user: req.user._id,
         };
 
+        // 1. Add to Product's review array (for seamless embedded display)
         product.reviews.push(review);
-
         product.numReviews = product.reviews.length;
-
         product.rating =
             product.reviews.reduce((acc, item) => item.rating + acc, 0) /
             product.reviews.length;
-
         await product.save();
+
+        // 2. Create independent Review document (for Admin/My Reviews)
+        await Review.create({
+            product: product._id,
+            user: req.user._id,
+            name: req.user.name,
+            rating: Number(rating),
+            comment,
+            status: "Pending" // Default status
+        });
+
         res.status(201).json({ message: "Review added" });
     } else {
         res.status(404);

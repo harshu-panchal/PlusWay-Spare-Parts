@@ -22,6 +22,7 @@ import {
   getProductById,
   createProductReview,
 } from "../controllers/productController.js";
+import { getMyReviews } from "../controllers/reviewController.js";
 import {
   addOrderItems,
   getOrderById,
@@ -62,6 +63,9 @@ router.get("/models", getModels);
 router.get("/categories", getCategories);
 router.get("/brands", getBrands);
 router.get("/banners", getActiveBanners);
+
+// Review routes
+router.get("/reviews", protect, getMyReviews);
 
 // Cart routes (Protected)
 router.route("/cart").get(protect, getCart).post(protect, addToCart);
