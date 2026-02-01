@@ -69,12 +69,12 @@ const Home = () => {
     const fetchData = async () => {
       try {
         const [brandsRes, bannersRes, sectionsRes] = await Promise.all([
-          axios.get(API_ENDPOINTS.BRANDS),
+          axios.get(`${API_ENDPOINTS.BRANDS}?all=true`),
           axios.get(API_ENDPOINTS.BANNERS),
           axios.get(API_ENDPOINTS.HOME_SECTIONS),
         ]);
 
-        setBrands(brandsRes.data);
+        setBrands(brandsRes.data.brands || brandsRes.data || []);
         setBanners({
           main: bannersRes.data.filter((b) => b.type === "main"),
           sub: bannersRes.data.filter((b) => b.type === "sub"),

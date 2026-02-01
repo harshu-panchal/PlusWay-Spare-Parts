@@ -4,8 +4,17 @@ import Product from '../../../models/Product.js';
 // @route   GET /api/admin/products
 // @access  Private/Admin
 export const getProducts = async (req, res) => {
-  const products = await Product.find({}).populate('brand model category');
-  res.json(products);
+  const pageSize = Number(req.query.pageSize) || 20;
+  const page = Number(req.query.pageNumber) || 1;
+
+  const count = await Product.countDocuments({});
+  const products = await Product.find({})
+    .populate('brand model category')
+    .limit(pageSize)
+    .skip(pageSize * (page - 1))
+    .sort({ createdAt: -1 });
+
+  res.json({ products, page, pages: Math.ceil(count / pageSize), total: count });
 };
 
 // @desc    Get product by ID
@@ -106,7 +115,7 @@ export const updateProduct = async (req, res) => {
     product.model = req.body.model || product.model;
     product.category = req.body.category || product.category;
     product.productType = req.body.productType || product.productType;
-    product.countInStock = req.body.countInStock || product.countInStock;
+    product.countInStock = req.body.countInStock !== undefined ? req.body.countInStock : product.countInStock;
     product.details = req.body.details || product.details;
     product.colors = req.body.colors || product.colors;
 

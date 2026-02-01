@@ -19,10 +19,14 @@ import axios from "axios";
 
 import ProfileSidebar from "../components/ProfileSidebar";
 import { API_ENDPOINTS } from "../../../config/api";
+import Pagination from "../../../components/Pagination";
 
 const Profile = () => {
   const [orders, setOrders] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [reviewPage, setReviewPage] = useState(1);
+  const [reviewPages, setReviewPages] = useState(1);
+  const [totalReviews, setTotalReviews] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("overview"); // overview, reviews
@@ -40,7 +44,7 @@ const Profile = () => {
       return;
     }
     fetchData();
-  }, [navigate]);
+  }, [navigate, reviewPage]);
 
   const [trackOrderId, setTrackOrderId] = useState("");
 
@@ -67,12 +71,14 @@ const Profile = () => {
 
       const [ordersRes, reviewsRes] = await Promise.all([
         axios.get(API_ENDPOINTS.MY_ORDERS, config),
-        axios.get(API_ENDPOINTS.MY_REVIEWS, config).catch(() => ({ data: [] })),
+        axios.get(`${API_ENDPOINTS.MY_REVIEWS}?pageNumber=${reviewPage}`, config).catch(() => ({ data: { reviews: [], pages: 1, total: 0 } })),
       ]);
 
-      const sortedOrders = ordersRes.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      const sortedOrders = (ordersRes.data.orders || ordersRes.data).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       setOrders(sortedOrders);
-      setReviews(reviewsRes.data);
+      setReviews(reviewsRes.data.reviews || []);
+      setReviewPages(reviewsRes.data.pages || 1);
+      setTotalReviews(reviewsRes.data.total || 0);
 
       // Calculate stats
       const pendingCount = sortedOrders.filter((o) => !o.isPaid).length;
@@ -81,7 +87,7 @@ const Profile = () => {
       setStats({
         pending: pendingCount,
         shipped: deliveredCount,
-        reviews: reviewsRes.data.length,
+        reviews: reviewsRes.data.total || reviewsRes.data.length,
       });
 
       setLoading(false);
@@ -294,7 +300,7 @@ const Profile = () => {
                           <div className="aspect-square bg-white rounded-xl p-2 border border-gray-100 flex items-center justify-center">
                             {review.product?.images?.[0] ? (
                               <img
-                                src={review.product.images[0]}
+                                src={review.product.images[0] || null}
                                 alt={review.product.name}
                                 className="w-full h-full object-contain"
                               />
@@ -333,6 +339,15 @@ const Profile = () => {
                     ))}
                   </div>
                 )}
+
+                <Pagination
+                  page={reviewPage}
+                  pages={reviewPages}
+                  onPageChange={(p) => setReviewPage(p)}
+                />
+                <p className="text-center text-[10px] font-black text-gray-400 uppercase tracking-widest mt-4">
+                  Total {totalReviews} reviews
+                </p>
               </div>
             )}
 

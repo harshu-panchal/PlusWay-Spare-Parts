@@ -4,9 +4,26 @@ import Brand from '../../../models/Brand.js';
 // @desc    Get all models
 // @route   GET /api/admin/models
 // @access  Private/Admin
+// @desc    Get all models
+// @route   GET /api/admin/models
+// @access  Private/Admin
 export const getModels = async (req, res) => {
-  const models = await Model.find({}).populate('brand', 'name');
-  res.json(models);
+  const pageSize = Number(req.query.pageSize) || 20;
+  const page = Number(req.query.pageNumber) || 1;
+
+  if (req.query.all === 'true') {
+    const models = await Model.find({}).populate('brand', 'name').sort({ name: 1 });
+    return res.json({ models, total: models.length });
+  }
+
+  const count = await Model.countDocuments({});
+  const models = await Model.find({})
+    .populate('brand', 'name')
+    .limit(pageSize)
+    .skip(pageSize * (page - 1))
+    .sort({ createdAt: -1 });
+
+  res.json({ models, page, pages: Math.ceil(count / pageSize), total: count });
 };
 
 // @desc    Get model by ID

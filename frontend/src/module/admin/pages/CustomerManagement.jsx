@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { API_ENDPOINTS } from "../../../config/api";
+import Pagination from "../../../components/Pagination";
 import {
   Search,
   User,
@@ -29,22 +30,25 @@ const CustomerManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [customersList, setCustomersList] = useState([]);
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const fetchCustomers = async () => {
     try {
-      const token = localStorage.getItem("adminToken");
+      const token = JSON.parse(localStorage.getItem("adminInfo"))?.token;
       const config = {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       };
       const { data } = await axios.get(
-        API_ENDPOINTS.ADMIN_CUSTOMERS,
+        `${API_ENDPOINTS.ADMIN_CUSTOMERS}?pageNumber=${page}`,
         config
       );
 
-      const formattedData = data.map(customer => ({
+      const formattedData = data.customers.map(customer => ({
         id: customer._id,
         name: customer.name,
         email: customer.email,
@@ -56,6 +60,8 @@ const CustomerManagement = () => {
       }));
 
       setCustomersList(formattedData);
+      setPages(data.pages);
+      setTotal(data.total);
       setLoading(false);
     } catch (error) {
       console.error("Failed to fetch customers", error);
@@ -65,7 +71,7 @@ const CustomerManagement = () => {
 
   useEffect(() => {
     fetchCustomers();
-  }, []);
+  }, [page]);
 
   const filteredCustomers = customersList.filter((customer) => {
     const matchesSearch =
@@ -138,6 +144,10 @@ const CustomerManagement = () => {
       console.error("Failed to save customer", error);
       alert(error.response?.data?.message || "Failed to save customer");
     }
+  };
+
+  const handlePageChange = (p) => {
+    setPage(p);
   };
 
   const getStatusColor = (status) => {
@@ -286,6 +296,15 @@ const CustomerManagement = () => {
           </table>
         </div>
       </div>
+
+      <Pagination
+        page={page}
+        pages={pages}
+        onPageChange={handlePageChange}
+      />
+      <p className="text-center text-xs text-gray-400 mt-2">
+        Total {total} customers found
+      </p>
 
       {/* Add/Edit Modal */}
       {isModalOpen && (

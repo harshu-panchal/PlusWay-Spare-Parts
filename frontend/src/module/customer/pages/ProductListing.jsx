@@ -5,6 +5,7 @@ import { ChevronRight, Filter, ChevronDown, ShoppingCart, Star } from 'lucide-re
 import { API_ENDPOINTS, API_BASE_URL } from '../../../config/api';
 import { useCart } from '../context/CartContext';
 import LazyImage from '../../../components/LazyImage';
+import Pagination from '../../../components/Pagination';
 
 const ProductListing = () => {
     const location = useLocation();
@@ -20,6 +21,9 @@ const ProductListing = () => {
     const selectedModel = models.find(m => m._id === modelId);
 
     const [products, setProducts] = useState([]);
+    const [page, setPage] = useState(1);
+    const [pages, setPages] = useState(1);
+    const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -27,19 +31,18 @@ const ProductListing = () => {
         const fetchProducts = async () => {
             try {
                 setLoading(true);
-                let url = `${API_BASE_URL}/api/customer/products?`;
+                let url = `${API_BASE_URL}/api/customer/products?pageNumber=${page}&`;
                 if (modelId) url += `model=${modelId}&`;
-                // Note: Backend expects 'category' for what frontend calls 'type' usually, 
-                // or 'productType' string. For now, assuming 'type' param maps to 'category' ID if it's an ObjectId, 
-                // or we need to adjust navigation. 
-                // However, the prompt implies "Add Product" flow. 
-                // Let's assume standard filtering.
                 if (typeId) url += `category=${typeId}&`;
                 if (keyword) url += `keyword=${keyword}&`;
 
                 const { data } = await axios.get(url);
                 setProducts(data.products);
+                setPages(data.pages);
+                setTotal(data.total);
                 setLoading(false);
+                // Scroll to top when page changes
+                window.scrollTo(0, 0);
             } catch (err) {
                 setError(err.message);
                 setLoading(false);
@@ -47,6 +50,11 @@ const ProductListing = () => {
         };
 
         fetchProducts();
+    }, [modelId, typeId, keyword, location.search, page]);
+
+    // Reset page when filters change
+    useEffect(() => {
+        setPage(1);
     }, [modelId, typeId, keyword, location.search]);
 
     // Mock data for display titles (optional, could fetch real objects)
@@ -61,11 +69,11 @@ const ProductListing = () => {
             try {
                 setLoadingModels(true);
                 const [modelRes, brandRes] = await Promise.all([
-                    axios.get(API_ENDPOINTS.MODELS),
-                    axios.get(API_ENDPOINTS.BRANDS)
+                    axios.get(`${API_ENDPOINTS.MODELS}?all=true`),
+                    axios.get(`${API_ENDPOINTS.BRANDS}?all=true`)
                 ]);
-                setModels(modelRes.data);
-                setBrands(brandRes.data);
+                setModels(modelRes.data.models || modelRes.data || []);
+                setBrands(brandRes.data.brands || brandRes.data || []);
                 setLoadingModels(false);
             } catch (error) {
                 console.error("Error fetching filters", error);
@@ -162,7 +170,7 @@ const ProductListing = () => {
                                 </div>
                             ) : (
                                 <h1 className="text-lg font-black text-secondary uppercase italic tracking-tighter">
-                                    Products <span className="text-primary tracking-normal not-italic lowercase font-medium ml-2">({products.length} items)</span>
+                                    Products <span className="text-primary tracking-normal not-italic lowercase font-medium ml-2">({total} items)</span>
                                 </h1>
                             )}
                             <div className="flex items-center gap-2 text-sm font-bold text-gray-500">
@@ -215,6 +223,13 @@ const ProductListing = () => {
                                 </div>
                             ))}
                         </div>
+
+                        {/* Pagination */}
+                        <Pagination
+                            page={page}
+                            pages={pages}
+                            onPageChange={(p) => setPage(p)}
+                        />
 
                         {products.length === 0 && (
                             <div className="py-20 text-center bg-white rounded-3xl shadow-sm border border-dashed border-gray-200">

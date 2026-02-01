@@ -4,9 +4,25 @@ import asyncHandler from '../../../middleware/asyncHandler.js';
 // @desc    Get all categories
 // @route   GET /api/admin/categories
 // @access  Private/Admin
+// @desc    Get all categories
+// @route   GET /api/admin/categories
+// @access  Private/Admin
 export const getCategories = asyncHandler(async (req, res) => {
-  const categories = await Category.find({});
-  res.json(categories);
+  const pageSize = Number(req.query.pageSize) || 20;
+  const page = Number(req.query.pageNumber) || 1;
+
+  if (req.query.all === 'true') {
+    const categories = await Category.find({}).sort({ name: 1 });
+    return res.json({ categories, total: categories.length });
+  }
+
+  const count = await Category.countDocuments({});
+  const categories = await Category.find({})
+    .limit(pageSize)
+    .skip(pageSize * (page - 1))
+    .sort({ createdAt: -1 });
+
+  res.json({ categories, page, pages: Math.ceil(count / pageSize), total: count });
 });
 
 // @desc    Create a category

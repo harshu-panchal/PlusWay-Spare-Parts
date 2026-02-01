@@ -4,9 +4,25 @@ import asyncHandler from '../../../middleware/asyncHandler.js';
 // @desc    Get all brands
 // @route   GET /api/admin/brands
 // @access  Private/Admin
+// @desc    Get all brands
+// @route   GET /api/admin/brands
+// @access  Private/Admin
 export const getBrands = asyncHandler(async (req, res) => {
-  const brands = await Brand.find({}); // Removed populate('models') for performance
-  res.json(brands);
+  const pageSize = Number(req.query.pageSize) || 20;
+  const page = Number(req.query.pageNumber) || 1;
+
+  if (req.query.all === 'true') {
+    const brands = await Brand.find({}).sort({ name: 1 });
+    return res.json({ brands, total: brands.length });
+  }
+
+  const count = await Brand.countDocuments({});
+  const brands = await Brand.find({})
+    .limit(pageSize)
+    .skip(pageSize * (page - 1))
+    .sort({ createdAt: -1 });
+
+  res.json({ brands, page, pages: Math.ceil(count / pageSize), total: count });
 });
 
 // @desc    Create a brand

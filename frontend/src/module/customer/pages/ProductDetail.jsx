@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { API_ENDPOINTS } from "../../../config/api";
 import {
   products,
@@ -29,7 +29,8 @@ import LazyImage from "../../../components/LazyImage";
 
 const ProductDetail = () => {
   const { id } = useParams();
-  const { addToCart } = useCart();
+  const { addToCart, clearCart } = useCart();
+  const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -257,13 +258,18 @@ const ProductDetail = () => {
                 />
               </div>
               <div className="flex flex-1 gap-2 pt-6">
-                <button className="flex-1 bg-white border-2 border-primary text-primary font-black py-3 px-4 hover:bg-orange-50 transition-colors uppercase italic tracking-tighter text-sm">
+                <button
+                  onClick={async () => {
+                    await clearCart();
+                    await addToCart({ ...product, image: selectedImage }, Number(quantity));
+                    navigate("/checkout");
+                  }}
+                  className="flex-1 bg-white border-2 border-primary text-primary font-black py-3 px-4 hover:bg-orange-50 transition-colors uppercase italic tracking-tighter text-sm">
                   Buy Now
                 </button>
                 <button
                   onClick={() => {
-                    addToCart({ ...product, image: selectedImage }, quantity);
-                    alert("Added to cart!");
+                    addToCart({ ...product, image: selectedImage }, Number(quantity));
                   }}
                   className="flex-1 bg-primary text-white font-black py-3 px-4 hover:bg-orange-600 transition-colors uppercase italic tracking-tighter text-sm">
                   Add to Cart

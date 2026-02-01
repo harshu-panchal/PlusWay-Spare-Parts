@@ -6,7 +6,7 @@ import asyncHandler from "../../../middleware/asyncHandler.js";
 // @route   GET /api/customer/products
 // @access  Public
 export const getProducts = asyncHandler(async (req, res) => {
-    const pageSize = 100;
+    const pageSize = 20;
     const page = Number(req.query.pageNumber) || 1;
 
     const keyword = req.query.keyword
@@ -47,7 +47,7 @@ export const getProducts = asyncHandler(async (req, res) => {
             .skip(pageSize * (page - 1))
     ]);
 
-    res.json({ products, page, pages: Math.ceil(count / pageSize) });
+    res.json({ products, page, pages: Math.ceil(count / pageSize), total: count });
 });
 
 // @desc    Get product by ID

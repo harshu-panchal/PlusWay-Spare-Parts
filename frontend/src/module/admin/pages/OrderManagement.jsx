@@ -13,32 +13,38 @@ import {
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API_ENDPOINTS } from "../../../config/api";
+import Pagination from "../../../components/Pagination";
 
 const OrderManagement = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [orders, setOrders] = useState([]);
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [page]);
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("adminToken");
+      const token = JSON.parse(localStorage.getItem("adminInfo"))?.token;
       const { data } = await axios.get(
-        API_ENDPOINTS.ADMIN_ORDERS,
+        `${API_ENDPOINTS.ADMIN_ORDERS}?pageNumber=${page}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         },
       );
-      setOrders(data);
+      setOrders(data.orders);
+      setPages(data.pages);
+      setTotal(data.total);
       setLoading(false);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch orders");
@@ -250,6 +256,15 @@ const OrderManagement = () => {
           </table>
         </div>
       </div>
+
+      <Pagination
+        page={page}
+        pages={pages}
+        onPageChange={(p) => setPage(p)}
+      />
+      <p className="text-center text-xs text-gray-400 mt-2">
+        Total {total} orders found
+      </p>
     </div>
   );
 };

@@ -103,6 +103,14 @@ export const updateOrderToPaid = async (req, res) => {
 // @route   GET /api/customer/orders/myorders
 // @access  Private
 export const getMyOrders = async (req, res) => {
-  const orders = await Order.find({ customer: req.user._id });
-  res.json(orders);
+  const pageSize = Number(req.query.pageSize) || 10;
+  const page = Number(req.query.pageNumber) || 1;
+
+  const count = await Order.countDocuments({ customer: req.user._id });
+  const orders = await Order.find({ customer: req.user._id })
+    .limit(pageSize)
+    .skip(pageSize * (page - 1))
+    .sort({ createdAt: -1 });
+
+  res.json({ orders, page, pages: Math.ceil(count / pageSize), total: count });
 };

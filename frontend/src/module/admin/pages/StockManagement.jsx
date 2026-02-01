@@ -13,12 +13,16 @@ import {
   Package,
   History,
 } from "lucide-react";
+import Pagination from "../../../components/Pagination";
 
 const StockManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [products, setProducts] = useState([]);
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const fetchProducts = async () => {
@@ -30,13 +34,15 @@ const StockManagement = () => {
         },
       };
       const { data } = await axios.get(
-        API_ENDPOINTS.ADMIN_PRODUCTS,
+        `${API_ENDPOINTS.ADMIN_PRODUCTS}?pageNumber=${page}`,
         config
       );
-      setProducts(data);
+      setProducts(data.products);
+      setPages(data.pages);
+      setTotal(data.total);
 
       // Initialize local stock inputs with current actual stock
-      const initialStock = data.reduce(
+      const initialStock = data.products.reduce(
         (acc, p) => ({ ...acc, [p._id]: p.countInStock }),
         {}
       );
@@ -50,7 +56,7 @@ const StockManagement = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [page]);
 
   const [formData, setFormData] = useState({
     productId: "",
@@ -179,7 +185,7 @@ const StockManagement = () => {
                       <div className="w-10 h-10 rounded-lg overflow-hidden border border-gray-100 bg-gray-50 flex-shrink-0">
                         {product.images && product.images[0] ? (
                           <img
-                            src={product.images[0]}
+                            src={product.images[0] || null}
                             alt={product.name}
                             className="w-full h-full object-contain"
                           />
@@ -237,6 +243,15 @@ const StockManagement = () => {
           </table>
         </div>
       </div>
+
+      <Pagination
+        page={page}
+        pages={pages}
+        onPageChange={(p) => setPage(p)}
+      />
+      <p className="text-center text-xs text-gray-400 mt-4">
+        Total {total} products found
+      </p>
 
       {/* Stock Update Modal */}
       {isModalOpen && (

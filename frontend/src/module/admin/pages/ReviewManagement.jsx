@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { API_ENDPOINTS } from "../../../config/api";
+import Pagination from "../../../components/Pagination";
 import {
   Star,
   CheckCircle,
@@ -22,22 +23,25 @@ const ReviewManagement = () => {
   const [replyText, setReplyText] = useState("");
 
   const [allReviews, setAllReviews] = useState([]);
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const fetchReviews = async () => {
     try {
-      const token = localStorage.getItem("adminToken");
+      const token = JSON.parse(localStorage.getItem("adminInfo"))?.token;
       const config = {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       };
       const { data } = await axios.get(
-        API_ENDPOINTS.ADMIN_REVIEWS,
+        `${API_ENDPOINTS.ADMIN_REVIEWS}?pageNumber=${page}`,
         config
       );
 
-      const formattedReviews = data.map(review => ({
+      const formattedReviews = data.reviews.map(review => ({
         id: review._id,
         author: review.name,
         date: new Date(review.createdAt).toLocaleDateString(),
@@ -47,10 +51,12 @@ const ReviewManagement = () => {
         adminReply: review.adminReply,
         productName: review.product?.name || "Unknown Product",
         productId: review.product?._id,
-        productImage: review.product?.images?.[0] || "",
+        productImage: review.product?.images?.[0] || null,
       }));
 
       setAllReviews(formattedReviews);
+      setPages(data.pages);
+      setTotal(data.total);
       setLoading(false);
     } catch (error) {
       console.error("Failed to fetch reviews", error);
@@ -60,7 +66,7 @@ const ReviewManagement = () => {
 
   useEffect(() => {
     fetchReviews();
-  }, []);
+  }, [page]);
 
   const handleOpenReply = (review) => {
     setSelectedReview(review);
@@ -197,10 +203,10 @@ const ReviewManagement = () => {
                         <p className="text-xs text-gray-500">{review.date}</p>
                         <span
                           className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${review.status === "Approved"
-                              ? "bg-green-100 text-green-700"
-                              : review.status === "Rejected"
-                                ? "bg-red-100 text-red-700"
-                                : "bg-amber-100 text-amber-700"
+                            ? "bg-green-100 text-green-700"
+                            : review.status === "Rejected"
+                              ? "bg-red-100 text-red-700"
+                              : "bg-amber-100 text-amber-700"
                             }`}>
                           {review.status}
                         </span>
@@ -239,8 +245,8 @@ const ReviewManagement = () => {
                   <button
                     onClick={() => handleStatusChange(review.id, "Approved")}
                     className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${review.status === "Approved"
-                        ? "bg-green-100 text-green-700"
-                        : "text-gray-400 hover:text-green-600 hover:bg-green-50"
+                      ? "bg-green-100 text-green-700"
+                      : "text-gray-400 hover:text-green-600 hover:bg-green-50"
                       }`}>
                     <CheckCircle size={14} />
                     APPROVE
@@ -248,8 +254,8 @@ const ReviewManagement = () => {
                   <button
                     onClick={() => handleStatusChange(review.id, "Rejected")}
                     className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${review.status === "Rejected"
-                        ? "bg-red-100 text-red-700"
-                        : "text-gray-400 hover:text-red-600 hover:bg-red-50"
+                      ? "bg-red-100 text-red-700"
+                      : "text-gray-400 hover:text-red-600 hover:bg-red-50"
                       }`}>
                     <XCircle size={14} />
                     REJECT

@@ -66,16 +66,18 @@ const ProductTypeSelection = () => {
             try {
                 const [productsRes, modelsRes] = await Promise.all([
                     axios.get(`${API_BASE_URL}/api/customer/products?model=${modelId}`),
-                    axios.get(API_ENDPOINTS.MODELS)
+                    axios.get(`${API_ENDPOINTS.MODELS}?all=true`)
                 ]);
 
                 // Find model info
-                const foundModel = modelsRes.data.find(m => m._id === modelId);
+                const models = modelsRes.data.models || modelsRes.data || [];
+                const foundModel = models.find(m => m._id === modelId);
                 setModelInfo(foundModel || { name: "Unknown Model" });
 
                 // Group products by category
                 const groups = {};
-                productsRes.data.products.forEach(product => {
+                const products = productsRes.data.products || productsRes.data || [];
+                products.forEach(product => {
                     const catName = product.category?.name || "Other";
                     if (!groups[catName]) groups[catName] = [];
                     groups[catName].push(product);

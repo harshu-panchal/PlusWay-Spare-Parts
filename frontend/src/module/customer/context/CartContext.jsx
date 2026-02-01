@@ -91,11 +91,20 @@ export const CartProvider = ({ children }) => {
         }
     };
 
+    const clearCart = async () => {
+        try {
+            await axios.delete(API_ENDPOINTS.CART, getConfig());
+            fetchCart();
+        } catch (error) {
+            console.error("Error clearing cart:", error);
+        }
+    };
+
     const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
     return (
-        <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, cartTotal, cartCount, fetchCart }}>
+        <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, clearCart, cartTotal, cartCount, fetchCart }}>
             {children}
         </CartContext.Provider>
     );

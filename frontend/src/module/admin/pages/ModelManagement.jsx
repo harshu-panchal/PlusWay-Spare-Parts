@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import ImageUpload from "../../../components/ImageUpload";
 import { API_ENDPOINTS } from "../../../config/api";
+import Pagination from "../../../components/Pagination";
 
 
 const ModelManagement = () => {
@@ -23,6 +24,9 @@ const ModelManagement = () => {
   const [editingModel, setEditingModel] = useState(null);
 
   const [models, setModels] = useState([]);
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -39,11 +43,13 @@ const ModelManagement = () => {
     try {
       const config = { headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}` } };
       const [modelRes, brandRes] = await Promise.all([
-        axios.get(API_ENDPOINTS.ADMIN_MODELS, config),
-        axios.get(API_ENDPOINTS.ADMIN_BRANDS, config)
+        axios.get(`${API_ENDPOINTS.ADMIN_MODELS}?pageNumber=${page}`, config),
+        axios.get(`${API_ENDPOINTS.ADMIN_BRANDS}?all=true`, config)
       ]);
-      setModels(modelRes.data);
-      setBrands(brandRes.data);
+      setModels(modelRes.data.models);
+      setPages(modelRes.data.pages);
+      setTotal(modelRes.data.total);
+      setBrands(brandRes.data.brands || brandRes.data || []);
       setLoading(false);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -53,7 +59,7 @@ const ModelManagement = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [page]);
 
   const filteredModels = models.filter((model) => {
     const matchesSearch = model.name
@@ -183,7 +189,7 @@ const ModelManagement = () => {
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-blue-50 text-blue-600 rounded-lg overflow-hidden w-12 h-12 flex items-center justify-center">
                         {model.image ? (
-                          <img src={model.image} alt={model.name} className="w-full h-full object-contain" />
+                          <img src={model.image || null} alt={model.name} className="w-full h-full object-contain" />
                         ) : (
                           <Smartphone size={20} />
                         )}
@@ -223,6 +229,15 @@ const ModelManagement = () => {
           </table>
         </div>
       </div>
+
+      <Pagination
+        page={page}
+        pages={pages}
+        onPageChange={(p) => setPage(p)}
+      />
+      <p className="text-center text-xs text-gray-400 mt-4">
+        Total {total} models found
+      </p>
 
       {/* Add/Edit Modal */}
       {isModalOpen && (

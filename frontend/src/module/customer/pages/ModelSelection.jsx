@@ -18,17 +18,18 @@ const ModelSelection = () => {
         const fetchData = async () => {
             try {
                 const [modelsRes, brandsRes] = await Promise.all([
-                    axios.get(API_ENDPOINTS.MODELS),
-                    axios.get(API_ENDPOINTS.BRANDS)
+                    axios.get(`${API_ENDPOINTS.MODELS}?all=true`),
+                    axios.get(`${API_ENDPOINTS.BRANDS}?all=true`)
                 ]);
 
                 // Filter models for this brand
-                const allModels = modelsRes.data;
+                const allModels = modelsRes.data.models || modelsRes.data || [];
                 const filtered = allModels.filter(m => m.brand?._id === brandId || m.brand === brandId);
                 setModels(filtered);
 
                 // Find brand info
-                const foundBrand = brandsRes.data.find(b => b._id === brandId);
+                const brands = brandsRes.data.brands || brandsRes.data || [];
+                const foundBrand = brands.find(b => b._id === brandId);
                 setBrand(foundBrand);
 
                 setLoading(false);

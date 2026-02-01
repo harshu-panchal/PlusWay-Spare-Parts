@@ -11,12 +11,16 @@ import {
 } from "lucide-react";
 import ImageUpload from "../../../components/ImageUpload";
 import { API_BASE_URL } from "../../../config/api";
+import Pagination from "../../../components/Pagination";
 
 const CategoryManagement = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [items, setItems] = useState([]);
+    const [page, setPage] = useState(1);
+    const [pages, setPages] = useState(1);
+    const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
@@ -31,7 +35,7 @@ const CategoryManagement = () => {
 
     useEffect(() => {
         fetchItems();
-    }, []);
+    }, [page]);
 
     const fetchItems = async () => {
         setLoading(true);
@@ -39,12 +43,14 @@ const CategoryManagement = () => {
         try {
             const token = localStorage.getItem("adminToken");
             const { data } = await axios.get(
-                `${API_BASE_URL}/api/admin/categories`,
+                `${API_BASE_URL}/api/admin/categories?pageNumber=${page}`,
                 {
                     headers: { Authorization: `Bearer ${token}` },
                 },
             );
-            setItems(data);
+            setItems(data.categories);
+            setPages(data.pages);
+            setTotal(data.total);
         } catch (err) {
             setError(err.response?.data?.message || "Failed to fetch categories");
         } finally {
@@ -184,7 +190,7 @@ const CategoryManagement = () => {
                                 className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group">
                                 <div className="h-40 bg-gray-50 relative flex items-center justify-center p-4">
                                     <img
-                                        src={item.image}
+                                        src={item.image || null}
                                         alt={item.name}
                                         className="max-w-full max-h-full object-contain"
                                     />
@@ -214,6 +220,15 @@ const CategoryManagement = () => {
                         ))}
                 </div>
             )}
+
+            <Pagination
+                page={page}
+                pages={pages}
+                onPageChange={(p) => setPage(p)}
+            />
+            <p className="text-center text-xs text-gray-400 mt-4">
+                Total {total} categories found
+            </p>
 
             {/* Add/Edit Modal */}
             {isModalOpen && (

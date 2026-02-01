@@ -27,8 +27,8 @@ const Header = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const { data } = await axios.get(API_ENDPOINTS.CUSTOMER_CATEGORIES);
-        setCategories(data);
+        const { data } = await axios.get(`${API_ENDPOINTS.CUSTOMER_CATEGORIES}?all=true`);
+        setCategories(data.categories || data || []);
       } catch (error) {
         console.error("Error fetching categories:", error);
       }

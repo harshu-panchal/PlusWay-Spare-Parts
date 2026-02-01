@@ -6,8 +6,17 @@ import generateInvoice from "../../../utils/generateInvoice.js";
 // @route   GET /api/admin/orders
 // @access  Private/Admin
 export const getOrders = async (req, res) => {
-  const orders = await Order.find({}).populate("customer", "id name");
-  res.json(orders);
+  const pageSize = Number(req.query.pageSize) || 20;
+  const page = Number(req.query.pageNumber) || 1;
+
+  const count = await Order.countDocuments({});
+  const orders = await Order.find({})
+    .populate("customer", "id name")
+    .limit(pageSize)
+    .skip(pageSize * (page - 1))
+    .sort({ createdAt: -1 });
+
+  res.json({ orders, page, pages: Math.ceil(count / pageSize), total: count });
 };
 
 // @desc    Get order by ID

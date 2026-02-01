@@ -32,10 +32,12 @@ const LazyImage = ({
         if (onError) onError(e);
     };
 
-    if (hasError) {
+    if (hasError || !src) {
         return (
             <div className={`${placeholder} flex items-center justify-center ${className}`}>
-                <span className="text-gray-400 text-xs">Image not available</span>
+                <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest px-2 text-center">
+                    {hasError ? "Image not available" : "No Image"}
+                </span>
             </div>
         );
     }

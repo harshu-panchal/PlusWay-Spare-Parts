@@ -6,10 +6,17 @@ import Product from "../../../models/Product.js";
 // @route   GET /api/admin/reviews
 // @access  Private/Admin
 export const getReviews = asyncHandler(async (req, res) => {
+    const pageSize = Number(req.query.pageSize) || 20;
+    const page = Number(req.query.pageNumber) || 1;
+
+    const count = await Review.countDocuments({});
     const reviews = await Review.find({})
         .populate("product", "name images")
-        .sort({ createdAt: -1 });
-    res.json(reviews);
+        .sort({ createdAt: -1 })
+        .limit(pageSize)
+        .skip(pageSize * (page - 1));
+
+    res.json({ reviews, page, pages: Math.ceil(count / pageSize), total: count });
 });
 
 // @desc    Update review status/reply

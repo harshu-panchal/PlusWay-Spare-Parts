@@ -4,9 +4,13 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import ProfileSidebar from "../components/ProfileSidebar";
 import { API_ENDPOINTS } from "../../../config/api";
+import Pagination from "../../../components/Pagination";
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -17,21 +21,23 @@ const Orders = () => {
       return;
     }
     fetchMyOrders();
-  }, [navigate]);
+  }, [navigate, page]);
 
   const fetchMyOrders = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
       const { data } = await axios.get(
-        API_ENDPOINTS.MY_ORDERS,
+        `${API_ENDPOINTS.MY_ORDERS}?pageNumber=${page}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         },
       );
-      setOrders(data);
+      setOrders(data.orders);
+      setPages(data.pages);
+      setTotal(data.total);
       setLoading(false);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch orders");
@@ -151,6 +157,15 @@ const Orders = () => {
                   })
                 )}
               </div>
+
+              <Pagination
+                page={page}
+                pages={pages}
+                onPageChange={(p) => setPage(p)}
+              />
+              <p className="text-center text-[10px] font-black text-gray-400 uppercase tracking-widest mt-4">
+                Total {total} orders
+              </p>
             </div>
           </div>
         </div>

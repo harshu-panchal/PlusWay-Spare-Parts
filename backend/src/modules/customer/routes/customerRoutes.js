@@ -4,6 +4,7 @@ import {
   addToCart,
   updateCartItem,
   removeCartItem,
+  clearCart,
 } from "../controllers/cartController.js";
 import {
   registerCustomer,
@@ -68,7 +69,10 @@ router.get("/banners", getActiveBanners);
 router.get("/reviews", protect, getMyReviews);
 
 // Cart routes (Protected)
-router.route("/cart").get(protect, getCart).post(protect, addToCart);
+router.route("/cart")
+  .get(protect, getCart)
+  .post(protect, addToCart)
+  .delete(protect, clearCart);
 router.route("/cart/:itemId")
   .put(protect, updateCartItem)
   .delete(protect, removeCartItem);

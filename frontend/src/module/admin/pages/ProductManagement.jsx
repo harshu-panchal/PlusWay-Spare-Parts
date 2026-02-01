@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import ImageUpload from "../../../components/ImageUpload";
 import { API_ENDPOINTS } from "../../../config/api";
+import Pagination from "../../../components/Pagination";
 
 const ProductManagement = () => {
   const [products, setProducts] = useState([]);
@@ -27,6 +28,9 @@ const ProductManagement = () => {
   const [models, setModels] = useState([]);
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -36,16 +40,19 @@ const ProductManagement = () => {
       const config = { headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}` } };
 
       const [prodRes, catRes, brandRes, modelRes] = await Promise.all([
-        axios.get(API_ENDPOINTS.ADMIN_PRODUCTS, config),
-        axios.get(API_ENDPOINTS.ADMIN_CATEGORIES, config),
-        axios.get(API_ENDPOINTS.ADMIN_BRANDS, config),
-        axios.get(API_ENDPOINTS.ADMIN_MODELS, config)
+        axios.get(`${API_ENDPOINTS.ADMIN_PRODUCTS}?pageNumber=${page}`, config),
+        axios.get(`${API_ENDPOINTS.ADMIN_CATEGORIES}?all=true`, config),
+        axios.get(`${API_ENDPOINTS.ADMIN_BRANDS}?all=true`, config),
+        axios.get(`${API_ENDPOINTS.ADMIN_MODELS}?all=true`, config)
       ]);
 
-      setProducts(prodRes.data.products || prodRes.data || []); // Handle paginated response
-      setCategories(catRes.data);
-      setBrands(brandRes.data);
-      setModels(modelRes.data);
+      const productData = prodRes.data;
+      setProducts(productData.products || []);
+      setPages(productData.pages || 1);
+      setTotal(productData.total || 0);
+      setCategories(catRes.data.categories || catRes.data || []);
+      setBrands(brandRes.data.brands || brandRes.data || []);
+      setModels(modelRes.data.models || modelRes.data || []);
 
       setLoading(false);
     } catch (err) {
@@ -56,7 +63,7 @@ const ProductManagement = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [page]);
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch =
@@ -377,31 +384,15 @@ const ProductManagement = () => {
         </div>
 
         {/* Pagination Footer */}
-        <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Showing <span className="font-medium text-gray-900">1</span> to{" "}
-            <span className="font-medium text-gray-900">{products.length}</span>{" "}
-            of{" "}
-            <span className="font-medium text-gray-900">{products.length}</span>{" "}
-            results
+        <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-100">
+          <Pagination
+            page={page}
+            pages={pages}
+            onPageChange={(p) => setPage(p)}
+          />
+          <p className="text-center text-xs text-gray-400 mt-4">
+            Total {total} products found
           </p>
-          <div className="flex items-center gap-2">
-            <button
-              className="p-2 border border-gray-200 rounded-lg bg-white text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              disabled>
-              <ChevronLeft size={18} />
-            </button>
-            <div className="flex items-center gap-1">
-              <button className="w-9 h-9 flex items-center justify-center rounded-lg bg-blue-600 text-white font-medium text-sm">
-                1
-              </button>
-            </div>
-            <button
-              className="p-2 border border-gray-200 rounded-lg bg-white text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              disabled>
-              <ChevronRight size={18} />
-            </button>
-          </div>
         </div>
       </div>
 
@@ -538,7 +529,7 @@ const ProductManagement = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
                       Selling Price (₹)
@@ -573,6 +564,24 @@ const ProductManagement = () => {
                         value={formData.mrp}
                         onChange={(e) =>
                           setFormData({ ...formData, mrp: e.target.value })
+                        }
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                      Stock Count
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        required
+                        min="0"
+                        placeholder="0"
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold"
+                        value={formData.countInStock}
+                        onChange={(e) =>
+                          setFormData({ ...formData, countInStock: e.target.value })
                         }
                       />
                     </div>

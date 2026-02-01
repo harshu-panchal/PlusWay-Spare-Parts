@@ -17,8 +17,8 @@ const BrandSelection = () => {
   useEffect(() => {
     const fetchBrands = async () => {
       try {
-        const { data } = await axios.get(API_ENDPOINTS.BRANDS);
-        setBrands(data);
+        const { data } = await axios.get(`${API_ENDPOINTS.BRANDS}?all=true`);
+        setBrands(data.brands || data || []);
         setLoading(false);
       } catch (error) {
         console.error("Error fetching brands", error);

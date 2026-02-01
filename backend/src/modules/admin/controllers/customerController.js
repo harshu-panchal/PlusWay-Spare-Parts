@@ -6,17 +6,20 @@ import Order from "../../../models/Order.js";
 // @route   GET /api/admin/customers
 // @access  Private/Admin
 export const getCustomers = asyncHandler(async (req, res) => {
-    // Aggregate stats: total spent and order count are best calculated from Orders,
-    // but Customer model has 'orders' array too.
-    // Using Order aggregation for accuracy.
+    const pageSize = Number(req.query.pageSize) || 20;
+    const page = Number(req.query.pageNumber) || 1;
 
-    const customers = await Customer.find({}).sort({ createdAt: -1 });
+    const count = await Customer.countDocuments({});
+    const customers = await Customer.find({})
+        .sort({ createdAt: -1 })
+        .limit(pageSize)
+        .skip(pageSize * (page - 1));
 
-    // We need to calculate totalSpent and totalOrders for each customer.
-    // Ideally this should be an aggregation on the Order collection grouped by customer.
+    const customerIds = customers.map(c => c._id);
 
+    // Get stats only for these customers
     const customerStats = await Order.aggregate([
-        { $match: { isPaid: true } },
+        { $match: { customer: { $in: customerIds }, isPaid: true } },
         {
             $group: {
                 _id: "$customer",
@@ -43,12 +46,12 @@ export const getCustomers = asyncHandler(async (req, res) => {
             mobile: cust.mobile,
             joined: cust.createdAt,
             status: cust.status,
-            orders: stat.totalOrders, // Or cust.orders.length if we trust that array
+            orders: stat.totalOrders,
             totalSpent: stat.totalSpent
         };
     });
 
-    res.json(customersWithStats);
+    res.json({ customers: customersWithStats, page, pages: Math.ceil(count / pageSize), total: count });
 });
 
 // @desc    Create a customer
