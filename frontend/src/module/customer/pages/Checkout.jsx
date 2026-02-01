@@ -36,12 +36,18 @@ const Checkout = () => {
             };
 
             const orderData = {
-                orderItems: cartItems.map(item => ({
-                    ...item,
-                    product: item._id, // Backend expects product ID in 'product' field
-                    qty: item.quantity, // Backend expects 'qty', frontend has 'quantity'
-                    image: item.image || "sample.jpg" // Fallback image
-                })),
+                orderItems: cartItems.map(item => {
+                    const currentPrice = (item.wholesalePrice > 0 && item.quantity >= (item.wholesaleMinQty || 10))
+                        ? item.wholesalePrice
+                        : item.price;
+                    return {
+                        ...item,
+                        product: item._id, // Backend expects product ID in 'product' field
+                        qty: item.quantity, // Backend expects 'qty', frontend has 'quantity'
+                        price: currentPrice, // Use the retail or wholesale price
+                        image: item.image || "sample.jpg" // Fallback image
+                    };
+                }),
                 shippingAddress: {
                     address: fullAddress.address,
                     city: fullAddress.city,

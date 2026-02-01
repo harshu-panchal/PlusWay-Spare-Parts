@@ -19,9 +19,13 @@ const ProductCard = ({ product }) => {
                     className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute top-3 left-3 flex flex-col gap-2">
-                    {product.countInStock > 0 && <span className="bg-accent text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-widest">In Stock</span>}
+                    {product.countInStock > 0 ? (
+                        <span className="bg-accent text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-widest">In Stock</span>
+                    ) : (
+                        <span className="bg-gray-500 text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-widest">Out of stock</span>
+                    )}
                 </div>
-                {savingsPercent > 0 && (
+                {savingsPercent > 0 && product.countInStock > 0 && (
                     <div className="absolute top-0 right-0 bg-red-600 text-[10px] text-white font-black px-2 py-1 rounded-bl-lg shadow-md">
                         Save {savingsPercent}%
                     </div>
@@ -35,25 +39,33 @@ const ProductCard = ({ product }) => {
 
                 <div className="mt-auto">
                     <div className="flex flex-col mb-3">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-sm md:text-lg font-black text-secondary tracking-tighter">₹{product.price.toLocaleString()}</span>
+                            {product.wholesalePrice > 0 && (
+                                <span className="text-[10px] md:text-xs font-black text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded tracking-tight">
+                                    Wholesale: ₹{product.wholesalePrice.toLocaleString()} <span className="text-[8px] opacity-70">({product.wholesaleMinQty}+)</span>
+                                </span>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-2">
                             {product.mrp > product.price && (
                                 <span className="text-[9px] md:text-[11px] text-gray-400 line-through">₹{product.mrp.toLocaleString()}</span>
                             )}
+                            {product.mrp > product.price && (
+                                <span className="text-[9px] font-black text-accent uppercase tracking-widest leading-none">Save ₹{(product.mrp - product.price).toLocaleString()}</span>
+                            )}
                         </div>
-                        {product.mrp > product.price && (
-                            <span className="text-[9px] font-black text-accent uppercase tracking-widest leading-none mt-0.5">You Save ₹{(product.mrp - product.price).toLocaleString()}</span>
-                        )}
                     </div>
 
                     <button
                         onClick={(e) => {
                             e.preventDefault();
-                            addToCart(product);
+                            if (product.countInStock > 0) addToCart(product);
                         }}
-                        className="w-full bg-primary text-white py-2 md:py-2.5 rounded-lg md:rounded-xl hover:bg-orange-600 transition-all flex items-center justify-center gap-2 text-[9px] md:text-[10px] font-black uppercase tracking-widest shadow-lg shadow-orange-500/10"
+                        disabled={product.countInStock === 0}
+                        className={`w-full py-2 md:py-2.5 rounded-lg md:rounded-xl transition-all flex items-center justify-center gap-2 text-[9px] md:text-[10px] font-black uppercase tracking-widest shadow-lg ${product.countInStock === 0 ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none' : 'bg-primary text-white hover:bg-orange-600 shadow-orange-500/10'}`}
                     >
-                        <ShoppingCart size={14} /> Add to Cart
+                        <ShoppingCart size={14} /> {product.countInStock === 0 ? 'Out of stock' : 'Add to Cart'}
                     </button>
                 </div>
             </div>

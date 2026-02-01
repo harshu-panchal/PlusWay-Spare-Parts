@@ -221,19 +221,46 @@ const ProductDetail = () => {
             </div>
 
             {/* Pricing Stack */}
-            <div className="space-y-1 mb-8">
-              <div className="flex items-baseline gap-2 text-sm text-gray-500">
-                <span>List price:</span>
-                <span className="line-through">
-                  {product.mrp.toLocaleString()}.00 Rs.
-                </span>
+            <div className="space-y-4 mb-8">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-baseline gap-2 text-sm text-gray-500">
+                  <span>List price:</span>
+                  <span className="line-through">
+                    {product.mrp.toLocaleString()}.00 Rs.
+                  </span>
+                </div>
+                <div className="bg-[#f8f9fa] p-4 border-l-4 border-secondary flex flex-col gap-2 rounded-r-2xl">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-black text-secondary italic tracking-tighter">
+                      {(quantity >= (product.wholesaleMinQty || 10) ? product.wholesalePrice : product.price).toLocaleString()}.00
+                    </span>
+                    <span className="text-xl font-bold text-secondary tracking-tight">Rs.</span>
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-2">Current Unit Price</span>
+                  </div>
+
+                  {product.wholesalePrice > 0 && (
+                    <div className={`mt-2 p-3 rounded-xl border transition-all ${quantity >= (product.wholesaleMinQty || 10) ? 'bg-blue-50 border-blue-200 shadow-sm' : 'bg-white border-gray-100'}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex flex-col">
+                          <span className={`text-[10px] font-black uppercase tracking-widest ${quantity >= (product.wholesaleMinQty || 10) ? 'text-blue-600' : 'text-gray-400'}`}>Wholesale Pricing</span>
+                          <span className="text-sm font-black text-secondary">₹{product.wholesalePrice.toLocaleString()} <span className="text-[10px] font-bold text-gray-400">for {product.wholesaleMinQty || 10}+ pieces</span></span>
+                        </div>
+                        {quantity >= (product.wholesaleMinQty || 10) ? (
+                          <span className="bg-blue-600 text-white text-[8px] font-black px-2 py-1 rounded-full uppercase">Applied</span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-blue-600 cursor-help" title={`Buy ${product.wholesaleMinQty || 10} or more to get this price`}>
+                            Save ₹{(product.price - product.wholesalePrice).toLocaleString()} per unit!
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="text-3xl font-black text-secondary italic tracking-tighter flex items-baseline gap-2">
-                {product.price.toLocaleString()}.00{" "}
-                <span className="text-lg not-italic font-bold">Rs.</span>
-              </div>
-              <div className="text-sm text-red-600 font-bold">
-                You save: {savings.toLocaleString()}.00 Rs. ({savingsPercent}%)
+
+              <div className="text-sm text-red-600 font-bold flex flex-col">
+                <span>You save: {(product.mrp - (quantity >= (product.wholesaleMinQty || 10) ? product.wholesalePrice : product.price)).toLocaleString()}.00 Rs.</span>
+                <span className="text-[10px] uppercase tracking-widest opacity-70">Total Savings on MRP</span>
               </div>
               <div className="text-sm text-secondary font-bold flex items-center gap-1.5 pt-2">
                 Cash Back:{" "}
@@ -257,11 +284,22 @@ const ProductDetail = () => {
               </span>
             </div>
 
-            <div className="flex items-center gap-4 mb-8 text-sm text-secondary font-black">
+            <div className="flex items-center gap-4 mb-4 text-sm text-secondary font-black">
               <span>CODE:</span>
               <span className="bg-gray-50 px-2 py-1 text-[11px] font-bold border border-gray-100">
                 {product.code}
               </span>
+            </div>
+
+            <div className="p-4 bg-orange-50 rounded-2xl mb-8 border border-orange-100 flex justify-between items-center">
+              <div>
+                <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest mb-1">Total Amount Payable</p>
+                <p className="text-2xl font-black text-secondary tracking-tighter">₹{((quantity >= (product.wholesaleMinQty || 10) ? product.wholesalePrice : product.price) * quantity).toLocaleString()}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Quantity</p>
+                <p className="text-xl font-black text-secondary">{quantity}</p>
+              </div>
             </div>
 
             <div className="flex items-center gap-6 mb-8">
@@ -272,8 +310,10 @@ const ProductDetail = () => {
                 <input
                   type="number"
                   value={quantity}
-                  onChange={(e) => setQuantity(Math.max(1, e.target.value))}
+                  onChange={(e) => setQuantity(Math.min(product.countInStock, Math.max(1, e.target.value)))}
                   className="w-16 h-10 border border-gray-300 text-center font-bold outline-none"
+                  max={product.countInStock}
+                  min={1}
                 />
               </div>
               <div className="flex flex-1 gap-2 pt-6">
@@ -283,14 +323,16 @@ const ProductDetail = () => {
                     await addToCart({ ...product, image: selectedImage }, Number(quantity));
                     navigate("/checkout");
                   }}
-                  className="flex-1 bg-white border-2 border-primary text-primary font-black py-3 px-4 hover:bg-orange-50 transition-colors uppercase italic tracking-tighter text-sm">
-                  Buy Now
+                  disabled={product.countInStock === 0}
+                  className={`flex-1 border-2 border-primary font-black py-3 px-4 transition-colors uppercase italic tracking-tighter text-sm ${product.countInStock === 0 ? 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed' : 'bg-white text-primary hover:bg-orange-50'}`}>
+                  {product.countInStock === 0 ? 'Out of Stock' : 'Buy Now'}
                 </button>
                 <button
                   onClick={() => {
                     addToCart({ ...product, image: selectedImage }, Number(quantity));
                   }}
-                  className="flex-1 bg-primary text-white font-black py-3 px-4 hover:bg-orange-600 transition-colors uppercase italic tracking-tighter text-sm">
+                  disabled={product.countInStock === 0}
+                  className={`flex-1 font-black py-3 px-4 transition-colors uppercase italic tracking-tighter text-sm ${product.countInStock === 0 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-primary text-white hover:bg-orange-600'}`}>
                   Add to Cart
                 </button>
               </div>

@@ -40,6 +40,8 @@ export const createProduct = async (req, res) => {
     code,
     description,
     price,
+    wholesalePrice,
+    wholesaleMinQty,
     mrp,
     cashback,
     images,
@@ -60,6 +62,8 @@ export const createProduct = async (req, res) => {
     slug: generatedSlug,
     description,
     price,
+    wholesalePrice,
+    wholesaleMinQty,
     mrp,
     cashback,
     images,
@@ -107,6 +111,8 @@ export const updateProduct = async (req, res) => {
     if (req.body.code === "") product.code = undefined;
     product.description = req.body.description || product.description;
     product.price = req.body.price || product.price;
+    product.wholesalePrice = req.body.wholesalePrice || product.wholesalePrice;
+    product.wholesaleMinQty = req.body.wholesaleMinQty || product.wholesaleMinQty;
     product.mrp = req.body.mrp || product.mrp;
     product.cashback = req.body.cashback || product.cashback;
     product.images = req.body.images || product.images;

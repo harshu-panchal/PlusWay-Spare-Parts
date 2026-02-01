@@ -40,6 +40,16 @@ const productSchema = new mongoose.Schema({
     required: true,
     default: 0,
   },
+  wholesalePrice: {
+    type: Number,
+    required: true,
+    default: 0,
+  },
+  wholesaleMinQty: {
+    type: Number,
+    required: true,
+    default: 10,
+  },
   mrp: {
     type: Number,
     required: true,

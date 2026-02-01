@@ -37,14 +37,26 @@ export const addToCart = asyncHandler(async (req, res) => {
             (item) => item.product.toString() === productId
         );
 
+        const currentQtyInCart = itemIndex > -1 ? cart.items[itemIndex].quantity : 0;
+        const totalRequestedQty = currentQtyInCart + Number(quantity);
+
+        if (totalRequestedQty > product.countInStock) {
+            res.status(400);
+            throw new Error(`Only ${product.countInStock} items in stock. You already have ${currentQtyInCart} in cart.`);
+        }
+
         if (itemIndex > -1) {
             // Update quantity
-            cart.items[itemIndex].quantity += Number(quantity);
+            cart.items[itemIndex].quantity = totalRequestedQty;
         } else {
             // Add new item
             cart.items.push({ product: productId, quantity: Number(quantity) });
         }
     } else {
+        if (Number(quantity) > product.countInStock) {
+            res.status(400);
+            throw new Error(`Only ${product.countInStock} items in stock.`);
+        }
         // Create new cart
         cart = new Cart({
             user: req.user._id,
@@ -85,6 +97,11 @@ export const updateCartItem = asyncHandler(async (req, res) => {
 
     if (itemIndex > -1) {
         if (quantity > 0) {
+            const product = await Product.findById(itemId);
+            if (product && quantity > product.countInStock) {
+                res.status(400);
+                throw new Error(`Only ${product.countInStock} items in stock`);
+            }
             cart.items[itemIndex].quantity = Number(quantity);
         } else {
             // Remove if quantity 0 (optional logic, but usually explicit remove is better)

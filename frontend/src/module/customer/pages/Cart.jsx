@@ -80,8 +80,8 @@ const Cart = () => {
                                                 </button>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-base font-black text-secondary tracking-tighter">₹{(item.price * item.quantity).toLocaleString()}</p>
-                                                <p className="text-[9px] text-gray-400 font-bold">₹{item.price.toLocaleString()} / Unit</p>
+                                                <p className="text-base font-black text-secondary tracking-tighter">₹{((item.wholesalePrice > 0 && item.quantity >= (item.wholesaleMinQty || 10) ? item.wholesalePrice : item.price) * item.quantity).toLocaleString()}</p>
+                                                <p className="text-[9px] text-gray-400 font-bold">₹{(item.wholesalePrice > 0 && item.quantity >= (item.wholesaleMinQty || 10) ? item.wholesalePrice : item.price).toLocaleString()} / Unit</p>
                                             </div>
                                         </div>
                                     </div>
@@ -108,8 +108,11 @@ const Cart = () => {
                                         </div>
 
                                         <div className="text-right">
-                                            <p className="text-xl font-black text-secondary tracking-tighter italic">₹{(item.price * item.quantity).toLocaleString()}</p>
-                                            <p className="text-[10px] text-gray-400 font-bold uppercase">₹{item.price.toLocaleString()} / Unit</p>
+                                            {item.wholesalePrice > 0 && item.quantity >= (item.wholesaleMinQty || 10) && (
+                                                <span className="text-[8px] font-black bg-blue-600 text-white px-1.5 py-0.5 rounded uppercase tracking-widest block mb-1">Wholesale Applied</span>
+                                            )}
+                                            <p className="text-xl font-black text-secondary tracking-tighter italic">₹{((item.wholesalePrice > 0 && item.quantity >= (item.wholesaleMinQty || 10) ? item.wholesalePrice : item.price) * item.quantity).toLocaleString()}</p>
+                                            <p className="text-[10px] text-gray-400 font-bold uppercase">₹{(item.wholesalePrice > 0 && item.quantity >= (item.wholesaleMinQty || 10) ? item.wholesalePrice : item.price).toLocaleString()} / Unit</p>
                                         </div>
                                     </div>
                                 </div>

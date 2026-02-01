@@ -37,6 +37,8 @@ export const CartProvider = ({ children }) => {
             const formattedItems = (data.items || []).map(item => ({
                 ...item.product,
                 quantity: item.quantity,
+                wholesalePrice: item.product.wholesalePrice,
+                wholesaleMinQty: item.product.wholesaleMinQty,
                 // Ensure image is accessible (product might have image string or images array)
                 image: item.product.image || (item.product.images && item.product.images[0]) || ''
             }));
@@ -100,7 +102,12 @@ export const CartProvider = ({ children }) => {
         }
     };
 
-    const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const cartTotal = cartItems.reduce((sum, item) => {
+        const price = (item.wholesalePrice && item.quantity >= (item.wholesaleMinQty || 10))
+            ? item.wholesalePrice
+            : item.price;
+        return sum + (price * item.quantity);
+    }, 0);
     const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
     return (

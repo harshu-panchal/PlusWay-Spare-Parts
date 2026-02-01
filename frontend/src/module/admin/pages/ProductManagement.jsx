@@ -78,7 +78,8 @@ const ProductManagement = () => {
   const initialFormState = {
     name: "",
     price: "",
-    mrp: "",
+    wholesalePrice: "",
+    wholesaleMinQty: 10,
     category: "",
     brand: "",
     model: "",
@@ -116,6 +117,8 @@ const ProductManagement = () => {
           highlights: product.details?.highlights?.map(h => ({ type: h })) || []
         },
         countInStock: product.countInStock || 0,
+        wholesalePrice: product.wholesalePrice || 0,
+        wholesaleMinQty: product.wholesaleMinQty || 10,
       });
     } else {
       setEditingProduct(null);
@@ -208,6 +211,8 @@ const ProductManagement = () => {
       const payload = {
         ...formData,
         price: Number(formData.price),
+        wholesalePrice: Number(formData.wholesalePrice),
+        wholesaleMinQty: Number(formData.wholesaleMinQty),
         mrp: Number(formData.mrp),
         countInStock: Number(formData.countInStock),
         details: {
@@ -292,7 +297,10 @@ const ProductManagement = () => {
                   Category
                 </th>
                 <th className="px-6 py-4 text-[13px] font-bold text-gray-500 uppercase tracking-wider">
-                  Price
+                  Retail
+                </th>
+                <th className="px-6 py-4 text-[13px] font-bold text-gray-500 uppercase tracking-wider">
+                  Wholesale
                 </th>
                 <th className="px-6 py-4 text-[13px] font-bold text-gray-500 uppercase tracking-wider text-center">
                   Stock Status
@@ -334,10 +342,20 @@ const ProductManagement = () => {
                   <td className="px-6 py-4">
                     <div className="flex flex-col">
                       <span className="font-bold text-gray-900">
-                        ₹{product.price.toLocaleString()}
+                        ₹{product.price?.toLocaleString()}
                       </span>
                       <span className="text-[11px] text-gray-400 line-through">
-                        ₹{product.mrp.toLocaleString()}
+                        ₹{product.mrp?.toLocaleString()}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col">
+                      <span className="font-black text-blue-600">
+                        ₹{product.wholesalePrice?.toLocaleString()}
+                      </span>
+                      <span className="text-[10px] text-gray-400 font-bold uppercase">
+                        Min: {product.wholesaleMinQty || 10}
                       </span>
                     </div>
                   </td>
@@ -583,6 +601,47 @@ const ProductManagement = () => {
                         onChange={(e) =>
                           setFormData({ ...formData, countInStock: e.target.value })
                         }
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                      Wholesale Price (₹)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">
+                        ₹
+                      </span>
+                      <input
+                        type="number"
+                        required
+                        className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold text-blue-600"
+                        value={formData.wholesalePrice}
+                        onChange={(e) =>
+                          setFormData({ ...formData, wholesalePrice: e.target.value })
+                        }
+                        placeholder="Price for bulk orders"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                      Wholesale Min Quantity
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        required
+                        min="1"
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold"
+                        value={formData.wholesaleMinQty}
+                        onChange={(e) =>
+                          setFormData({ ...formData, wholesaleMinQty: e.target.value })
+                        }
+                        placeholder="Min qty for wholesale price"
                       />
                     </div>
                   </div>
