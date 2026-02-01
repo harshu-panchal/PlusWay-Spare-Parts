@@ -4,6 +4,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ChevronRight, Star, ShoppingCart } from 'lucide-react';
 
 import { useCart } from '../context/CartContext';
+import LazyImage from '../../../components/LazyImage';
 
 const ProductCard = ({ product }) => {
     const { addToCart } = useCart();
@@ -11,7 +12,7 @@ const ProductCard = ({ product }) => {
     return (
         <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-gray-100 group flex flex-col h-full">
             <Link to={`/product/${product._id}`} className="block relative aspect-square overflow-hidden bg-gray-50">
-                <img
+                <LazyImage
                     src={product.images && product.images.length > 0 ? product.images[0] : (product.image || "https://via.placeholder.com/300")}
                     alt={product.name}
                     className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500"

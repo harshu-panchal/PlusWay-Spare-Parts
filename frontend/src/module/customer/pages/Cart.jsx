@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { Trash2, Plus, Minus, ChevronRight, ShieldCheck, Truck } from 'lucide-react';
+import LazyImage from '../../../components/LazyImage';
 
 const Cart = () => {
     const { cartItems, removeFromCart, updateQuantity, cartTotal, fetchCart } = useCart();
@@ -50,7 +51,7 @@ const Cart = () => {
 
                                 {/* Product Image - Smaller on mobile */}
                                 <div className="w-20 h-20 md:w-32 md:h-32 flex-shrink-0 bg-gray-50 rounded-lg md:rounded-xl overflow-hidden p-2 md:p-4">
-                                    <img src={item.image} alt={item.name} className="w-full h-full object-contain" />
+                                    <LazyImage src={item.image} alt={item.name} className="w-full h-full object-contain" />
                                 </div>
 
                                 {/* Product Info */}

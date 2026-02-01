@@ -110,6 +110,14 @@ const productSchema = new mongoose.Schema({
   timestamps: true,
 });
 
+// Add indexes for performance
+productSchema.index({ name: 'text' }); // Text index for name search
+productSchema.index({ category: 1 });
+productSchema.index({ brand: 1 });
+productSchema.index({ model: 1 });
+productSchema.index({ productType: 1 });
+productSchema.index({ countInStock: 1 }); // Useful for filtering out-of-stock items if needed
+
 const Product = mongoose.model('Product', productSchema);
 
 export default Product;

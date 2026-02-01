@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import Header from './Header';
 import Footer from './Footer';
 import BottomNav from './BottomNav';
+import LazyImage from "../../../components/LazyImage";
 
 const Layout = ({ children }) => {
     return (
@@ -23,7 +24,7 @@ const Layout = ({ children }) => {
                 rel="noopener noreferrer"
                 className="fixed bottom-20 right-6 md:bottom-6 bg-[#25D366] text-white p-3 rounded-full shadow-lg hover:scale-110 transition-transform z-40"
             >
-                <img
+                <LazyImage
                     src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
                     alt="WhatsApp"
                     className="w-8 h-8"

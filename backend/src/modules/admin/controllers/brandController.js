@@ -5,7 +5,7 @@ import asyncHandler from '../../../middleware/asyncHandler.js';
 // @route   GET /api/admin/brands
 // @access  Private/Admin
 export const getBrands = asyncHandler(async (req, res) => {
-  const brands = await Brand.find({}).populate('models');
+  const brands = await Brand.find({}); // Removed populate('models') for performance
   res.json(brands);
 });
 

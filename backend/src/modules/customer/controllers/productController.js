@@ -35,13 +35,17 @@ export const getProducts = asyncHandler(async (req, res) => {
     if (req.query.productType) filters.productType = req.query.productType;
 
 
-    const count = await Product.countDocuments(filters);
-    const products = await Product.find(filters)
-        .populate("brand", "name")
-        .populate("category", "name")
-        .populate("model", "name")
-        .limit(pageSize)
-        .skip(pageSize * (page - 1));
+
+    // Optimize with Promise.all
+    const [count, products] = await Promise.all([
+        Product.countDocuments(filters),
+        Product.find(filters)
+            .populate("brand", "name")
+            .populate("category", "name")
+            .populate("model", "name")
+            .limit(pageSize)
+            .skip(pageSize * (page - 1))
+    ]);
 
     res.json({ products, page, pages: Math.ceil(count / pageSize) });
 });

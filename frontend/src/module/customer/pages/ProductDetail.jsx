@@ -25,6 +25,7 @@ import {
   ThumbsDown,
   Play,
 } from "lucide-react";
+import LazyImage from "../../../components/LazyImage";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -140,7 +141,7 @@ const ProductDetail = () => {
           <div className="lg:col-span-4 space-y-4">
             <div className="bg-white p-4 border border-gray-200 relative group">
               <div className="aspect-square overflow-hidden bg-white">
-                <img
+                <LazyImage
                   src={selectedImage}
                   alt={product.name}
                   className="w-full h-full object-contain cursor-zoom-in"
@@ -159,7 +160,7 @@ const ProductDetail = () => {
                   key={idx}
                   onClick={() => setSelectedImage(img)}
                   className={`w-16 h-16 border-2 flex-shrink-0 bg-white p-1 transition-all ${selectedImage === img ? "border-primary" : "border-gray-200 hover:border-gray-300"}`}>
-                  <img
+                  <LazyImage
                     src={img}
                     alt=""
                     className="w-full h-full object-contain"
@@ -324,7 +325,7 @@ const ProductDetail = () => {
                 </div>
                 <div className="w-10 h-10 bg-gray-100 flex items-center justify-center rounded overflow-hidden">
                   {product.model?.image ? (
-                    <img src={product.model.image} alt={product.model.name} className="w-full h-full object-cover" />
+                    <LazyImage src={product.model.image} alt={product.model.name} className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-[8px] font-bold text-gray-400 text-center leading-none p-1">
                       {product.model?.name?.substring(0, 8)}

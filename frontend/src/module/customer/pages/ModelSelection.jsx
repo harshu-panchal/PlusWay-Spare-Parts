@@ -5,6 +5,7 @@ import { ChevronRight, Search, Smartphone } from 'lucide-react';
 
 import axios from 'axios';
 import { API_ENDPOINTS } from '../../../config/api';
+import LazyImage from '../../../components/LazyImage';
 
 const ModelSelection = () => {
     const { brandId } = useParams();
@@ -81,7 +82,7 @@ const ModelSelection = () => {
                         >
                             <div className="w-full aspect-[4/5] bg-gray-50 flex items-center justify-center p-6 relative overflow-hidden">
                                 {model.image ? (
-                                    <img
+                                    <LazyImage
                                         src={model.image}
                                         alt={model.name}
                                         className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"

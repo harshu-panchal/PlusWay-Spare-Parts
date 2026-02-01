@@ -20,6 +20,8 @@ const modelSchema = new mongoose.Schema({
   timestamps: true,
 });
 
+modelSchema.index({ brand: 1 });
+
 modelSchema.pre('save', async function () {
   if (this.isModified('name') || this.isNew) {
     try {

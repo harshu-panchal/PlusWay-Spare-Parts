@@ -5,6 +5,7 @@ import { Search, ChevronRight } from "lucide-react";
 
 import axios from "axios";
 import { API_ENDPOINTS } from "../../../config/api";
+import LazyImage from "../../../components/LazyImage";
 
 const BrandSelection = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -80,7 +81,7 @@ const BrandSelection = () => {
                 key={brand._id}
                 to={`/brand/${brand._id}/models`}
                 className="bg-white p-6 flex items-center justify-center h-40 hover:bg-gray-50 transition-colors group relative flex-col gap-2">
-                <img
+                <LazyImage
                   src={brand.logo}
                   alt={brand.name}
                   className="max-w-full max-h-[80px] object-contain transition-all duration-300 transform group-hover:scale-110"
@@ -128,7 +129,7 @@ const BrandSelection = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
             <div className="flex flex-col items-center">
               <div className="h-28 flex items-center justify-center mb-4">
-                <img
+                <LazyImage
                   src="https://www.Plusway.com/temp/images/search_v3/brand_search.jpg"
                   alt="Select Brand"
                   className="max-h-full object-contain opacity-80"
@@ -145,7 +146,7 @@ const BrandSelection = () => {
             </div>
             <div className="flex flex-col items-center">
               <div className="h-28 flex items-center justify-center mb-4">
-                <img
+                <LazyImage
                   src="https://www.Plusway.com/temp/images/search_v3/model_search.jpg"
                   alt="Select Model"
                   className="max-h-full object-contain opacity-80"
@@ -162,7 +163,7 @@ const BrandSelection = () => {
             </div>
             <div className="flex flex-col items-center">
               <div className="h-28 flex items-center justify-center mb-4">
-                <img
+                <LazyImage
                   src="https://www.Plusway.com/temp/images/search_v3/part_search.jpg"
                   alt="Select Part"
                   className="max-h-full object-contain opacity-80"

@@ -4,6 +4,7 @@ import axios from 'axios';
 import { ChevronRight, Filter, ChevronDown, ShoppingCart, Star } from 'lucide-react';
 import { API_ENDPOINTS, API_BASE_URL } from '../../../config/api';
 import { useCart } from '../context/CartContext';
+import LazyImage from '../../../components/LazyImage';
 
 const ProductListing = () => {
     const location = useLocation();
@@ -126,7 +127,7 @@ const ProductListing = () => {
                             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8 flex flex-col md:flex-row items-center gap-6">
                                 <div className="w-32 h-32 md:w-40 md:h-40 bg-gray-50 flex items-center justify-center p-4 rounded-xl flex-shrink-0">
                                     {selectedModel.image ? (
-                                        <img src={selectedModel.image} alt={selectedModel.name} className="w-full h-full object-contain" />
+                                        <LazyImage src={selectedModel.image} alt={selectedModel.name} className="w-full h-full object-contain" />
                                     ) : (
                                         <div className="text-center">
                                             <span className="text-orange-500 font-black italic text-xl">PLUSWAY</span>
@@ -175,7 +176,7 @@ const ProductListing = () => {
                             {products.map((product) => (
                                 <div key={product._id} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-gray-100 group flex flex-col">
                                     <Link to={`/product/${product._id}`} className="block relative aspect-square overflow-hidden bg-gray-50">
-                                        <img
+                                        <LazyImage
                                             src={product.images && product.images.length > 0 ? product.images[0] : (product.image || "https://via.placeholder.com/300")}
                                             alt={product.name}
                                             className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500"

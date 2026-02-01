@@ -11,6 +11,7 @@ import {
 
 import axios from "axios";
 import { API_ENDPOINTS } from "../../../config/api";
+import LazyImage from "../../../components/LazyImage";
 
 const CategoryCard = ({ category }) => {
   return (
@@ -18,7 +19,7 @@ const CategoryCard = ({ category }) => {
       to={`/category/${category.slug}`}
       className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:border-primary transition-all group flex flex-col items-center">
       <div className="w-24 h-24 sm:w-28 sm:h-28 mb-3 overflow-hidden relative flex-shrink-0">
-        <img
+        <LazyImage
           src={category.image}
           alt={category.name}
           className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
@@ -42,7 +43,7 @@ const BrandGrid = ({ brands }) => (
           key={brand._id}
           to={`/brand/${brand._id}/models`}
           className="flex items-center justify-center p-6 bg-white hover:bg-gray-50 transition-colors aspect-square overflow-hidden">
-          <img
+          <LazyImage
             src={brand.logo}
             alt={brand.name}
             className="max-w-full max-h-full object-contain transition-all opacity-80 hover:opacity-100 duration-300"
@@ -93,7 +94,7 @@ const Home = () => {
       <div className="max-w-7xl mx-auto px-0 md:px-4 py-4">
         <div className="w-full rounded shadow-sm overflow-hidden bg-white">
           {banners.main.length > 0 ? (
-            <img
+            <LazyImage
               src={banners.main[0].image}
               alt="Promotion"
               className="w-full h-auto"
@@ -111,7 +112,7 @@ const Home = () => {
       <div className="max-w-7xl mx-auto px-[2%] md:px-4 mb-12">
         <div className="relative group">
           {banners.sub.length > 0 ? (
-            <img
+            <LazyImage
               src={banners.sub[0].image}
               alt="Search Banner"
               className="w-full h-auto rounded shadow-sm"
@@ -186,7 +187,7 @@ const Home = () => {
             {recentlyViewed.map((item) => (
               <Link to={`/product/${item._id}`} key={item._id} className="bg-white p-3 border border-gray-100 rounded group cursor-pointer hover:border-primary transition-all">
                 <div className="relative aspect-square mb-2 overflow-hidden bg-gray-50 p-2 rounded">
-                  <img
+                  <LazyImage
                     src={item.image}
                     alt={item.name}
                     className="w-full h-full object-contain group-hover:scale-105 transition-transform"

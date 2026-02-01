@@ -3,15 +3,8 @@ import axios from "axios";
 import { useParams, Link } from "react-router-dom";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { API_ENDPOINTS } from "../../../config/api";
-import {
-    CheckCircle2,
-    AlertCircle,
-    MapPin,
-    CreditCard,
-    Truck,
-    Download,
-    Loader2,
-} from "lucide-react";
+import { CheckCircle2, Clock, Truck, Package, ChevronRight, MapPin, Phone } from 'lucide-react';
+import LazyImage from '../../../components/LazyImage';
 
 const OrderDetails = () => {
     const { id } = useParams();
