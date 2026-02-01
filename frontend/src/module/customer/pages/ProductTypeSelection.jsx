@@ -87,7 +87,7 @@ const ProductTypeSelection = () => {
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 py-8">
+            <div className="max-w-7xl mx-auto px-0 md:px-4 py-8">
                 {/* Handset Header */}
                 <div className="bg-white p-6 mb-8 flex items-center gap-8 border-b border-gray-100 shadow-sm rounded">
                     <div className="w-40 h-40 flex-shrink-0 bg-gray-50 p-4 rounded flex items-center justify-center">

@@ -46,7 +46,7 @@ const BrandSelection = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-0 md:px-4 py-8">
         {/* Suggestions Section */}
         {/* Suggestions Section - Placeholder or Removed */}
 
@@ -74,7 +74,7 @@ const BrandSelection = () => {
         {loading ? (
           <div className="text-center py-20">Loading brands...</div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-px bg-gray-200 border border-gray-200 mb-12">
+          <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 gap-px bg-gray-200 border border-gray-200 mb-12">
             {filteredBrands.map((brand) => (
               <Link
                 key={brand._id}

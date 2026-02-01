@@ -4,7 +4,7 @@ import { Send } from "lucide-react";
 
 const Footer = () => {
   return (
-    <footer className="bg-white border-t border-gray-200">
+    <footer className="bg-white border-t border-gray-200 hidden md:block">
       {/* Stay Connected Banner */}
       <div className="bg-secondary py-8 text-white">
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6">

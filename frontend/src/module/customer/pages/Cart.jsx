@@ -16,7 +16,7 @@ const Cart = () => {
 
         return (
             <div className="bg-[#f4f4f4] min-h-screen py-20">
-                <div className="max-w-7xl mx-auto px-4 text-center">
+                <div className="max-w-7xl mx-auto px-0 md:px-4 text-center">
                     <div className="bg-white p-12 rounded-[32px] shadow-sm border border-gray-100 max-w-2xl mx-auto">
                         <h1 className="text-3xl font-black text-secondary mb-4 uppercase italic tracking-tighter">Your cart is <span className="text-primary italic">empty</span></h1>
                         <p className="text-gray-500 mb-8 uppercase text-xs font-black tracking-widest">Add some high quality mobile parts to get started</p>
@@ -31,7 +31,7 @@ const Cart = () => {
 
     return (
         <div className="bg-[#f4f4f4] min-h-screen pb-12">
-            <div className="max-w-7xl mx-auto px-4 py-8">
+            <div className="max-w-7xl mx-auto px-0 md:px-4 py-8">
                 <h1 className="text-3xl font-black text-secondary mb-8 uppercase italic tracking-tighter">
                     SHOPPING <span className="text-primary italic">CART</span>
                 </h1>

@@ -23,6 +23,7 @@ import Addresses from "./module/customer/pages/Addresses";
 import Wishlist from "./module/customer/pages/Wishlist";
 import SettingsPage from "./module/customer/pages/Settings";
 import { CartProvider } from "./module/customer/context/CartContext";
+import ScrollToTop from "./components/ScrollToTop";
 
 // Admin Imports
 import AdminLayout from "./module/admin/layout/AdminLayout";
@@ -55,6 +56,7 @@ const App = () => {
   return (
     <CartProvider>
       <Router>
+        <ScrollToTop />
         <Routes>
           {/* Customer Routes */}
           <Route path="/" element={<Layout />}>

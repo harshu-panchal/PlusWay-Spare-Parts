@@ -32,11 +32,11 @@ const CategoryCard = ({ category }) => {
 };
 
 const BrandGrid = ({ brands }) => (
-  <div className="bg-white p-8 rounded shadow-sm border border-gray-100 mb-12">
-    <h2 className="text-center text-xl font-black text-secondary mb-8 uppercase tracking-tight">
+  <div className="bg-white p-0 md:p-8 rounded shadow-sm border border-gray-100 mb-12">
+    <h2 className="text-center text-xl font-black text-secondary mb-4 md:mb-8 py-4 md:py-0 uppercase tracking-tight">
       Select Mobile Phone Brand
     </h2>
-    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-px bg-gray-100 border border-gray-100">
+    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-px bg-gray-100 border border-gray-100">
       {brands.map((brand) => (
         <Link
           key={brand._id}
@@ -90,7 +90,7 @@ const Home = () => {
     <div className="bg-[#fcfcfc] pb-12">
       {/* Main Promotional Banner */}
       {/* Main Promotional Banner */}
-      <div className="max-w-7xl mx-auto px-4 py-4">
+      <div className="max-w-7xl mx-auto px-0 md:px-4 py-4">
         <div className="w-full rounded shadow-sm overflow-hidden bg-white">
           {banners.main.length > 0 ? (
             <img
@@ -108,7 +108,7 @@ const Home = () => {
 
       {/* Sub-Banner / Search Visual */}
       {/* Sub-Banner / Search Visual */}
-      <div className="max-w-7xl mx-auto px-4 mb-12">
+      <div className="max-w-7xl mx-auto px-0 md:px-4 mb-12">
         <div className="relative group">
           {banners.sub.length > 0 ? (
             <img
@@ -153,7 +153,7 @@ const Home = () => {
         };
 
         return (
-          <div key={section._id} className="max-w-7xl mx-auto px-4 mb-12">
+          <div key={section._id} className="max-w-7xl mx-auto px-0 md:px-4 mb-12">
             <div className="bg-gray-50 px-4 py-3 border-b-2 border-primary mb-6">
               <h2 className="text-sm font-black text-secondary uppercase tracking-widest">
                 {section.title}
@@ -169,14 +169,14 @@ const Home = () => {
       })}
 
       {/* Brands Selection */}
-      <div className="max-w-7xl mx-auto px-4">
+      <div className="max-w-7xl mx-auto px-0 md:px-4">
         <BrandGrid brands={brands} />
       </div>
 
       {/* Recently Viewed Block (Mock) */}
       {/* Recently Viewed Block */}
       {recentlyViewed.length > 0 && (
-        <div className="max-w-7xl mx-auto px-4">
+        <div className="max-w-7xl mx-auto px-0 md:px-4">
           <div className="bg-gray-50 px-4 py-3 border-b-2 border-primary mb-6">
             <h2 className="text-sm font-black text-secondary uppercase tracking-widest">
               Recently Viewed
