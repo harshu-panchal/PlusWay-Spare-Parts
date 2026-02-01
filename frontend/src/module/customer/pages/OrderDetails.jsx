@@ -204,11 +204,7 @@ const OrderDetails = () => {
                                         </div>
                                     ) : (
                                         <div className="space-y-4">
-                                            <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl text-[10px] font-bold text-blue-600 uppercase tracking-widest leading-relaxed">
-                                                Note: PayPal does not support domestic INR. Your payment will be processed as
-                                                <span className="text-secondary ml-1">USD ${(order.totalPrice * 0.0106).toFixed(2)}</span>
-                                                (Approx. conversion rate: 1 INR = 0.0106 USD).
-                                            </div>
+
                                             <PayPalScriptProvider options={{ "client-id": clientId, currency: "USD" }}>
                                                 <PayPalButtons
                                                     style={{ layout: "vertical" }}
