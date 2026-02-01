@@ -43,7 +43,7 @@ const ModelSelection = () => {
 
     return (
         <div className="bg-[#f4f4f4] min-h-screen pb-12">
-            <div className="max-w-7xl mx-auto px-0 md:px-4 py-8">
+            <div className="max-w-7xl mx-auto px-[2%] md:px-4 py-8">
                 <div className="flex items-center gap-2 text-sm text-gray-500 mb-8">
                     <Link to="/" className="hover:text-primary">Home</Link>
                     <ChevronRight size={14} />

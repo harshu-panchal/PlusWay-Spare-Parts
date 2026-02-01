@@ -108,7 +108,7 @@ const Home = () => {
 
       {/* Sub-Banner / Search Visual */}
       {/* Sub-Banner / Search Visual */}
-      <div className="max-w-7xl mx-auto px-0 md:px-4 mb-12">
+      <div className="max-w-7xl mx-auto px-[2%] md:px-4 mb-12">
         <div className="relative group">
           {banners.sub.length > 0 ? (
             <img
@@ -153,7 +153,7 @@ const Home = () => {
         };
 
         return (
-          <div key={section._id} className="max-w-7xl mx-auto px-0 md:px-4 mb-12">
+          <div key={section._id} className="max-w-7xl mx-auto px-[2%] md:px-4 mb-12">
             <div className="bg-gray-50 px-4 py-3 border-b-2 border-primary mb-6">
               <h2 className="text-sm font-black text-secondary uppercase tracking-widest">
                 {section.title}
@@ -169,14 +169,14 @@ const Home = () => {
       })}
 
       {/* Brands Selection */}
-      <div className="max-w-7xl mx-auto px-0 md:px-4">
+      <div className="max-w-7xl mx-auto px-[2%] md:px-4">
         <BrandGrid brands={brands} />
       </div>
 
       {/* Recently Viewed Block (Mock) */}
       {/* Recently Viewed Block */}
       {recentlyViewed.length > 0 && (
-        <div className="max-w-7xl mx-auto px-0 md:px-4">
+        <div className="max-w-7xl mx-auto px-[2%] md:px-4">
           <div className="bg-gray-50 px-4 py-3 border-b-2 border-primary mb-6">
             <h2 className="text-sm font-black text-secondary uppercase tracking-widest">
               Recently Viewed

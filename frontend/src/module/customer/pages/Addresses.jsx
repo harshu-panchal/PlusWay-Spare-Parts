@@ -152,7 +152,7 @@ const Addresses = () => {
 
   return (
     <div className="bg-[#f4f4f4] min-h-screen pb-12">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-[2%] md:px-4 py-8">
         <h1 className="text-3xl font-black text-secondary mb-8 uppercase italic tracking-tighter">
           MY <span className="text-primary italic">ADDRESSES</span>
         </h1>
@@ -180,8 +180,8 @@ const Addresses = () => {
               {message.text && (
                 <div
                   className={`mb-6 p-4 rounded-xl text-sm font-bold ${message.type === "success"
-                      ? "bg-green-50 text-green-700 border border-green-200"
-                      : "bg-red-50 text-red-700 border border-red-200"
+                    ? "bg-green-50 text-green-700 border border-green-200"
+                    : "bg-red-50 text-red-700 border border-red-200"
                     }`}
                 >
                   {message.text}
@@ -201,8 +201,8 @@ const Addresses = () => {
                     <div
                       key={address._id}
                       className={`relative p-6 rounded-2xl border transition-all ${address.isDefault
-                          ? "border-primary bg-orange-50/30"
-                          : "border-gray-100 hover:border-gray-200"
+                        ? "border-primary bg-orange-50/30"
+                        : "border-gray-100 hover:border-gray-200"
                         }`}
                     >
                       {address.isDefault && (

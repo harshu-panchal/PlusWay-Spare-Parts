@@ -17,7 +17,7 @@ const Wishlist = () => {
 
   return (
     <div className="bg-[#f4f4f4] min-h-screen pb-12">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-[2%] md:px-4 py-8">
         <h1 className="text-3xl font-black text-secondary mb-8 uppercase italic tracking-tighter">
           MY <span className="text-primary italic">WISHLIST</span>
         </h1>

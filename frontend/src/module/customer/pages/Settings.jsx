@@ -65,7 +65,7 @@ const Settings = () => {
 
   return (
     <div className="bg-[#f4f4f4] min-h-screen pb-12">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-[2%] md:px-4 py-8">
         <h1 className="text-3xl font-black text-secondary mb-8 uppercase italic tracking-tighter">
           ACCOUNT <span className="text-primary italic">SETTINGS</span>
         </h1>
@@ -91,8 +91,8 @@ const Settings = () => {
                 {message.text && (
                   <div
                     className={`mb-6 p-4 rounded-xl text-sm font-bold ${message.type === "success"
-                        ? "bg-green-50 text-green-700 border border-green-200"
-                        : "bg-red-50 text-red-700 border border-red-200"
+                      ? "bg-green-50 text-green-700 border border-green-200"
+                      : "bg-red-50 text-red-700 border border-red-200"
                       }`}
                   >
                     {message.text}
@@ -164,8 +164,8 @@ const Settings = () => {
                     type="submit"
                     disabled={loading}
                     className={`bg-secondary text-white text-[10px] font-black py-4 px-10 rounded-2xl uppercase tracking-[0.2em] shadow-lg transition-all ${loading
-                        ? "opacity-50 cursor-not-allowed"
-                        : "hover:bg-black"
+                      ? "opacity-50 cursor-not-allowed"
+                      : "hover:bg-black"
                       }`}
                   >
                     {loading ? "Saving..." : "Save Changes"}

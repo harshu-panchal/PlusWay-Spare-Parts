@@ -82,7 +82,7 @@ const Header = () => {
       </div>
 
       {/* Main Header */}
-      <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-[2%] md:px-4 py-4 flex items-center justify-between gap-4">
         {/* Logo */}
         <Link to="/" className="flex-shrink-0">
           <div className="h-10 md:h-12 flex items-center bg-secondary px-4 rounded text-white font-black italic tracking-tighter text-xl">
@@ -241,7 +241,7 @@ const Header = () => {
 
       {/* Navigation Drawer Trigger Style */}
       <div className="bg-secondary text-white hidden md:block border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 flex items-center h-10">
+        <div className="max-w-7xl mx-auto px-[2%] md:px-4 flex items-center h-10">
           <div className="flex items-center gap-2 bg-primary h-full px-6 cursor-pointer font-black text-xs uppercase tracking-widest">
             <Menu size={16} /> All Categories
           </div>

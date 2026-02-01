@@ -46,7 +46,7 @@ const BrandSelection = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-0 md:px-4 py-8">
+      <div className="max-w-7xl mx-auto px-[2%] md:px-4 py-8">
         {/* Suggestions Section */}
         {/* Suggestions Section - Placeholder or Removed */}
 
