@@ -10,10 +10,12 @@ import {
   Clock,
   XCircle,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API_ENDPOINTS } from "../../../config/api";
 
 const OrderManagement = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [orders, setOrders] = useState([]);
@@ -185,7 +187,9 @@ const OrderManagement = () => {
                   key={order._id}
                   className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-6 py-4 font-bold text-secondary">
-                    #{order._id.slice(-6).toUpperCase()}
+                    <button onClick={() => navigate(`/admin/orders/${order._id}`)} className="hover:text-primary transition-colors">
+                      #{order._id.slice(-6).toUpperCase()}
+                    </button>
                   </td>
                   <td className="px-6 py-4">
                     <div className="font-bold text-secondary">
@@ -228,7 +232,9 @@ const OrderManagement = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      <button className="p-2 hover:bg-white rounded-lg text-gray-400 hover:text-primary transition-all shadow-sm">
+                      <button
+                        onClick={() => navigate(`/admin/orders/${order._id}`)}
+                        className="p-2 hover:bg-white rounded-lg text-gray-400 hover:text-primary transition-all shadow-sm">
                         <Eye size={18} />
                       </button>
                       <button

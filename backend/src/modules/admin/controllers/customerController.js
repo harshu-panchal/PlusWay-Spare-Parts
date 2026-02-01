@@ -112,6 +112,35 @@ export const updateCustomer = asyncHandler(async (req, res) => {
     }
 });
 
+// @desc    Get customer by ID with detailed stats
+// @route   GET /api/admin/customers/:id
+// @access  Private/Admin
+export const getCustomerById = asyncHandler(async (req, res) => {
+    const customer = await Customer.findById(req.params.id)
+        .populate("addresses")
+        .select("-password"); // Exclude password
+
+    if (customer) {
+        // Fetch orders for this customer
+        const orders = await Order.find({ customer: customer._id }).sort({ createdAt: -1 });
+
+        // Calculate stats
+        const totalSpent = orders
+            .filter(o => o.isPaid)
+            .reduce((acc, o) => acc + o.totalPrice, 0);
+
+        res.json({
+            ...customer.toObject(),
+            orders,
+            totalSpent,
+            totalOrders: orders.length
+        });
+    } else {
+        res.status(404);
+        throw new Error("Customer not found");
+    }
+});
+
 // @desc    Delete customer
 // @route   DELETE /api/admin/customers/:id
 // @access  Private/Admin

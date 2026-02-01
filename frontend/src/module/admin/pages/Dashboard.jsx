@@ -205,9 +205,10 @@ const Dashboard = () => {
                   data.recentOrders.map((order) => (
                     <tr
                       key={order._id}
-                      className="hover:bg-gray-50/50 transition-colors group">
+                      onClick={() => window.location.href = `/admin/orders/${order._id}`}
+                      className="hover:bg-gray-50/50 transition-colors group cursor-pointer">
                       <td className="px-6 py-4">
-                        <span className="text-sm font-bold text-gray-900">
+                        <span className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
                           #{order._id.substring(order._id.length - 6)}
                         </span>
                         <p className="text-[10px] text-gray-400 mt-0.5">

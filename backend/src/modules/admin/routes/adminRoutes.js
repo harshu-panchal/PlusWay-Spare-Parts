@@ -2,6 +2,7 @@ import express from "express";
 import { authAdmin, getAdminProfile, getDashboardStats, getReportStats } from "../controllers/adminController.js";
 import {
   getCustomers,
+  getCustomerById,
   createCustomer as createCustomerAdmin,
   updateCustomer as updateCustomerAdmin,
   deleteCustomer as deleteCustomerAdmin,
@@ -98,6 +99,7 @@ router
 
 router
   .route("/customers/:id")
+  .get(protect, admin, getCustomerById)
   .put(protect, admin, updateCustomerAdmin)
   .delete(protect, admin, deleteCustomerAdmin);
 

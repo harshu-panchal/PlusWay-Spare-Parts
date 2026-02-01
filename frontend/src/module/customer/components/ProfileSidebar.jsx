@@ -41,12 +41,7 @@ const ProfileSidebar = () => {
       path: "/profile/addresses",
       active: location.pathname === "/profile/addresses",
     },
-    {
-      name: "My Wishlist",
-      icon: <Heart size={18} />,
-      path: "/profile/wishlist",
-      active: location.pathname === "/profile/wishlist",
-    },
+
     {
       name: "Account Settings",
       icon: <Settings size={18} />,
@@ -89,8 +84,8 @@ const ProfileSidebar = () => {
                 item.action ? item.action() : navigate(item.path)
               }
               className={`w-full flex items-center justify-between p-4 rounded-xl transition-all font-bold text-sm uppercase tracking-wider ${item.active
-                  ? "bg-secondary text-white"
-                  : "hover:bg-gray-50 text-gray-400 hover:text-secondary"
+                ? "bg-secondary text-white"
+                : "hover:bg-gray-50 text-gray-400 hover:text-secondary"
                 }`}>
               <div className={`flex items-center gap-3 ${item.color || ""}`}>
                 {item.icon}

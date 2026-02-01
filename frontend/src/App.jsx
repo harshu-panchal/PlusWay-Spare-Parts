@@ -20,7 +20,6 @@ import Checkout from "./module/customer/pages/Checkout";
 import Profile from "./module/customer/pages/Profile";
 import Orders from "./module/customer/pages/Orders";
 import Addresses from "./module/customer/pages/Addresses";
-import Wishlist from "./module/customer/pages/Wishlist";
 import SettingsPage from "./module/customer/pages/Settings";
 import { CartProvider } from "./module/customer/context/CartContext";
 import ScrollToTop from "./components/ScrollToTop";
@@ -35,7 +34,9 @@ import ModelManagement from "./module/admin/pages/ModelManagement";
 import ProductManagement from "./module/admin/pages/ProductManagement";
 import StockManagement from "./module/admin/pages/StockManagement";
 import OrderManagement from "./module/admin/pages/OrderManagement";
+import OrderDetail from "./module/admin/pages/OrderDetail";
 import CustomerManagement from "./module/admin/pages/CustomerManagement";
+import CustomerDetail from "./module/admin/pages/CustomerDetail";
 import ReviewManagement from "./module/admin/pages/ReviewManagement";
 import Settings from "./module/admin/pages/Settings";
 import Reports from "./module/admin/pages/Reports";
@@ -77,7 +78,6 @@ const App = () => {
             <Route path="order/:id" element={<OrderDetails />} />
             <Route path="profile/orders" element={<Orders />} />
             <Route path="profile/addresses" element={<Addresses />} />
-            <Route path="profile/wishlist" element={<Wishlist />} />
             <Route path="profile/settings" element={<SettingsPage />} />
           </Route>
 
@@ -97,7 +97,9 @@ const App = () => {
             <Route path="products" element={<ProductManagement />} />
             <Route path="stock" element={<StockManagement />} />
             <Route path="orders" element={<OrderManagement />} />
+            <Route path="orders/:id" element={<OrderDetail />} />
             <Route path="customers" element={<CustomerManagement />} />
+            <Route path="customers/:id" element={<CustomerDetail />} />
             <Route path="reviews" element={<ReviewManagement />} />
             <Route path="support" element={<SupportManagement />} />
             <Route path="reports" element={<Reports />} />

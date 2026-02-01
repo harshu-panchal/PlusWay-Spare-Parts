@@ -20,7 +20,10 @@ import {
   UserPlus,
 } from "lucide-react";
 
+import { useNavigate } from "react-router-dom";
+
 const CustomerManagement = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -222,9 +225,12 @@ const CustomerManagement = () => {
                         {customer.name.charAt(0)}
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">
+                        <button
+                          onClick={() => navigate(`/admin/customers/${customer.id}`)}
+                          className="font-medium text-gray-900 hover:text-blue-600 transition-colors text-left"
+                        >
                           {customer.name}
-                        </p>
+                        </button>
                         <p className="text-xs text-gray-500">
                           Joined {customer.joined}
                         </p>
@@ -259,7 +265,9 @@ const CustomerManagement = () => {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                      <button
+                        onClick={() => navigate(`/admin/customers/${customer.id}`)}
+                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                         <Eye size={18} />
                       </button>
                       <button

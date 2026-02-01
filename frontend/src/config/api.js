@@ -82,6 +82,7 @@ export const API_ENDPOINTS = {
 
     // Admin Orders
     ADMIN_ORDERS: `${API_BASE_URL}/api/admin/orders`,
+    ADMIN_ORDER_DETAIL: (id) => `${API_BASE_URL}/api/admin/orders/${id}`,
     ADMIN_ORDER_STATUS: (id) => `${API_BASE_URL}/api/admin/orders/${id}/status`,
     ADMIN_ORDER_INVOICE: (id) => `${API_BASE_URL}/api/admin/orders/${id}/invoice`,
 
