@@ -26,6 +26,8 @@ import {
   Play,
 } from "lucide-react";
 import LazyImage from "../../../components/LazyImage";
+import ImageZoom from "../components/ImageZoom";
+import ProductCard from "../components/ProductCard";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -42,6 +44,7 @@ const ProductDetail = () => {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [relatedProducts, setRelatedProducts] = useState([]);
 
   const userInfo = JSON.parse(localStorage.getItem("userInfo"));
 
@@ -106,6 +109,22 @@ const ProductDetail = () => {
     fetchProduct();
   }, [id]);
 
+  useEffect(() => {
+    const fetchRelatedProducts = async () => {
+      if (product && product.category) {
+        try {
+          const catId = product.category._id || product.category;
+          const { data } = await axios.get(`${API_ENDPOINTS.PRODUCTS}?category=${catId}`);
+          // Filter out the current product and limit to 4
+          setRelatedProducts(data.products.filter(p => p._id !== product._id).slice(0, 4));
+        } catch (err) {
+          console.error("Error fetching related products", err);
+        }
+      }
+    };
+    fetchRelatedProducts();
+  }, [product]);
+
   if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   if (error) return <div className="min-h-screen flex items-center justify-center text-red-500">{error}</div>;
   if (!product) return <div className="p-20 text-center">Product not found</div>;
@@ -141,11 +160,11 @@ const ProductDetail = () => {
           {/* Left: Gallery (4 cols) */}
           <div className="lg:col-span-4 space-y-4">
             <div className="bg-white p-4 border border-gray-200 relative group">
-              <div className="aspect-square overflow-hidden bg-white">
-                <LazyImage
+              <div className="aspect-square bg-white">
+                <ImageZoom
                   src={selectedImage}
                   alt={product.name}
-                  className="w-full h-full object-contain cursor-zoom-in"
+                  className="w-full h-full"
                 />
               </div>
               {savingsPercent > 0 && (
@@ -641,13 +660,26 @@ const ProductDetail = () => {
         </div>
 
         {/* Related Products Scroller */}
-        {/* Placeholder for Related Products - To be implemented with real API relations */}
-        <div className="mt-16">
-          <h2 className="text-2xl font-black text-secondary mb-8 uppercase italic tracking-tighter">
-            You might also like
-          </h2>
-          <p className="text-sm text-gray-400">Related products coming soon...</p>
-        </div>
+        {relatedProducts.length > 0 && (
+          <div className="mt-20">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-black text-secondary uppercase italic tracking-tighter">
+                You might also <span className="text-primary italic">like</span>
+              </h2>
+              <Link
+                to={`/products?type=${product.category._id || product.category}`}
+                className="text-xs font-black text-primary uppercase tracking-widest hover:underline"
+              >
+                View all related
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
+              {relatedProducts.map((p) => (
+                <ProductCard key={p._id} product={p} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

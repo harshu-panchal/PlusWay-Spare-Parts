@@ -4,8 +4,8 @@ import axios from 'axios';
 import { ChevronRight, Filter, ChevronDown, ShoppingCart, Star } from 'lucide-react';
 import { API_ENDPOINTS, API_BASE_URL } from '../../../config/api';
 import { useCart } from '../context/CartContext';
-import LazyImage from '../../../components/LazyImage';
 import Pagination from '../../../components/Pagination';
+import ProductCard from '../components/ProductCard';
 
 const ProductListing = () => {
     const location = useLocation();
@@ -179,48 +179,9 @@ const ProductListing = () => {
                             </div>
                         </div>
 
-                        {/* Product Grid */}
                         <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-2 md:gap-6">
                             {products.map((product) => (
-                                <div key={product._id} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-gray-100 group flex flex-col">
-                                    <Link to={`/product/${product._id}`} className="block relative aspect-square overflow-hidden bg-gray-50">
-                                        <LazyImage
-                                            src={product.images && product.images.length > 0 ? product.images[0] : (product.image || "https://via.placeholder.com/300")}
-                                            alt={product.name}
-                                            className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500"
-                                        />
-                                        <div className="absolute top-3 left-3 flex flex-col gap-2">
-                                            {product.countInStock > 0 && <span className="bg-accent text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-widest">In Stock</span>}
-                                        </div>
-                                    </Link>
-
-                                    <div className="p-3 md:p-5 flex-1 flex flex-col">
-                                        <div className="flex items-center gap-1 mb-2">
-                                            <Star size={12} className="fill-yellow-400 text-yellow-400" />
-                                            <span className="text-[10px] font-bold text-gray-400">{product.rating} ({product.numReviews || 0})</span>
-                                        </div>
-                                        <Link to={`/product/${product._id}`} className="font-bold text-secondary text-xs md:text-sm leading-snug mb-2 md:mb-3 hover:text-primary transition-colors block">
-                                            {product.name}
-                                        </Link>
-
-                                        <div className="mt-auto flex items-end justify-between">
-                                            <div>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-base md:text-xl font-black text-secondary tracking-tighter">₹{product.price.toLocaleString()}</span>
-                                                    <span className="text-[10px] md:text-xs text-gray-400 line-through">₹{product.mrp.toLocaleString()}</span>
-                                                </div>
-                                                <span className="text-[10px] font-black text-accent uppercase tracking-widest">You Save ₹{(product.mrp - product.price).toLocaleString()}</span>
-                                            </div>
-
-                                            <button
-                                                onClick={() => addToCart(product)}
-                                                className="bg-primary text-white p-2 md:p-2.5 rounded-lg md:rounded-xl hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/20"
-                                            >
-                                                <ShoppingCart size={16} className="md:w-5 md:h-5" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
+                                <ProductCard key={product._id} product={product} />
                             ))}
                         </div>
 
