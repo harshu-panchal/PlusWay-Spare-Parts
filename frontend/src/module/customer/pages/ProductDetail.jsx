@@ -115,8 +115,8 @@ const ProductDetail = () => {
         try {
           const catId = product.category._id || product.category;
           const { data } = await axios.get(`${API_ENDPOINTS.PRODUCTS}?category=${catId}`);
-          // Filter out the current product and limit to 4
-          setRelatedProducts(data.products.filter(p => p._id !== product._id).slice(0, 4));
+          // Filter out the current product and limit to 10 for scroller
+          setRelatedProducts(data.products.filter(p => p._id !== product._id).slice(0, 10));
         } catch (err) {
           console.error("Error fetching related products", err);
         }
@@ -673,9 +673,11 @@ const ProductDetail = () => {
                 View all related
               </Link>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
+            <div className="flex gap-3 md:gap-4 overflow-x-auto pb-4 -mx-[2%] px-[2%] md:mx-0 md:px-0 scroll-smooth">
               {relatedProducts.map((p) => (
-                <ProductCard key={p._id} product={p} />
+                <div key={p._id} className="w-[150px] md:w-[240px] flex-shrink-0">
+                  <ProductCard product={p} />
+                </div>
               ))}
             </div>
           </div>
