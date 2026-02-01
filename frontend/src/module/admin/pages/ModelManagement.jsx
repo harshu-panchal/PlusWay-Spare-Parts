@@ -1,0 +1,331 @@
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import {
+  Search,
+  Plus,
+  Edit,
+  Trash2,
+  Smartphone,
+  ChevronRight,
+  Filter,
+  X,
+  Save,
+  Calendar,
+} from "lucide-react";
+import ImageUpload from "../../../components/ImageUpload";
+
+
+const ModelManagement = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedBrand, setSelectedBrand] = useState("all");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingModel, setEditingModel] = useState(null);
+
+  const [models, setModels] = useState([]);
+  const [brands, setBrands] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const initialFormState = {
+    name: "",
+    brand: "",
+    released: "",
+    image: "",
+  };
+
+  const [formData, setFormData] = useState(initialFormState);
+
+  const fetchData = async () => {
+    try {
+      const config = { headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}` } };
+      const [modelRes, brandRes] = await Promise.all([
+        axios.get("http://localhost:5001/api/admin/models", config),
+        axios.get("http://localhost:5001/api/admin/brands", config)
+      ]);
+      setModels(modelRes.data);
+      setBrands(brandRes.data);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const filteredModels = models.filter((model) => {
+    const matchesSearch = model.name
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    const matchesBrand =
+      selectedBrand === "all" || (model.brand?._id || model.brand) === selectedBrand;
+    return matchesSearch && matchesBrand;
+  });
+
+  const handleOpenModal = (model = null) => {
+    if (model) {
+      setEditingModel(model);
+      setFormData({
+        name: model.name,
+        brand: model.brand?._id || model.brand,
+        released: model.released || "",
+        image: model.image || "",
+      });
+    } else {
+      setEditingModel(null);
+      setFormData(initialFormState);
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingModel(null);
+  };
+
+  const handleImageUpload = (url) => {
+    setFormData({ ...formData, image: url });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const config = { headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}` } };
+      if (editingModel) {
+        await axios.put(`http://localhost:5001/api/admin/models/${editingModel._id}`, formData, config);
+      } else {
+        await axios.post("http://localhost:5001/api/admin/models", formData, config);
+      }
+      fetchData();
+      handleCloseModal();
+    } catch (error) {
+      console.error("Error saving model:", error);
+      alert("Failed to save model");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure?")) return;
+    try {
+      const config = { headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}` } };
+      await axios.delete(`http://localhost:5001/api/admin/models/${id}`, config);
+      fetchData();
+    } catch (error) {
+      console.error(error);
+      alert("Failed to delete model");
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-1 gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              size={20}
+            />
+            <input
+              type="text"
+              placeholder="Search models..."
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <select
+            className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            value={selectedBrand}
+            onChange={(e) => setSelectedBrand(e.target.value)}>
+            <option value="all">All Brands</option>
+            {brands.map((brand) => (
+              <option key={brand._id} value={brand._id}>
+                {brand.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <button
+          onClick={() => handleOpenModal()}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+          <Plus size={18} />
+          <span>Add Model</span>
+        </button>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead className="bg-gray-50 border-b border-gray-100">
+              <tr>
+                <th className="px-6 py-4 text-sm font-semibold text-gray-600">
+                  Model Name
+                </th>
+                <th className="px-6 py-4 text-sm font-semibold text-gray-600">
+                  Brand
+                </th>
+                <th className="px-6 py-4 text-sm font-semibold text-gray-600">
+                  Details
+                </th>
+                <th className="px-6 py-4 text-sm font-semibold text-gray-600 text-right">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {filteredModels.map((model) => (
+                <tr
+                  key={model._id}
+                  className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-50 text-blue-600 rounded-lg overflow-hidden w-12 h-12 flex items-center justify-center">
+                        {model.image ? (
+                          <img src={model.image} alt={model.name} className="w-full h-full object-contain" />
+                        ) : (
+                          <Smartphone size={20} />
+                        )}
+                      </div>
+                      <span className="font-medium text-gray-900">
+                        {model.name}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs font-bold rounded uppercase">
+                      {model.brand?.name || "Unknown"}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    {model.released
+                      ? `Released: ${model.released}`
+                      : "No details available"}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => handleOpenModal(model)}
+                        className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors">
+                        <Edit size={18} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(model._id)}
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Add/Edit Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+              <h3 className="text-xl font-bold text-gray-800">
+                {editingModel ? "Edit Model" : "Add New Model"}
+              </h3>
+              <button
+                onClick={handleCloseModal}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+              <div className="space-y-4">
+                <div className="flex justify-center">
+                  <div className="w-32 h-32">
+                    <ImageUpload
+                      value={formData.image}
+                      onChange={handleImageUpload}
+                      placeholder="Model Image"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-700">
+                    Model Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    placeholder="e.g. Galaxy S23 Ultra"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700">Brand</label>
+                <select
+                  required
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                  value={formData.brand}
+                  onChange={(e) =>
+                    setFormData({ ...formData, brand: e.target.value })
+                  }>
+                  <option value="">Select Brand</option>
+                  {brands.map((brand) => (
+                    <option key={brand._id} value={brand._id}>
+                      {brand.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700">
+                  Release Date/Year
+                </label>
+                <div className="relative">
+                  <Calendar
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    size={18}
+                  />
+                  <input
+                    type="text"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    value={formData.released}
+                    onChange={(e) =>
+                      setFormData({ ...formData, released: e.target.value })
+                    }
+                    placeholder="e.g. February 2023"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-gray-100 flex gap-4">
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="flex-1 px-6 py-2 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors font-bold">
+                  CANCEL
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-bold flex items-center justify-center gap-2">
+                  <Save size={18} />
+                  {editingModel ? "UPDATE MODEL" : "CREATE MODEL"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ModelManagement;

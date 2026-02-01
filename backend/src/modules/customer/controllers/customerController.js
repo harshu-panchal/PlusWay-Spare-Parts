@@ -1,0 +1,60 @@
+import Customer from "../../../models/Customer.js";
+import generateToken from "../../../utils/generateToken.js";
+
+// @desc    Register a new customer
+// @route   POST /api/customer/register
+// @access  Public
+export const registerCustomer = async (req, res) => {
+  const { name, mobile, email, otp } = req.body;
+
+  if (otp !== "123456") {
+    return res.status(400).json({ message: "Invalid OTP" });
+  }
+
+  const customerExists = await Customer.findOne({ mobile });
+
+  if (customerExists) {
+    return res.status(400).json({ message: "Customer already exists" });
+  }
+
+  const customer = await Customer.create({
+    name,
+    mobile,
+    email,
+  });
+
+  if (customer) {
+    res.status(201).json({
+      _id: customer._id,
+      name: customer.name,
+      mobile: customer.mobile,
+      token: generateToken(customer._id, "customer"),
+    });
+  } else {
+    res.status(400).json({ message: "Invalid customer data" });
+  }
+};
+
+// @desc    Auth customer & get token (Login via mobile - simplified for now)
+// @route   POST /api/customer/login
+// @access  Public
+export const authCustomer = async (req, res) => {
+  const { mobile, otp } = req.body;
+
+  if (otp !== "123456") {
+    return res.status(400).json({ message: "Invalid OTP" });
+  }
+
+  const customer = await Customer.findOne({ mobile });
+
+  if (customer) {
+    res.json({
+      _id: customer._id,
+      name: customer.name,
+      mobile: customer.mobile,
+      token: generateToken(customer._id, "customer"),
+    });
+  } else {
+    res.status(401).json({ message: "Invalid mobile number" });
+  }
+};

@@ -1,0 +1,2644 @@
+{
+  "brands": [
+    {
+      "id": "697c60dd924195db7dcafb55",
+      "name": "Acer"
+    },
+    {
+      "id": "697c60de924195db7dcafb58",
+      "name": "Alcatel"
+    },
+    {
+      "id": "697c60df924195db7dcafb5b",
+      "name": "Allview"
+    },
+    {
+      "id": "697c60e0924195db7dcafb5e",
+      "name": "Apple"
+    },
+    {
+      "id": "697c60e2924195db7dcafb61",
+      "name": "Asus"
+    },
+    {
+      "id": "697c60e3924195db7dcafb64",
+      "name": "Blackberry"
+    },
+    {
+      "id": "697c60e4924195db7dcafb67",
+      "name": "Blackview"
+    },
+    {
+      "id": "697c60e5924195db7dcafb6a",
+      "name": "BLU"
+    },
+    {
+      "id": "697c60e7924195db7dcafb6d",
+      "name": "Celkon"
+    },
+    {
+      "id": "697c60e8924195db7dcafb70",
+      "name": "Coolpad"
+    },
+    {
+      "id": "697c60e9924195db7dcafb73",
+      "name": "Cubot"
+    },
+    {
+      "id": "697c60ea924195db7dcafb76",
+      "name": "Doogee"
+    },
+    {
+      "id": "697c60eb924195db7dcafb79",
+      "name": "Energizer"
+    },
+    {
+      "id": "697c60ed924195db7dcafb7c",
+      "name": "Gionee"
+    },
+    {
+      "id": "697c60ee924195db7dcafb7f",
+      "name": "Google"
+    },
+    {
+      "id": "697c60ef924195db7dcafb82",
+      "name": "Hi-Tech"
+    },
+    {
+      "id": "697c60f1924195db7dcafb85",
+      "name": "Honor"
+    },
+    {
+      "id": "697c60f2924195db7dcafb88",
+      "name": "HTC"
+    },
+    {
+      "id": "697c60f3924195db7dcafb8b",
+      "name": "Huawei"
+    },
+    {
+      "id": "697c60f4924195db7dcafb8e",
+      "name": "iball"
+    },
+    {
+      "id": "697c60f6924195db7dcafb91",
+      "name": "Infinix"
+    },
+    {
+      "id": "697c60f7924195db7dcafb94",
+      "name": "Innjoo"
+    },
+    {
+      "id": "697c60f9924195db7dcafb97",
+      "name": "Intex"
+    },
+    {
+      "id": "697c60fa924195db7dcafb9a",
+      "name": "Itel"
+    },
+    {
+      "id": "697c60fb924195db7dcafb9d",
+      "name": "I Kall"
+    },
+    {
+      "id": "697c60fc924195db7dcafba0",
+      "name": "Karbonn"
+    },
+    {
+      "id": "697c60fe924195db7dcafba3",
+      "name": "Lava"
+    },
+    {
+      "id": "697c60ff924195db7dcafba6",
+      "name": "Lenovo"
+    },
+    {
+      "id": "697c6101924195db7dcafba9",
+      "name": "LG"
+    },
+    {
+      "id": "697c6104924195db7dcafbaf",
+      "name": "Maxx"
+    },
+    {
+      "id": "697c6105924195db7dcafbb2",
+      "name": "Meizu"
+    },
+    {
+      "id": "697c6107924195db7dcafbb5",
+      "name": "Micromax"
+    },
+    {
+      "id": "697c6108924195db7dcafbb8",
+      "name": "Microsoft"
+    },
+    {
+      "id": "697c6109924195db7dcafbbb",
+      "name": "Motorola"
+    },
+    {
+      "id": "697c610a924195db7dcafbbe",
+      "name": "Nokia"
+    },
+    {
+      "id": "697c610b924195db7dcafbc1",
+      "name": "Oneplus"
+    },
+    {
+      "id": "697c610d924195db7dcafbc4",
+      "name": "Oppo"
+    },
+    {
+      "id": "697c610e924195db7dcafbc7",
+      "name": "Oukitel"
+    },
+    {
+      "id": "697c610f924195db7dcafbca",
+      "name": "Panasonic"
+    },
+    {
+      "id": "697c6110924195db7dcafbcd",
+      "name": "Prestigio"
+    },
+    {
+      "id": "697c6111924195db7dcafbd0",
+      "name": "Rage"
+    },
+    {
+      "id": "697c6113924195db7dcafbd3",
+      "name": "Realme"
+    },
+    {
+      "id": "697c6114924195db7dcafbd6",
+      "name": "Samsung"
+    },
+    {
+      "id": "697c6115924195db7dcafbd9",
+      "name": "Sansui"
+    },
+    {
+      "id": "697c6116924195db7dcafbdc",
+      "name": "Sharp"
+    },
+    {
+      "id": "697c6117924195db7dcafbdf",
+      "name": "Sony"
+    },
+    {
+      "id": "697c6118924195db7dcafbe2",
+      "name": "Sony Ericsson"
+    },
+    {
+      "id": "697c6119924195db7dcafbe5",
+      "name": "Spice"
+    },
+    {
+      "id": "697c611a924195db7dcafbe8",
+      "name": "Swipe"
+    },
+    {
+      "id": "697c611c924195db7dcafbeb",
+      "name": "TCL"
+    },
+    {
+      "id": "697c611d924195db7dcafbee",
+      "name": "Tecno"
+    },
+    {
+      "id": "697c611e924195db7dcafbf1",
+      "name": "Ulefone"
+    },
+    {
+      "id": "697c6121924195db7dcafbf4",
+      "name": "Umidigi"
+    },
+    {
+      "id": "697c6122924195db7dcafbf7",
+      "name": "Videocon"
+    },
+    {
+      "id": "697c6123924195db7dcafbfa",
+      "name": "Vivo"
+    },
+    {
+      "id": "697c6124924195db7dcafbfd",
+      "name": "Wiko"
+    },
+    {
+      "id": "697c6125924195db7dcafc00",
+      "name": "Xiaomi"
+    },
+    {
+      "id": "697c6126924195db7dcafc03",
+      "name": "Xolo"
+    },
+    {
+      "id": "697c6128924195db7dcafc06",
+      "name": "Zen"
+    },
+    {
+      "id": "697c6129924195db7dcafc09",
+      "name": "ZTE"
+    }
+  ],
+  "models": [
+    {
+      "id": "697b133e0192cfd593ab964b",
+      "name": "TEST Model"
+    },
+    {
+      "id": "697c7943962ffaff39986814",
+      "name": "Acerone Liquid S162E4",
+      "brandId": "697c60dd924195db7dcafb55",
+      "brandName": "Acer"
+    },
+    {
+      "id": "697c7944962ffaff39986817",
+      "name": "Acerone Liquid S272E4",
+      "brandId": "697c60dd924195db7dcafb55",
+      "brandName": "Acer"
+    },
+    {
+      "id": "697c7945962ffaff3998681a",
+      "name": "One 10 T4-129L",
+      "brandId": "697c60dd924195db7dcafb55",
+      "brandName": "Acer"
+    },
+    {
+      "id": "697c7946962ffaff3998681d",
+      "name": "One 8 T4-82L",
+      "brandId": "697c60dd924195db7dcafb55",
+      "brandName": "Acer"
+    },
+    {
+      "id": "697c7947962ffaff39986820",
+      "name": "Super ZX",
+      "brandId": "697c60dd924195db7dcafb55",
+      "brandName": "Acer"
+    },
+    {
+      "id": "697c7949962ffaff39986824",
+      "name": "1",
+      "brandId": "697c60de924195db7dcafb58",
+      "brandName": "Alcatel"
+    },
+    {
+      "id": "697c794a962ffaff39986827",
+      "name": "1B 2022",
+      "brandId": "697c60de924195db7dcafb58",
+      "brandName": "Alcatel"
+    },
+    {
+      "id": "697c794b962ffaff3998682a",
+      "name": "1S",
+      "brandId": "697c60de924195db7dcafb58",
+      "brandName": "Alcatel"
+    },
+    {
+      "id": "697c794c962ffaff3998682d",
+      "name": "1T 7",
+      "brandId": "697c60de924195db7dcafb58",
+      "brandName": "Alcatel"
+    },
+    {
+      "id": "697c794d962ffaff39986830",
+      "name": "3X 2019",
+      "brandId": "697c60de924195db7dcafb58",
+      "brandName": "Alcatel"
+    },
+    {
+      "id": "697c794e962ffaff39986833",
+      "name": "3 2025",
+      "brandId": "697c60de924195db7dcafb58",
+      "brandName": "Alcatel"
+    },
+    {
+      "id": "697c794f962ffaff39986836",
+      "name": "V3 Classic",
+      "brandId": "697c60de924195db7dcafb58",
+      "brandName": "Alcatel"
+    },
+    {
+      "id": "697c7950962ffaff39986839",
+      "name": "V3 Pro 5G",
+      "brandId": "697c60de924195db7dcafb58",
+      "brandName": "Alcatel"
+    },
+    {
+      "id": "697c7951962ffaff3998683c",
+      "name": "V3 Ultra",
+      "brandId": "697c60de924195db7dcafb58",
+      "brandName": "Alcatel"
+    },
+    {
+      "id": "697c7952962ffaff39986840",
+      "name": "P10 Life",
+      "brandId": "697c60df924195db7dcafb5b",
+      "brandName": "Allview"
+    },
+    {
+      "id": "697c7954962ffaff39986843",
+      "name": "P10 Mini",
+      "brandId": "697c60df924195db7dcafb5b",
+      "brandName": "Allview"
+    },
+    {
+      "id": "697c7955962ffaff39986846",
+      "name": "P10 Pro",
+      "brandId": "697c60df924195db7dcafb5b",
+      "brandName": "Allview"
+    },
+    {
+      "id": "697c7956962ffaff39986849",
+      "name": "P10 Style",
+      "brandId": "697c60df924195db7dcafb5b",
+      "brandName": "Allview"
+    },
+    {
+      "id": "697c7957962ffaff3998684c",
+      "name": "P9 Energy Mini",
+      "brandId": "697c60df924195db7dcafb5b",
+      "brandName": "Allview"
+    },
+    {
+      "id": "697c7958962ffaff3998684f",
+      "name": "Soul X6 Xtreme",
+      "brandId": "697c60df924195db7dcafb5b",
+      "brandName": "Allview"
+    },
+    {
+      "id": "697c795a962ffaff39986852",
+      "name": "Soul X7 Pro",
+      "brandId": "697c60df924195db7dcafb5b",
+      "brandName": "Allview"
+    },
+    {
+      "id": "697c795b962ffaff39986855",
+      "name": "Soul X7 Style",
+      "brandId": "697c60df924195db7dcafb5b",
+      "brandName": "Allview"
+    },
+    {
+      "id": "697c795c962ffaff39986858",
+      "name": "Viva 803G",
+      "brandId": "697c60df924195db7dcafb5b",
+      "brandName": "Allview"
+    },
+    {
+      "id": "697c795d962ffaff3998685b",
+      "name": "X5 Soul",
+      "brandId": "697c60df924195db7dcafb5b",
+      "brandName": "Allview"
+    },
+    {
+      "id": "697c795e962ffaff3998685f",
+      "name": "iPhone 11",
+      "brandId": "697c60e0924195db7dcafb5e",
+      "brandName": "Apple"
+    },
+    {
+      "id": "697c795f962ffaff39986862",
+      "name": "iPhone 12",
+      "brandId": "697c60e0924195db7dcafb5e",
+      "brandName": "Apple"
+    },
+    {
+      "id": "697c7960962ffaff39986865",
+      "name": "iPhone 12 Mini",
+      "brandId": "697c60e0924195db7dcafb5e",
+      "brandName": "Apple"
+    },
+    {
+      "id": "697c7961962ffaff39986868",
+      "name": "iPhone 12 Pro",
+      "brandId": "697c60e0924195db7dcafb5e",
+      "brandName": "Apple"
+    },
+    {
+      "id": "697c7962962ffaff3998686b",
+      "name": "iPhone 12 Pro Max",
+      "brandId": "697c60e0924195db7dcafb5e",
+      "brandName": "Apple"
+    },
+    {
+      "id": "697c7963962ffaff3998686e",
+      "name": "iPhone 13",
+      "brandId": "697c60e0924195db7dcafb5e",
+      "brandName": "Apple"
+    },
+    {
+      "id": "697c7965962ffaff39986871",
+      "name": "iPhone 13 pro",
+      "brandId": "697c60e0924195db7dcafb5e",
+      "brandName": "Apple"
+    },
+    {
+      "id": "697c7966962ffaff39986874",
+      "name": "iPhone 13 Pro Max",
+      "brandId": "697c60e0924195db7dcafb5e",
+      "brandName": "Apple"
+    },
+    {
+      "id": "697c7967962ffaff39986877",
+      "name": "iPhone XR",
+      "brandId": "697c60e0924195db7dcafb5e",
+      "brandName": "Apple"
+    },
+    {
+      "id": "697c7968962ffaff3998687b",
+      "name": "ROG Phone 3",
+      "brandId": "697c60e2924195db7dcafb61",
+      "brandName": "Asus"
+    },
+    {
+      "id": "697c7969962ffaff3998687e",
+      "name": "ROG Phone 9 Pro",
+      "brandId": "697c60e2924195db7dcafb61",
+      "brandName": "Asus"
+    },
+    {
+      "id": "697c796a962ffaff39986881",
+      "name": "ROG Phone II ZS660KL",
+      "brandId": "697c60e2924195db7dcafb61",
+      "brandName": "Asus"
+    },
+    {
+      "id": "697c796b962ffaff39986884",
+      "name": "Zenfone 10",
+      "brandId": "697c60e2924195db7dcafb61",
+      "brandName": "Asus"
+    },
+    {
+      "id": "697c796c962ffaff39986887",
+      "name": "Zenfone 12 Ultra",
+      "brandId": "697c60e2924195db7dcafb61",
+      "brandName": "Asus"
+    },
+    {
+      "id": "697c796d962ffaff3998688a",
+      "name": "Zenfone 5z ZS620KL",
+      "brandId": "697c60e2924195db7dcafb61",
+      "brandName": "Asus"
+    },
+    {
+      "id": "697c796f962ffaff3998688d",
+      "name": "Zenfone 6 ZS630KL",
+      "brandId": "697c60e2924195db7dcafb61",
+      "brandName": "Asus"
+    },
+    {
+      "id": "697c7970962ffaff39986890",
+      "name": "Zenfone Max M2 ZB633KL",
+      "brandId": "697c60e2924195db7dcafb61",
+      "brandName": "Asus"
+    },
+    {
+      "id": "697c7972962ffaff39986893",
+      "name": "Zenfone Max Pro (M1) ZB601KL",
+      "brandId": "697c60e2924195db7dcafb61",
+      "brandName": "Asus"
+    },
+    {
+      "id": "697c7973962ffaff39986896",
+      "name": "Zenfone Max Pro M2 ZB631KL",
+      "brandId": "697c60e2924195db7dcafb61",
+      "brandName": "Asus"
+    },
+    {
+      "id": "697c7974962ffaff3998689a",
+      "name": "KEY2",
+      "brandId": "697c60e3924195db7dcafb64",
+      "brandName": "Blackberry"
+    },
+    {
+      "id": "697c7975962ffaff3998689d",
+      "name": "KEY2 LE",
+      "brandId": "697c60e3924195db7dcafb64",
+      "brandName": "Blackberry"
+    },
+    {
+      "id": "697c7977962ffaff399868a1",
+      "name": "A200 Pro",
+      "brandId": "697c60e4924195db7dcafb67",
+      "brandName": "Blackview"
+    },
+    {
+      "id": "697c7978962ffaff399868a4",
+      "name": "BV6200 Pro",
+      "brandId": "697c60e4924195db7dcafb67",
+      "brandName": "Blackview"
+    },
+    {
+      "id": "697c7979962ffaff399868a7",
+      "name": "Hero 10",
+      "brandId": "697c60e4924195db7dcafb67",
+      "brandName": "Blackview"
+    },
+    {
+      "id": "697c797a962ffaff399868aa",
+      "name": "Mega 2",
+      "brandId": "697c60e4924195db7dcafb67",
+      "brandName": "Blackview"
+    },
+    {
+      "id": "697c797b962ffaff399868ad",
+      "name": "Mega 8",
+      "brandId": "697c60e4924195db7dcafb67",
+      "brandName": "Blackview"
+    },
+    {
+      "id": "697c797d962ffaff399868b0",
+      "name": "Shark 6",
+      "brandId": "697c60e4924195db7dcafb67",
+      "brandName": "Blackview"
+    },
+    {
+      "id": "697c797e962ffaff399868b3",
+      "name": "Shark 8",
+      "brandId": "697c60e4924195db7dcafb67",
+      "brandName": "Blackview"
+    },
+    {
+      "id": "697c797f962ffaff399868b6",
+      "name": "Tab90 WiFi",
+      "brandId": "697c60e4924195db7dcafb67",
+      "brandName": "Blackview"
+    },
+    {
+      "id": "697c7980962ffaff399868b9",
+      "name": "Tab 60",
+      "brandId": "697c60e4924195db7dcafb67",
+      "brandName": "Blackview"
+    },
+    {
+      "id": "697c7981962ffaff399868bc",
+      "name": "Tab 60 Pro",
+      "brandId": "697c60e4924195db7dcafb67",
+      "brandName": "Blackview"
+    },
+    {
+      "id": "697c7982962ffaff399868c0",
+      "name": "Bold N3",
+      "brandId": "697c60e5924195db7dcafb6a",
+      "brandName": "BLU"
+    },
+    {
+      "id": "697c7983962ffaff399868c3",
+      "name": "G33",
+      "brandId": "697c60e5924195db7dcafb6a",
+      "brandName": "BLU"
+    },
+    {
+      "id": "697c7984962ffaff399868c6",
+      "name": "G63",
+      "brandId": "697c60e5924195db7dcafb6a",
+      "brandName": "BLU"
+    },
+    {
+      "id": "697c7986962ffaff399868c9",
+      "name": "G73",
+      "brandId": "697c60e5924195db7dcafb6a",
+      "brandName": "BLU"
+    },
+    {
+      "id": "697c7987962ffaff399868cc",
+      "name": "G91 Max",
+      "brandId": "697c60e5924195db7dcafb6a",
+      "brandName": "BLU"
+    },
+    {
+      "id": "697c7988962ffaff399868cf",
+      "name": "G91 Pro",
+      "brandId": "697c60e5924195db7dcafb6a",
+      "brandName": "BLU"
+    },
+    {
+      "id": "697c798a962ffaff399868d2",
+      "name": "G93",
+      "brandId": "697c60e5924195db7dcafb6a",
+      "brandName": "BLU"
+    },
+    {
+      "id": "697c798b962ffaff399868d5",
+      "name": "S91 Pro",
+      "brandId": "697c60e5924195db7dcafb6a",
+      "brandName": "BLU"
+    },
+    {
+      "id": "697c798c962ffaff399868d8",
+      "name": "View 2",
+      "brandId": "697c60e5924195db7dcafb6a",
+      "brandName": "BLU"
+    },
+    {
+      "id": "697c798d962ffaff399868db",
+      "name": "View 3",
+      "brandId": "697c60e5924195db7dcafb6a",
+      "brandName": "BLU"
+    },
+    {
+      "id": "697c798e962ffaff399868e0",
+      "name": "C16",
+      "brandId": "697c60e8924195db7dcafb70",
+      "brandName": "Coolpad"
+    },
+    {
+      "id": "697c798f962ffaff399868e3",
+      "name": "Cool 30 Play",
+      "brandId": "697c60e8924195db7dcafb70",
+      "brandName": "Coolpad"
+    },
+    {
+      "id": "697c7990962ffaff399868e6",
+      "name": "CP12",
+      "brandId": "697c60e8924195db7dcafb70",
+      "brandName": "Coolpad"
+    },
+    {
+      "id": "697c7991962ffaff399868e9",
+      "name": "CP12 Neo",
+      "brandId": "697c60e8924195db7dcafb70",
+      "brandName": "Coolpad"
+    },
+    {
+      "id": "697c7992962ffaff399868ec",
+      "name": "Defiant",
+      "brandId": "697c60e8924195db7dcafb70",
+      "brandName": "Coolpad"
+    },
+    {
+      "id": "697c7994962ffaff399868ef",
+      "name": "Legacy",
+      "brandId": "697c60e8924195db7dcafb70",
+      "brandName": "Coolpad"
+    },
+    {
+      "id": "697c7995962ffaff399868f2",
+      "name": "NX1",
+      "brandId": "697c60e8924195db7dcafb70",
+      "brandName": "Coolpad"
+    },
+    {
+      "id": "697c7996962ffaff399868f5",
+      "name": "X100",
+      "brandId": "697c60e8924195db7dcafb70",
+      "brandName": "Coolpad"
+    },
+    {
+      "id": "697c7997962ffaff399868f9",
+      "name": "KingKong 9",
+      "brandId": "697c60e9924195db7dcafb73",
+      "brandName": "Cubot"
+    },
+    {
+      "id": "697c7998962ffaff399868fc",
+      "name": "KingKong Mini 3",
+      "brandId": "697c60e9924195db7dcafb73",
+      "brandName": "Cubot"
+    },
+    {
+      "id": "697c7999962ffaff399868ff",
+      "name": "KingKong Power 5",
+      "brandId": "697c60e9924195db7dcafb73",
+      "brandName": "Cubot"
+    },
+    {
+      "id": "697c799b962ffaff39986902",
+      "name": "KingKong X",
+      "brandId": "697c60e9924195db7dcafb73",
+      "brandName": "Cubot"
+    },
+    {
+      "id": "697c799c962ffaff39986905",
+      "name": "KingKong X Pro",
+      "brandId": "697c60e9924195db7dcafb73",
+      "brandName": "Cubot"
+    },
+    {
+      "id": "697c799d962ffaff39986908",
+      "name": "Max 5",
+      "brandId": "697c60e9924195db7dcafb73",
+      "brandName": "Cubot"
+    },
+    {
+      "id": "697c799e962ffaff3998690b",
+      "name": "P90",
+      "brandId": "697c60e9924195db7dcafb73",
+      "brandName": "Cubot"
+    },
+    {
+      "id": "697c799f962ffaff3998690e",
+      "name": "X20",
+      "brandId": "697c60e9924195db7dcafb73",
+      "brandName": "Cubot"
+    },
+    {
+      "id": "697c79a0962ffaff39986911",
+      "name": "X70",
+      "brandId": "697c60e9924195db7dcafb73",
+      "brandName": "Cubot"
+    },
+    {
+      "id": "697c79a1962ffaff39986914",
+      "name": "X90",
+      "brandId": "697c60e9924195db7dcafb73",
+      "brandName": "Cubot"
+    },
+    {
+      "id": "697c79a3962ffaff39986918",
+      "name": "Blade10 Max",
+      "brandId": "697c60ea924195db7dcafb76",
+      "brandName": "Doogee"
+    },
+    {
+      "id": "697c79a4962ffaff3998691b",
+      "name": "DK10",
+      "brandId": "697c60ea924195db7dcafb76",
+      "brandName": "Doogee"
+    },
+    {
+      "id": "697c79a5962ffaff3998691e",
+      "name": "N55",
+      "brandId": "697c60ea924195db7dcafb76",
+      "brandName": "Doogee"
+    },
+    {
+      "id": "697c79a6962ffaff39986921",
+      "name": "S200X",
+      "brandId": "697c60ea924195db7dcafb76",
+      "brandName": "Doogee"
+    },
+    {
+      "id": "697c79a7962ffaff39986924",
+      "name": "S200 5G",
+      "brandId": "697c60ea924195db7dcafb76",
+      "brandName": "Doogee"
+    },
+    {
+      "id": "697c79a8962ffaff39986927",
+      "name": "S Punk",
+      "brandId": "697c60ea924195db7dcafb76",
+      "brandName": "Doogee"
+    },
+    {
+      "id": "697c79a9962ffaff3998692a",
+      "name": "T30 Pro",
+      "brandId": "697c60ea924195db7dcafb76",
+      "brandName": "Doogee"
+    },
+    {
+      "id": "697c79ab962ffaff3998692d",
+      "name": "V Max",
+      "brandId": "697c60ea924195db7dcafb76",
+      "brandName": "Doogee"
+    },
+    {
+      "id": "697c79ac962ffaff39986930",
+      "name": "V Max Plus",
+      "brandId": "697c60ea924195db7dcafb76",
+      "brandName": "Doogee"
+    },
+    {
+      "id": "697c79ad962ffaff39986933",
+      "name": "V Max Pro",
+      "brandId": "697c60ea924195db7dcafb76",
+      "brandName": "Doogee"
+    },
+    {
+      "id": "697c79af962ffaff39986937",
+      "name": "E13",
+      "brandId": "697c60eb924195db7dcafb79",
+      "brandName": "Energizer"
+    },
+    {
+      "id": "697c79af962ffaff3998693a",
+      "name": "E242s Plus",
+      "brandId": "697c60eb924195db7dcafb79",
+      "brandName": "Energizer"
+    },
+    {
+      "id": "697c79b1962ffaff3998693d",
+      "name": "E288s",
+      "brandId": "697c60eb924195db7dcafb79",
+      "brandName": "Energizer"
+    },
+    {
+      "id": "697c79b2962ffaff39986940",
+      "name": "E29",
+      "brandId": "697c60eb924195db7dcafb79",
+      "brandName": "Energizer"
+    },
+    {
+      "id": "697c79b3962ffaff39986943",
+      "name": "Hard Case P28K",
+      "brandId": "697c60eb924195db7dcafb79",
+      "brandName": "Energizer"
+    },
+    {
+      "id": "697c79b4962ffaff39986946",
+      "name": "Power Max P490S",
+      "brandId": "697c60eb924195db7dcafb79",
+      "brandName": "Energizer"
+    },
+    {
+      "id": "697c79b5962ffaff39986949",
+      "name": "U683S",
+      "brandId": "697c60eb924195db7dcafb79",
+      "brandName": "Energizer"
+    },
+    {
+      "id": "697c79b6962ffaff3998694c",
+      "name": "Ultimate 65G",
+      "brandId": "697c60eb924195db7dcafb79",
+      "brandName": "Energizer"
+    },
+    {
+      "id": "697c79b7962ffaff3998694f",
+      "name": "Ultimate U505s",
+      "brandId": "697c60eb924195db7dcafb79",
+      "brandName": "Energizer"
+    },
+    {
+      "id": "697c79b8962ffaff39986952",
+      "name": "Ultimate U6G",
+      "brandId": "697c60eb924195db7dcafb79",
+      "brandName": "Energizer"
+    },
+    {
+      "id": "697c79b9962ffaff39986956",
+      "name": "G13 Pro",
+      "brandId": "697c60ed924195db7dcafb7c",
+      "brandName": "Gionee"
+    },
+    {
+      "id": "697c79ba962ffaff39986959",
+      "name": "Max",
+      "brandId": "697c60ed924195db7dcafb7c",
+      "brandName": "Gionee"
+    },
+    {
+      "id": "697c79bb962ffaff3998695c",
+      "name": "S10",
+      "brandId": "697c60ed924195db7dcafb7c",
+      "brandName": "Gionee"
+    },
+    {
+      "id": "697c79bc962ffaff3998695f",
+      "name": "S11 lite",
+      "brandId": "697c60ed924195db7dcafb7c",
+      "brandName": "Gionee"
+    },
+    {
+      "id": "697c79bd962ffaff39986962",
+      "name": "S9",
+      "brandId": "697c60ed924195db7dcafb7c",
+      "brandName": "Gionee"
+    },
+    {
+      "id": "697c79be962ffaff39986966",
+      "name": "Pixel 3A",
+      "brandId": "697c60ee924195db7dcafb7f",
+      "brandName": "Google"
+    },
+    {
+      "id": "697c79bf962ffaff39986969",
+      "name": "Pixel 4a",
+      "brandId": "697c60ee924195db7dcafb7f",
+      "brandName": "Google"
+    },
+    {
+      "id": "697c79c0962ffaff3998696c",
+      "name": "Pixel 6a",
+      "brandId": "697c60ee924195db7dcafb7f",
+      "brandName": "Google"
+    },
+    {
+      "id": "697c79c1962ffaff3998696f",
+      "name": "Pixel 6 Pro",
+      "brandId": "697c60ee924195db7dcafb7f",
+      "brandName": "Google"
+    },
+    {
+      "id": "697c79c2962ffaff39986972",
+      "name": "Pixel 7A",
+      "brandId": "697c60ee924195db7dcafb7f",
+      "brandName": "Google"
+    },
+    {
+      "id": "697c79c3962ffaff39986975",
+      "name": "Pixel 7 5G",
+      "brandId": "697c60ee924195db7dcafb7f",
+      "brandName": "Google"
+    },
+    {
+      "id": "697c79c4962ffaff39986978",
+      "name": "Pixel 7 Pro 5G",
+      "brandId": "697c60ee924195db7dcafb7f",
+      "brandName": "Google"
+    },
+    {
+      "id": "697c79c5962ffaff3998697b",
+      "name": "Pixel 8a",
+      "brandId": "697c60ee924195db7dcafb7f",
+      "brandName": "Google"
+    },
+    {
+      "id": "697c79c7962ffaff3998697e",
+      "name": "Pixel 8 Pro",
+      "brandId": "697c60ee924195db7dcafb7f",
+      "brandName": "Google"
+    },
+    {
+      "id": "697c79c8962ffaff39986983",
+      "name": "20",
+      "brandId": "697c60f1924195db7dcafb85",
+      "brandName": "Honor"
+    },
+    {
+      "id": "697c79c9962ffaff39986986",
+      "name": "90",
+      "brandId": "697c60f1924195db7dcafb85",
+      "brandName": "Honor"
+    },
+    {
+      "id": "697c79ca962ffaff39986989",
+      "name": "90 Lite",
+      "brandId": "697c60f1924195db7dcafb85",
+      "brandName": "Honor"
+    },
+    {
+      "id": "697c79cb962ffaff3998698c",
+      "name": "9X",
+      "brandId": "697c60f1924195db7dcafb85",
+      "brandName": "Honor"
+    },
+    {
+      "id": "697c79cc962ffaff3998698f",
+      "name": "Magic V2",
+      "brandId": "697c60f1924195db7dcafb85",
+      "brandName": "Honor"
+    },
+    {
+      "id": "697c79cd962ffaff39986992",
+      "name": "Pad 5 8",
+      "brandId": "697c60f1924195db7dcafb85",
+      "brandName": "Honor"
+    },
+    {
+      "id": "697c79ce962ffaff39986995",
+      "name": "X9b 5G",
+      "brandId": "697c60f1924195db7dcafb85",
+      "brandName": "Honor"
+    },
+    {
+      "id": "697c79cf962ffaff39986999",
+      "name": "U11",
+      "brandId": "697c60f2924195db7dcafb88",
+      "brandName": "HTC"
+    },
+    {
+      "id": "697c79d0962ffaff3998699c",
+      "name": "U23 Pro",
+      "brandId": "697c60f2924195db7dcafb88",
+      "brandName": "HTC"
+    },
+    {
+      "id": "697c79d1962ffaff3998699f",
+      "name": "U24 Pro",
+      "brandId": "697c60f2924195db7dcafb88",
+      "brandName": "HTC"
+    },
+    {
+      "id": "697c79d3962ffaff399869a2",
+      "name": "Wildfire E5 Plus",
+      "brandId": "697c60f2924195db7dcafb88",
+      "brandName": "HTC"
+    },
+    {
+      "id": "697c79d4962ffaff399869a5",
+      "name": "Wildfire E star",
+      "brandId": "697c60f2924195db7dcafb88",
+      "brandName": "HTC"
+    },
+    {
+      "id": "697c79d5962ffaff399869a9",
+      "name": "Honor Play",
+      "brandId": "697c60f3924195db7dcafb8b",
+      "brandName": "Huawei"
+    },
+    {
+      "id": "697c79d6962ffaff399869ac",
+      "name": "Honor 10",
+      "brandId": "697c60f3924195db7dcafb8b",
+      "brandName": "Huawei"
+    },
+    {
+      "id": "697c79d7962ffaff399869af",
+      "name": "Honor 8X",
+      "brandId": "697c60f3924195db7dcafb8b",
+      "brandName": "Huawei"
+    },
+    {
+      "id": "697c79d8962ffaff399869b2",
+      "name": "Honor View 20",
+      "brandId": "697c60f3924195db7dcafb8b",
+      "brandName": "Huawei"
+    },
+    {
+      "id": "697c79d9962ffaff399869b5",
+      "name": "Mate 20 Pro",
+      "brandId": "697c60f3924195db7dcafb8b",
+      "brandName": "Huawei"
+    },
+    {
+      "id": "697c79da962ffaff399869b8",
+      "name": "Mate XT Ultimate",
+      "brandId": "697c60f3924195db7dcafb8b",
+      "brandName": "Huawei"
+    },
+    {
+      "id": "697c79db962ffaff399869bb",
+      "name": "P20 lite",
+      "brandId": "697c60f3924195db7dcafb8b",
+      "brandName": "Huawei"
+    },
+    {
+      "id": "697c79dc962ffaff399869be",
+      "name": "P30",
+      "brandId": "697c60f3924195db7dcafb8b",
+      "brandName": "Huawei"
+    },
+    {
+      "id": "697c79dd962ffaff399869c1",
+      "name": "Y9 Prime 2019",
+      "brandId": "697c60f3924195db7dcafb8b",
+      "brandName": "Huawei"
+    },
+    {
+      "id": "697c79de962ffaff399869c5",
+      "name": "iTAB BizniZ Mini",
+      "brandId": "697c60f4924195db7dcafb8e",
+      "brandName": "iball"
+    },
+    {
+      "id": "697c79df962ffaff399869c9",
+      "name": "GT 10 Pro",
+      "brandId": "697c60f6924195db7dcafb91",
+      "brandName": "Infinix"
+    },
+    {
+      "id": "697c79e0962ffaff399869cc",
+      "name": "GT 20 Pro",
+      "brandId": "697c60f6924195db7dcafb91",
+      "brandName": "Infinix"
+    },
+    {
+      "id": "697c79e2962ffaff399869cf",
+      "name": "Hot 30i",
+      "brandId": "697c60f6924195db7dcafb91",
+      "brandName": "Infinix"
+    },
+    {
+      "id": "697c79eb962ffaff399869d2",
+      "name": "Hot 8",
+      "brandId": "697c60f6924195db7dcafb91",
+      "brandName": "Infinix"
+    },
+    {
+      "id": "697c79ec962ffaff399869d5",
+      "name": "Note 10",
+      "brandId": "697c60f6924195db7dcafb91",
+      "brandName": "Infinix"
+    },
+    {
+      "id": "697c79ed962ffaff399869d8",
+      "name": "Note 12 Pro 5G",
+      "brandId": "697c60f6924195db7dcafb91",
+      "brandName": "Infinix"
+    },
+    {
+      "id": "697c79ef962ffaff399869db",
+      "name": "Note 30 5G",
+      "brandId": "697c60f6924195db7dcafb91",
+      "brandName": "Infinix"
+    },
+    {
+      "id": "697c79f0962ffaff399869de",
+      "name": "Note 40 Pro 5G",
+      "brandId": "697c60f6924195db7dcafb91",
+      "brandName": "Infinix"
+    },
+    {
+      "id": "697c79f1962ffaff399869e1",
+      "name": "Note 50s 5G Plus",
+      "brandId": "697c60f6924195db7dcafb91",
+      "brandName": "Infinix"
+    },
+    {
+      "id": "697c79f2962ffaff399869e4",
+      "name": "Zero 30 5G",
+      "brandId": "697c60f6924195db7dcafb91",
+      "brandName": "Infinix"
+    },
+    {
+      "id": "697c79f3962ffaff399869e9",
+      "name": "Staari 10",
+      "brandId": "697c60f9924195db7dcafb97",
+      "brandName": "Intex"
+    },
+    {
+      "id": "697c79f4962ffaff399869ed",
+      "name": "A60",
+      "brandId": "697c60fa924195db7dcafb9a",
+      "brandName": "Itel"
+    },
+    {
+      "id": "697c79f5962ffaff399869f0",
+      "name": "A70",
+      "brandId": "697c60fa924195db7dcafb9a",
+      "brandName": "Itel"
+    },
+    {
+      "id": "697c79f6962ffaff399869f3",
+      "name": "A90",
+      "brandId": "697c60fa924195db7dcafb9a",
+      "brandName": "Itel"
+    },
+    {
+      "id": "697c79f7962ffaff399869f6",
+      "name": "City 100",
+      "brandId": "697c60fa924195db7dcafb9a",
+      "brandName": "Itel"
+    },
+    {
+      "id": "697c79f8962ffaff399869f9",
+      "name": "P55 5G",
+      "brandId": "697c60fa924195db7dcafb9a",
+      "brandName": "Itel"
+    },
+    {
+      "id": "697c79f9962ffaff399869fc",
+      "name": "Power 70",
+      "brandId": "697c60fa924195db7dcafb9a",
+      "brandName": "Itel"
+    },
+    {
+      "id": "697c79fb962ffaff399869ff",
+      "name": "RS4",
+      "brandId": "697c60fa924195db7dcafb9a",
+      "brandName": "Itel"
+    },
+    {
+      "id": "697c79fc962ffaff39986a02",
+      "name": "S23",
+      "brandId": "697c60fa924195db7dcafb9a",
+      "brandName": "Itel"
+    },
+    {
+      "id": "697c79fd962ffaff39986a05",
+      "name": "S25",
+      "brandId": "697c60fa924195db7dcafb9a",
+      "brandName": "Itel"
+    },
+    {
+      "id": "697c79fe962ffaff39986a08",
+      "name": "S25 Ultra",
+      "brandId": "697c60fa924195db7dcafb9a",
+      "brandName": "Itel"
+    },
+    {
+      "id": "697c79ff962ffaff39986a0c",
+      "name": "K401",
+      "brandId": "697c60fb924195db7dcafb9d",
+      "brandName": "I Kall"
+    },
+    {
+      "id": "697c7a00962ffaff39986a0f",
+      "name": "K425 2021",
+      "brandId": "697c60fb924195db7dcafb9d",
+      "brandName": "I Kall"
+    },
+    {
+      "id": "697c7a01962ffaff39986a12",
+      "name": "K425 New",
+      "brandId": "697c60fb924195db7dcafb9d",
+      "brandName": "I Kall"
+    },
+    {
+      "id": "697c7a02962ffaff39986a15",
+      "name": "K470 New",
+      "brandId": "697c60fb924195db7dcafb9d",
+      "brandName": "I Kall"
+    },
+    {
+      "id": "697c7a04962ffaff39986a18",
+      "name": "K9 Pro",
+      "brandId": "697c60fb924195db7dcafb9d",
+      "brandName": "I Kall"
+    },
+    {
+      "id": "697c7a05962ffaff39986a1b",
+      "name": "S1",
+      "brandId": "697c60fb924195db7dcafb9d",
+      "brandName": "I Kall"
+    },
+    {
+      "id": "697c7a06962ffaff39986a1e",
+      "name": "Z12",
+      "brandId": "697c60fb924195db7dcafb9d",
+      "brandName": "I Kall"
+    },
+    {
+      "id": "697c7a07962ffaff39986a21",
+      "name": "Z14",
+      "brandId": "697c60fb924195db7dcafb9d",
+      "brandName": "I Kall"
+    },
+    {
+      "id": "697c7a08962ffaff39986a24",
+      "name": "Z19",
+      "brandId": "697c60fb924195db7dcafb9d",
+      "brandName": "I Kall"
+    },
+    {
+      "id": "697c7a09962ffaff39986a27",
+      "name": "Z19 Pro Ultra",
+      "brandId": "697c60fb924195db7dcafb9d",
+      "brandName": "I Kall"
+    },
+    {
+      "id": "697c7a0a962ffaff39986a2b",
+      "name": "Vue 1",
+      "brandId": "697c60fc924195db7dcafba0",
+      "brandName": "Karbonn"
+    },
+    {
+      "id": "697c7a0b962ffaff39986a2f",
+      "name": "Agni 2 5G",
+      "brandId": "697c60fe924195db7dcafba3",
+      "brandName": "Lava"
+    },
+    {
+      "id": "697c7a0c962ffaff39986a32",
+      "name": "Agni 3 5G",
+      "brandId": "697c60fe924195db7dcafba3",
+      "brandName": "Lava"
+    },
+    {
+      "id": "697c7a0d962ffaff39986a35",
+      "name": "Agni 4",
+      "brandId": "697c60fe924195db7dcafba3",
+      "brandName": "Lava"
+    },
+    {
+      "id": "697c7a0f962ffaff39986a38",
+      "name": "Blaze 5G",
+      "brandId": "697c60fe924195db7dcafba3",
+      "brandName": "Lava"
+    },
+    {
+      "id": "697c7a10962ffaff39986a3b",
+      "name": "Blaze Amoled 2",
+      "brandId": "697c60fe924195db7dcafba3",
+      "brandName": "Lava"
+    },
+    {
+      "id": "697c7a11962ffaff39986a3e",
+      "name": "Blaze X 5G",
+      "brandId": "697c60fe924195db7dcafba3",
+      "brandName": "Lava"
+    },
+    {
+      "id": "697c7a12962ffaff39986a41",
+      "name": "Play Max",
+      "brandId": "697c60fe924195db7dcafba3",
+      "brandName": "Lava"
+    },
+    {
+      "id": "697c7a13962ffaff39986a44",
+      "name": "Play Ultra 5G",
+      "brandId": "697c60fe924195db7dcafba3",
+      "brandName": "Lava"
+    },
+    {
+      "id": "697c7a14962ffaff39986a47",
+      "name": "Yuva 5G",
+      "brandId": "697c60fe924195db7dcafba3",
+      "brandName": "Lava"
+    },
+    {
+      "id": "697c7a15962ffaff39986a4a",
+      "name": "Yuva Star",
+      "brandId": "697c60fe924195db7dcafba3",
+      "brandName": "Lava"
+    },
+    {
+      "id": "697c7a16962ffaff39986a4e",
+      "name": "K10 Note",
+      "brandId": "697c60ff924195db7dcafba6",
+      "brandName": "Lenovo"
+    },
+    {
+      "id": "697c7a17962ffaff39986a51",
+      "name": "M10 Plus",
+      "brandId": "697c60ff924195db7dcafba6",
+      "brandName": "Lenovo"
+    },
+    {
+      "id": "697c7a18962ffaff39986a54",
+      "name": "Tab K10 FHD",
+      "brandId": "697c60ff924195db7dcafba6",
+      "brandName": "Lenovo"
+    },
+    {
+      "id": "697c7a1a962ffaff39986a57",
+      "name": "Tab M10",
+      "brandId": "697c60ff924195db7dcafba6",
+      "brandName": "Lenovo"
+    },
+    {
+      "id": "697c7a1b962ffaff39986a5a",
+      "name": "Tab M10 HD 2nd Gen",
+      "brandId": "697c60ff924195db7dcafba6",
+      "brandName": "Lenovo"
+    },
+    {
+      "id": "697c7a1c962ffaff39986a5d",
+      "name": "Tab M10 Plus 3rd Gen",
+      "brandId": "697c60ff924195db7dcafba6",
+      "brandName": "Lenovo"
+    },
+    {
+      "id": "697c7a1e962ffaff39986a60",
+      "name": "Tab M7",
+      "brandId": "697c60ff924195db7dcafba6",
+      "brandName": "Lenovo"
+    },
+    {
+      "id": "697c7a1f962ffaff39986a63",
+      "name": "Tab M8 HD",
+      "brandId": "697c60ff924195db7dcafba6",
+      "brandName": "Lenovo"
+    },
+    {
+      "id": "697c7a20962ffaff39986a66",
+      "name": "Tab M9",
+      "brandId": "697c60ff924195db7dcafba6",
+      "brandName": "Lenovo"
+    },
+    {
+      "id": "697c7a21962ffaff39986a6a",
+      "name": "G8X ThinQ",
+      "brandId": "697c6101924195db7dcafba9",
+      "brandName": "LG"
+    },
+    {
+      "id": "697c7a22962ffaff39986a6d",
+      "name": "G8 ThinQ",
+      "brandId": "697c6101924195db7dcafba9",
+      "brandName": "LG"
+    },
+    {
+      "id": "697c7a23962ffaff39986a70",
+      "name": "K42",
+      "brandId": "697c6101924195db7dcafba9",
+      "brandName": "LG"
+    },
+    {
+      "id": "697c7a25962ffaff39986a73",
+      "name": "V60 ThinQ",
+      "brandId": "697c6101924195db7dcafba9",
+      "brandName": "LG"
+    },
+    {
+      "id": "697c7a26962ffaff39986a76",
+      "name": "Velvet",
+      "brandId": "697c6101924195db7dcafba9",
+      "brandName": "LG"
+    },
+    {
+      "id": "697c7a27962ffaff39986a79",
+      "name": "Velvet 5G",
+      "brandId": "697c6101924195db7dcafba9",
+      "brandName": "LG"
+    },
+    {
+      "id": "697c7a28962ffaff39986a7c",
+      "name": "W10 Alpha",
+      "brandId": "697c6101924195db7dcafba9",
+      "brandName": "LG"
+    },
+    {
+      "id": "697c7a29962ffaff39986a7f",
+      "name": "W41",
+      "brandId": "697c6101924195db7dcafba9",
+      "brandName": "LG"
+    },
+    {
+      "id": "697c7a2a962ffaff39986a82",
+      "name": "Wing 5G",
+      "brandId": "697c6101924195db7dcafba9",
+      "brandName": "LG"
+    },
+    {
+      "id": "697c7a2c962ffaff39986a87",
+      "name": "20",
+      "brandId": "697c6105924195db7dcafbb2",
+      "brandName": "Meizu"
+    },
+    {
+      "id": "697c7a2d962ffaff39986a8a",
+      "name": "20 Infinity",
+      "brandId": "697c6105924195db7dcafbb2",
+      "brandName": "Meizu"
+    },
+    {
+      "id": "697c7a2e962ffaff39986a8d",
+      "name": "20 Pro",
+      "brandId": "697c6105924195db7dcafbb2",
+      "brandName": "Meizu"
+    },
+    {
+      "id": "697c7a2f962ffaff39986a90",
+      "name": "21",
+      "brandId": "697c6105924195db7dcafbb2",
+      "brandName": "Meizu"
+    },
+    {
+      "id": "697c7a30962ffaff39986a93",
+      "name": "21 Note",
+      "brandId": "697c6105924195db7dcafbb2",
+      "brandName": "Meizu"
+    },
+    {
+      "id": "697c7a31962ffaff39986a96",
+      "name": "21 Pro",
+      "brandId": "697c6105924195db7dcafbb2",
+      "brandName": "Meizu"
+    },
+    {
+      "id": "697c7a32962ffaff39986a99",
+      "name": "Lucky 08",
+      "brandId": "697c6105924195db7dcafbb2",
+      "brandName": "Meizu"
+    },
+    {
+      "id": "697c7a33962ffaff39986a9c",
+      "name": "Mblu 21",
+      "brandId": "697c6105924195db7dcafbb2",
+      "brandName": "Meizu"
+    },
+    {
+      "id": "697c7a35962ffaff39986a9f",
+      "name": "Mblu 22 Pro",
+      "brandId": "697c6105924195db7dcafbb2",
+      "brandName": "Meizu"
+    },
+    {
+      "id": "697c7a36962ffaff39986aa2",
+      "name": "Note 22 Pro",
+      "brandId": "697c6105924195db7dcafbb2",
+      "brandName": "Meizu"
+    },
+    {
+      "id": "697c7a37962ffaff39986aa6",
+      "name": "IN 1",
+      "brandId": "697c6107924195db7dcafbb5",
+      "brandName": "Micromax"
+    },
+    {
+      "id": "697c7a38962ffaff39986aa9",
+      "name": "In 1b",
+      "brandId": "697c6107924195db7dcafbb5",
+      "brandName": "Micromax"
+    },
+    {
+      "id": "697c7a39962ffaff39986aac",
+      "name": "In 2b",
+      "brandId": "697c6107924195db7dcafbb5",
+      "brandName": "Micromax"
+    },
+    {
+      "id": "697c7a3a962ffaff39986aaf",
+      "name": "In 2c",
+      "brandId": "697c6107924195db7dcafbb5",
+      "brandName": "Micromax"
+    },
+    {
+      "id": "697c7a3b962ffaff39986ab2",
+      "name": "IN Note 1",
+      "brandId": "697c6107924195db7dcafbb5",
+      "brandName": "Micromax"
+    },
+    {
+      "id": "697c7a3d962ffaff39986ab5",
+      "name": "In Note 2",
+      "brandId": "697c6107924195db7dcafbb5",
+      "brandName": "Micromax"
+    },
+    {
+      "id": "697c7a3e962ffaff39986ab9",
+      "name": "Surface Duo",
+      "brandId": "697c6108924195db7dcafbb8",
+      "brandName": "Microsoft"
+    },
+    {
+      "id": "697c7a3f962ffaff39986abc",
+      "name": "Surface Duo 2",
+      "brandId": "697c6108924195db7dcafbb8",
+      "brandName": "Microsoft"
+    },
+    {
+      "id": "697c7a40962ffaff39986ac0",
+      "name": "Edge 30",
+      "brandId": "697c6109924195db7dcafbbb",
+      "brandName": "Motorola"
+    },
+    {
+      "id": "697c7a41962ffaff39986ac3",
+      "name": "Edge 40",
+      "brandId": "697c6109924195db7dcafbbb",
+      "brandName": "Motorola"
+    },
+    {
+      "id": "697c7a42962ffaff39986ac6",
+      "name": "Edge 40 Neo",
+      "brandId": "697c6109924195db7dcafbbb",
+      "brandName": "Motorola"
+    },
+    {
+      "id": "697c7a43962ffaff39986ac9",
+      "name": "Edge 50 Fusion",
+      "brandId": "697c6109924195db7dcafbbb",
+      "brandName": "Motorola"
+    },
+    {
+      "id": "697c7a44962ffaff39986acc",
+      "name": "Edge 50 Pro",
+      "brandId": "697c6109924195db7dcafbbb",
+      "brandName": "Motorola"
+    },
+    {
+      "id": "697c7a45962ffaff39986acf",
+      "name": "Moto G34 5G",
+      "brandId": "697c6109924195db7dcafbbb",
+      "brandName": "Motorola"
+    },
+    {
+      "id": "697c7a47962ffaff39986ad2",
+      "name": "Moto G54 5G",
+      "brandId": "697c6109924195db7dcafbbb",
+      "brandName": "Motorola"
+    },
+    {
+      "id": "697c7a48962ffaff39986ad5",
+      "name": "Moto G60",
+      "brandId": "697c6109924195db7dcafbbb",
+      "brandName": "Motorola"
+    },
+    {
+      "id": "697c7a49962ffaff39986ad8",
+      "name": "Moto G85 5G",
+      "brandId": "697c6109924195db7dcafbbb",
+      "brandName": "Motorola"
+    },
+    {
+      "id": "697c7a4a962ffaff39986adb",
+      "name": "One Fusion Plus",
+      "brandId": "697c6109924195db7dcafbbb",
+      "brandName": "Motorola"
+    },
+    {
+      "id": "697c7a4c962ffaff39986adf",
+      "name": "5.1 Plus (Nokia X5)",
+      "brandId": "697c610a924195db7dcafbbe",
+      "brandName": "Nokia"
+    },
+    {
+      "id": "697c7a4d962ffaff39986ae2",
+      "name": "6.1 Plus",
+      "brandId": "697c610a924195db7dcafbbe",
+      "brandName": "Nokia"
+    },
+    {
+      "id": "697c7a4e962ffaff39986ae5",
+      "name": "7.2",
+      "brandId": "697c610a924195db7dcafbbe",
+      "brandName": "Nokia"
+    },
+    {
+      "id": "697c7a4f962ffaff39986ae8",
+      "name": "8.1",
+      "brandId": "697c610a924195db7dcafbbe",
+      "brandName": "Nokia"
+    },
+    {
+      "id": "697c7a50962ffaff39986aeb",
+      "name": "C32",
+      "brandId": "697c610a924195db7dcafbbe",
+      "brandName": "Nokia"
+    },
+    {
+      "id": "697c7a51962ffaff39986aee",
+      "name": "G21",
+      "brandId": "697c610a924195db7dcafbbe",
+      "brandName": "Nokia"
+    },
+    {
+      "id": "697c7a52962ffaff39986af1",
+      "name": "G42 5G",
+      "brandId": "697c610a924195db7dcafbbe",
+      "brandName": "Nokia"
+    },
+    {
+      "id": "697c7a53962ffaff39986af4",
+      "name": "T20",
+      "brandId": "697c610a924195db7dcafbbe",
+      "brandName": "Nokia"
+    },
+    {
+      "id": "697c7a54962ffaff39986af8",
+      "name": "10 Pro",
+      "brandId": "697c610b924195db7dcafbc1",
+      "brandName": "Oneplus"
+    },
+    {
+      "id": "697c7a55962ffaff39986afb",
+      "name": "11",
+      "brandId": "697c610b924195db7dcafbc1",
+      "brandName": "Oneplus"
+    },
+    {
+      "id": "697c7a56962ffaff39986afe",
+      "name": "11R",
+      "brandId": "697c610b924195db7dcafbc1",
+      "brandName": "Oneplus"
+    },
+    {
+      "id": "697c7a57962ffaff39986b01",
+      "name": "7 Pro",
+      "brandId": "697c610b924195db7dcafbc1",
+      "brandName": "Oneplus"
+    },
+    {
+      "id": "697c7a58962ffaff39986b04",
+      "name": "9 Pro",
+      "brandId": "697c610b924195db7dcafbc1",
+      "brandName": "Oneplus"
+    },
+    {
+      "id": "697c7a59962ffaff39986b07",
+      "name": "Nord",
+      "brandId": "697c610b924195db7dcafbc1",
+      "brandName": "Oneplus"
+    },
+    {
+      "id": "697c7a5a962ffaff39986b0a",
+      "name": "Nord 2 5G",
+      "brandId": "697c610b924195db7dcafbc1",
+      "brandName": "Oneplus"
+    },
+    {
+      "id": "697c7a5b962ffaff39986b0d",
+      "name": "Nord CE 2 5G",
+      "brandId": "697c610b924195db7dcafbc1",
+      "brandName": "Oneplus"
+    },
+    {
+      "id": "697c7a5c962ffaff39986b10",
+      "name": "Nord CE 2 Lite 5G",
+      "brandId": "697c610b924195db7dcafbc1",
+      "brandName": "Oneplus"
+    },
+    {
+      "id": "697c7a5d962ffaff39986b13",
+      "name": "Nord CE 3 Lite 5G",
+      "brandId": "697c610b924195db7dcafbc1",
+      "brandName": "Oneplus"
+    },
+    {
+      "id": "697c7a5f962ffaff39986b17",
+      "name": "A31 2020",
+      "brandId": "697c610d924195db7dcafbc4",
+      "brandName": "Oppo"
+    },
+    {
+      "id": "697c7a60962ffaff39986b1a",
+      "name": "A5 2020",
+      "brandId": "697c610d924195db7dcafbc4",
+      "brandName": "Oppo"
+    },
+    {
+      "id": "697c7a61962ffaff39986b1d",
+      "name": "F11 Pro",
+      "brandId": "697c610d924195db7dcafbc4",
+      "brandName": "Oppo"
+    },
+    {
+      "id": "697c7a62962ffaff39986b20",
+      "name": "Reno10 5G",
+      "brandId": "697c610d924195db7dcafbc4",
+      "brandName": "Oppo"
+    },
+    {
+      "id": "697c7a63962ffaff39986b23",
+      "name": "Reno6 5G",
+      "brandId": "697c610d924195db7dcafbc4",
+      "brandName": "Oppo"
+    },
+    {
+      "id": "697c7a64962ffaff39986b26",
+      "name": "Reno 10x Zoom",
+      "brandId": "697c610d924195db7dcafbc4",
+      "brandName": "Oppo"
+    },
+    {
+      "id": "697c7a65962ffaff39986b29",
+      "name": "Reno 5 Pro 5G",
+      "brandId": "697c610d924195db7dcafbc4",
+      "brandName": "Oppo"
+    },
+    {
+      "id": "697c7a66962ffaff39986b2c",
+      "name": "Reno 6 Pro 5G",
+      "brandId": "697c610d924195db7dcafbc4",
+      "brandName": "Oppo"
+    },
+    {
+      "id": "697c7a68962ffaff39986b2f",
+      "name": "Reno 8T 5G",
+      "brandId": "697c610d924195db7dcafbc4",
+      "brandName": "Oppo"
+    },
+    {
+      "id": "697c7a68962ffaff39986b32",
+      "name": "Reno 8 5G",
+      "brandId": "697c610d924195db7dcafbc4",
+      "brandName": "Oppo"
+    },
+    {
+      "id": "697c7a6a962ffaff39986b36",
+      "name": "C61",
+      "brandId": "697c610e924195db7dcafbc7",
+      "brandName": "Oukitel"
+    },
+    {
+      "id": "697c7a6b962ffaff39986b39",
+      "name": "C62",
+      "brandId": "697c610e924195db7dcafbc7",
+      "brandName": "Oukitel"
+    },
+    {
+      "id": "697c7a6c962ffaff39986b3c",
+      "name": "C62 Pro",
+      "brandId": "697c610e924195db7dcafbc7",
+      "brandName": "Oukitel"
+    },
+    {
+      "id": "697c7a6d962ffaff39986b3f",
+      "name": "G1",
+      "brandId": "697c610e924195db7dcafbc7",
+      "brandName": "Oukitel"
+    },
+    {
+      "id": "697c7a6e962ffaff39986b42",
+      "name": "P1",
+      "brandId": "697c610e924195db7dcafbc7",
+      "brandName": "Oukitel"
+    },
+    {
+      "id": "697c7a6f962ffaff39986b45",
+      "name": "WP300 5G",
+      "brandId": "697c610e924195db7dcafbc7",
+      "brandName": "Oukitel"
+    },
+    {
+      "id": "697c7a72962ffaff39986b48",
+      "name": "WP30 Pro",
+      "brandId": "697c610e924195db7dcafbc7",
+      "brandName": "Oukitel"
+    },
+    {
+      "id": "697c7a73962ffaff39986b4b",
+      "name": "WP33 Pro",
+      "brandId": "697c610e924195db7dcafbc7",
+      "brandName": "Oukitel"
+    },
+    {
+      "id": "697c7a74962ffaff39986b4e",
+      "name": "WP35",
+      "brandId": "697c610e924195db7dcafbc7",
+      "brandName": "Oukitel"
+    },
+    {
+      "id": "697c7a75962ffaff39986b51",
+      "name": "WP35 S",
+      "brandId": "697c610e924195db7dcafbc7",
+      "brandName": "Oukitel"
+    },
+    {
+      "id": "697c7a76962ffaff39986b55",
+      "name": "Eluga I7 2019",
+      "brandId": "697c610f924195db7dcafbca",
+      "brandName": "Panasonic"
+    },
+    {
+      "id": "697c7a77962ffaff39986b58",
+      "name": "Eluga Ray 800",
+      "brandId": "697c610f924195db7dcafbca",
+      "brandName": "Panasonic"
+    },
+    {
+      "id": "697c7a79962ffaff39986b5b",
+      "name": "Eluga Ray 810",
+      "brandId": "697c610f924195db7dcafbca",
+      "brandName": "Panasonic"
+    },
+    {
+      "id": "697c7a7a962ffaff39986b5e",
+      "name": "Eluga X1 Pro",
+      "brandId": "697c610f924195db7dcafbca",
+      "brandName": "Panasonic"
+    },
+    {
+      "id": "697c7a7b962ffaff39986b61",
+      "name": "P85 NXT",
+      "brandId": "697c610f924195db7dcafbca",
+      "brandName": "Panasonic"
+    },
+    {
+      "id": "697c7a7d962ffaff39986b67",
+      "name": "10 Pro Plus",
+      "brandId": "697c6113924195db7dcafbd3",
+      "brandName": "Realme"
+    },
+    {
+      "id": "697c7a7e962ffaff39986b6a",
+      "name": "11 Pro 5G",
+      "brandId": "697c6113924195db7dcafbd3",
+      "brandName": "Realme"
+    },
+    {
+      "id": "697c7a81962ffaff39986b6d",
+      "name": "11 Pro Plus 5G",
+      "brandId": "697c6113924195db7dcafbd3",
+      "brandName": "Realme"
+    },
+    {
+      "id": "697c7a82962ffaff39986b70",
+      "name": "5 Pro",
+      "brandId": "697c6113924195db7dcafbd3",
+      "brandName": "Realme"
+    },
+    {
+      "id": "697c7a83962ffaff39986b73",
+      "name": "6",
+      "brandId": "697c6113924195db7dcafbd3",
+      "brandName": "Realme"
+    },
+    {
+      "id": "697c7a84962ffaff39986b76",
+      "name": "7",
+      "brandId": "697c6113924195db7dcafbd3",
+      "brandName": "Realme"
+    },
+    {
+      "id": "697c7a85962ffaff39986b79",
+      "name": "8",
+      "brandId": "697c6113924195db7dcafbd3",
+      "brandName": "Realme"
+    },
+    {
+      "id": "697c7a86962ffaff39986b7c",
+      "name": "GT Master",
+      "brandId": "697c6113924195db7dcafbd3",
+      "brandName": "Realme"
+    },
+    {
+      "id": "697c7a88962ffaff39986b7f",
+      "name": "Narzo 50A",
+      "brandId": "697c6113924195db7dcafbd3",
+      "brandName": "Realme"
+    },
+    {
+      "id": "697c7a89962ffaff39986b82",
+      "name": "X",
+      "brandId": "697c6113924195db7dcafbd3",
+      "brandName": "Realme"
+    },
+    {
+      "id": "697c7a8b962ffaff39986b86",
+      "name": "Galaxy M31",
+      "brandId": "697c6114924195db7dcafbd6",
+      "brandName": "Samsung"
+    },
+    {
+      "id": "697c7a8c962ffaff39986b89",
+      "name": "Galaxy Note 20 Ultra 5G",
+      "brandId": "697c6114924195db7dcafbd6",
+      "brandName": "Samsung"
+    },
+    {
+      "id": "697c7a8d962ffaff39986b8c",
+      "name": "Galaxy S10",
+      "brandId": "697c6114924195db7dcafbd6",
+      "brandName": "Samsung"
+    },
+    {
+      "id": "697c7a8e962ffaff39986b8f",
+      "name": "Galaxy S10 Plus",
+      "brandId": "697c6114924195db7dcafbd6",
+      "brandName": "Samsung"
+    },
+    {
+      "id": "697c7a8f962ffaff39986b92",
+      "name": "Galaxy S20 Plus",
+      "brandId": "697c6114924195db7dcafbd6",
+      "brandName": "Samsung"
+    },
+    {
+      "id": "697c7a90962ffaff39986b95",
+      "name": "Galaxy S21 FE 5G",
+      "brandId": "697c6114924195db7dcafbd6",
+      "brandName": "Samsung"
+    },
+    {
+      "id": "697c7a91962ffaff39986b98",
+      "name": "Galaxy S21 Ultra",
+      "brandId": "697c6114924195db7dcafbd6",
+      "brandName": "Samsung"
+    },
+    {
+      "id": "697c7a93962ffaff39986b9b",
+      "name": "Galaxy S22 Ultra 5G",
+      "brandId": "697c6114924195db7dcafbd6",
+      "brandName": "Samsung"
+    },
+    {
+      "id": "697c7a94962ffaff39986b9e",
+      "name": "Galaxy S23 Ultra",
+      "brandId": "697c6114924195db7dcafbd6",
+      "brandName": "Samsung"
+    },
+    {
+      "id": "697c7a95962ffaff39986ba3",
+      "name": "Aquos R10",
+      "brandId": "697c6116924195db7dcafbdc",
+      "brandName": "Sharp"
+    },
+    {
+      "id": "697c7a96962ffaff39986ba6",
+      "name": "Aquos R3",
+      "brandId": "697c6116924195db7dcafbdc",
+      "brandName": "Sharp"
+    },
+    {
+      "id": "697c7a97962ffaff39986ba9",
+      "name": "Aquos R7s",
+      "brandId": "697c6116924195db7dcafbdc",
+      "brandName": "Sharp"
+    },
+    {
+      "id": "697c7a98962ffaff39986bac",
+      "name": "Aquos R8s Pro",
+      "brandId": "697c6116924195db7dcafbdc",
+      "brandName": "Sharp"
+    },
+    {
+      "id": "697c7a99962ffaff39986baf",
+      "name": "Aquos R9",
+      "brandId": "697c6116924195db7dcafbdc",
+      "brandName": "Sharp"
+    },
+    {
+      "id": "697c7a9a962ffaff39986bb2",
+      "name": "Aquos R9 Pro",
+      "brandId": "697c6116924195db7dcafbdc",
+      "brandName": "Sharp"
+    },
+    {
+      "id": "697c7a9b962ffaff39986bb5",
+      "name": "Aquos sense9",
+      "brandId": "697c6116924195db7dcafbdc",
+      "brandName": "Sharp"
+    },
+    {
+      "id": "697c7a9c962ffaff39986bb8",
+      "name": "Aquos Sense 7",
+      "brandId": "697c6116924195db7dcafbdc",
+      "brandName": "Sharp"
+    },
+    {
+      "id": "697c7a9d962ffaff39986bbb",
+      "name": "Aquos Zero6",
+      "brandId": "697c6116924195db7dcafbdc",
+      "brandName": "Sharp"
+    },
+    {
+      "id": "697c7a9e962ffaff39986bbe",
+      "name": "Aquos Zero 2",
+      "brandId": "697c6116924195db7dcafbdc",
+      "brandName": "Sharp"
+    },
+    {
+      "id": "697c7aa1962ffaff39986bc2",
+      "name": "Xperia 1 III",
+      "brandId": "697c6117924195db7dcafbdf",
+      "brandName": "Sony"
+    },
+    {
+      "id": "697c7aa2962ffaff39986bc5",
+      "name": "Xperia 1 IV",
+      "brandId": "697c6117924195db7dcafbdf",
+      "brandName": "Sony"
+    },
+    {
+      "id": "697c7aa3962ffaff39986bc8",
+      "name": "Xperia 1 V",
+      "brandId": "697c6117924195db7dcafbdf",
+      "brandName": "Sony"
+    },
+    {
+      "id": "697c7aa5962ffaff39986bcb",
+      "name": "Xperia 1 VI",
+      "brandId": "697c6117924195db7dcafbdf",
+      "brandName": "Sony"
+    },
+    {
+      "id": "697c7aa6962ffaff39986bce",
+      "name": "Xperia 1 VII",
+      "brandId": "697c6117924195db7dcafbdf",
+      "brandName": "Sony"
+    },
+    {
+      "id": "697c7aa7962ffaff39986bd1",
+      "name": "Xperia 5 IV",
+      "brandId": "697c6117924195db7dcafbdf",
+      "brandName": "Sony"
+    },
+    {
+      "id": "697c7aa8962ffaff39986bd4",
+      "name": "Xperia 5 V",
+      "brandId": "697c6117924195db7dcafbdf",
+      "brandName": "Sony"
+    },
+    {
+      "id": "697c7aa9962ffaff39986bd7",
+      "name": "Xperia Pro I",
+      "brandId": "697c6117924195db7dcafbdf",
+      "brandName": "Sony"
+    },
+    {
+      "id": "697c7aab962ffaff39986bde",
+      "name": "40 NxtPaper",
+      "brandId": "697c611c924195db7dcafbeb",
+      "brandName": "TCL"
+    },
+    {
+      "id": "697c7aac962ffaff39986be1",
+      "name": "40 SE",
+      "brandId": "697c611c924195db7dcafbeb",
+      "brandName": "TCL"
+    },
+    {
+      "id": "697c7aac962ffaff39986be4",
+      "name": "501",
+      "brandId": "697c611c924195db7dcafbeb",
+      "brandName": "TCL"
+    },
+    {
+      "id": "697c7aad962ffaff39986be7",
+      "name": "503",
+      "brandId": "697c611c924195db7dcafbeb",
+      "brandName": "TCL"
+    },
+    {
+      "id": "697c7aae962ffaff39986bea",
+      "name": "505",
+      "brandId": "697c611c924195db7dcafbeb",
+      "brandName": "TCL"
+    },
+    {
+      "id": "697c7aaf962ffaff39986bed",
+      "name": "50 5G",
+      "brandId": "697c611c924195db7dcafbeb",
+      "brandName": "TCL"
+    },
+    {
+      "id": "697c7ab0962ffaff39986bf0",
+      "name": "50 Pro NxtPaper",
+      "brandId": "697c611c924195db7dcafbeb",
+      "brandName": "TCL"
+    },
+    {
+      "id": "697c7ab2962ffaff39986bf3",
+      "name": "60 XE NxtPaper",
+      "brandId": "697c611c924195db7dcafbeb",
+      "brandName": "TCL"
+    },
+    {
+      "id": "697c7ab3962ffaff39986bf6",
+      "name": "NxtPaper 11 Plus",
+      "brandId": "697c611c924195db7dcafbeb",
+      "brandName": "TCL"
+    },
+    {
+      "id": "697c7ab4962ffaff39986bf9",
+      "name": "NxtPaper 14",
+      "brandId": "697c611c924195db7dcafbeb",
+      "brandName": "TCL"
+    },
+    {
+      "id": "697c7ab5962ffaff39986bfd",
+      "name": "Camon 20 Pro 5G",
+      "brandId": "697c611d924195db7dcafbee",
+      "brandName": "Tecno"
+    },
+    {
+      "id": "697c7ab6962ffaff39986c00",
+      "name": "Phantom V Fold",
+      "brandId": "697c611d924195db7dcafbee",
+      "brandName": "Tecno"
+    },
+    {
+      "id": "697c7ab7962ffaff39986c03",
+      "name": "Phantom X2",
+      "brandId": "697c611d924195db7dcafbee",
+      "brandName": "Tecno"
+    },
+    {
+      "id": "697c7ab8962ffaff39986c06",
+      "name": "Pova 2",
+      "brandId": "697c611d924195db7dcafbee",
+      "brandName": "Tecno"
+    },
+    {
+      "id": "697c7ab9962ffaff39986c09",
+      "name": "Pova 5 Pro 5G",
+      "brandId": "697c611d924195db7dcafbee",
+      "brandName": "Tecno"
+    },
+    {
+      "id": "697c7aba962ffaff39986c0c",
+      "name": "Pova 6 Pro",
+      "brandId": "697c611d924195db7dcafbee",
+      "brandName": "Tecno"
+    },
+    {
+      "id": "697c7abb962ffaff39986c0f",
+      "name": "Pova Curve 5G",
+      "brandId": "697c611d924195db7dcafbee",
+      "brandName": "Tecno"
+    },
+    {
+      "id": "697c7abd962ffaff39986c12",
+      "name": "Spark 6 Go",
+      "brandId": "697c611d924195db7dcafbee",
+      "brandName": "Tecno"
+    },
+    {
+      "id": "697c7abe962ffaff39986c15",
+      "name": "Spark 7T",
+      "brandId": "697c611d924195db7dcafbee",
+      "brandName": "Tecno"
+    },
+    {
+      "id": "697c7abf962ffaff39986c18",
+      "name": "Spark 7 Pro",
+      "brandId": "697c611d924195db7dcafbee",
+      "brandName": "Tecno"
+    },
+    {
+      "id": "697c7ac0962ffaff39986c1c",
+      "name": "Armor 22",
+      "brandId": "697c611e924195db7dcafbf1",
+      "brandName": "Ulefone"
+    },
+    {
+      "id": "697c7ac1962ffaff39986c1f",
+      "name": "Armor 24",
+      "brandId": "697c611e924195db7dcafbf1",
+      "brandName": "Ulefone"
+    },
+    {
+      "id": "697c7ac2962ffaff39986c22",
+      "name": "Armor 26 Ultra 5G",
+      "brandId": "697c611e924195db7dcafbf1",
+      "brandName": "Ulefone"
+    },
+    {
+      "id": "697c7ac3962ffaff39986c25",
+      "name": "Armor 28 Ultra Thermal",
+      "brandId": "697c611e924195db7dcafbf1",
+      "brandName": "Ulefone"
+    },
+    {
+      "id": "697c7ac4962ffaff39986c28",
+      "name": "Armor 30 Pro 5G",
+      "brandId": "697c611e924195db7dcafbf1",
+      "brandName": "Ulefone"
+    },
+    {
+      "id": "697c7ac5962ffaff39986c2b",
+      "name": "Armor 33 Pro",
+      "brandId": "697c611e924195db7dcafbf1",
+      "brandName": "Ulefone"
+    },
+    {
+      "id": "697c7ac6962ffaff39986c2e",
+      "name": "Armor 34 Pro",
+      "brandId": "697c611e924195db7dcafbf1",
+      "brandName": "Ulefone"
+    },
+    {
+      "id": "697c7ac7962ffaff39986c31",
+      "name": "Armor Mini 20T Pro",
+      "brandId": "697c611e924195db7dcafbf1",
+      "brandName": "Ulefone"
+    },
+    {
+      "id": "697c7ac9962ffaff39986c34",
+      "name": "Armor Mini 20 Pro",
+      "brandId": "697c611e924195db7dcafbf1",
+      "brandName": "Ulefone"
+    },
+    {
+      "id": "697c7aca962ffaff39986c37",
+      "name": "Armor X31 Pro",
+      "brandId": "697c611e924195db7dcafbf1",
+      "brandName": "Ulefone"
+    },
+    {
+      "id": "697c7acb962ffaff39986c3b",
+      "name": "A15",
+      "brandId": "697c6121924195db7dcafbf4",
+      "brandName": "Umidigi"
+    },
+    {
+      "id": "697c7acc962ffaff39986c3e",
+      "name": "C1 Max",
+      "brandId": "697c6121924195db7dcafbf4",
+      "brandName": "Umidigi"
+    },
+    {
+      "id": "697c7acd962ffaff39986c41",
+      "name": "G100",
+      "brandId": "697c6121924195db7dcafbf4",
+      "brandName": "Umidigi"
+    },
+    {
+      "id": "697c7ace962ffaff39986c44",
+      "name": "G3",
+      "brandId": "697c6121924195db7dcafbf4",
+      "brandName": "Umidigi"
+    },
+    {
+      "id": "697c7acf962ffaff39986c47",
+      "name": "G3 Max",
+      "brandId": "697c6121924195db7dcafbf4",
+      "brandName": "Umidigi"
+    },
+    {
+      "id": "697c7ad0962ffaff39986c4a",
+      "name": "G5A",
+      "brandId": "697c6121924195db7dcafbf4",
+      "brandName": "Umidigi"
+    },
+    {
+      "id": "697c7ad1962ffaff39986c4d",
+      "name": "G9A",
+      "brandId": "697c6121924195db7dcafbf4",
+      "brandName": "Umidigi"
+    },
+    {
+      "id": "697c7ad2962ffaff39986c50",
+      "name": "G9x",
+      "brandId": "697c6121924195db7dcafbf4",
+      "brandName": "Umidigi"
+    },
+    {
+      "id": "697c7ad3962ffaff39986c53",
+      "name": "G9 5G",
+      "brandId": "697c6121924195db7dcafbf4",
+      "brandName": "Umidigi"
+    },
+    {
+      "id": "697c7ad5962ffaff39986c56",
+      "name": "Note 100 5G",
+      "brandId": "697c6121924195db7dcafbf4",
+      "brandName": "Umidigi"
+    },
+    {
+      "id": "697c7ad6962ffaff39986c5b",
+      "name": "iQOO Neo 6 5G",
+      "brandId": "697c6123924195db7dcafbfa",
+      "brandName": "Vivo"
+    },
+    {
+      "id": "697c7ad7962ffaff39986c5e",
+      "name": "V15 Pro",
+      "brandId": "697c6123924195db7dcafbfa",
+      "brandName": "Vivo"
+    },
+    {
+      "id": "697c7ad8962ffaff39986c61",
+      "name": "V19",
+      "brandId": "697c6123924195db7dcafbfa",
+      "brandName": "Vivo"
+    },
+    {
+      "id": "697c7ad9962ffaff39986c64",
+      "name": "V20",
+      "brandId": "697c6123924195db7dcafbfa",
+      "brandName": "Vivo"
+    },
+    {
+      "id": "697c7ada962ffaff39986c67",
+      "name": "V23 5G",
+      "brandId": "697c6123924195db7dcafbfa",
+      "brandName": "Vivo"
+    },
+    {
+      "id": "697c7adb962ffaff39986c6a",
+      "name": "V23 Pro",
+      "brandId": "697c6123924195db7dcafbfa",
+      "brandName": "Vivo"
+    },
+    {
+      "id": "697c7adc962ffaff39986c6d",
+      "name": "V27",
+      "brandId": "697c6123924195db7dcafbfa",
+      "brandName": "Vivo"
+    },
+    {
+      "id": "697c7add962ffaff39986c70",
+      "name": "V29e 5G",
+      "brandId": "697c6123924195db7dcafbfa",
+      "brandName": "Vivo"
+    },
+    {
+      "id": "697c7ade962ffaff39986c73",
+      "name": "Y20 2020",
+      "brandId": "697c6123924195db7dcafbfa",
+      "brandName": "Vivo"
+    },
+    {
+      "id": "697c7ae0962ffaff39986c76",
+      "name": "Y21 2021",
+      "brandId": "697c6123924195db7dcafbfa",
+      "brandName": "Vivo"
+    },
+    {
+      "id": "697c7ae1962ffaff39986c7a",
+      "name": "10",
+      "brandId": "697c6124924195db7dcafbfd",
+      "brandName": "Wiko"
+    },
+    {
+      "id": "697c7ae2962ffaff39986c7d",
+      "name": "Hi Enjoy 60s",
+      "brandId": "697c6124924195db7dcafbfd",
+      "brandName": "Wiko"
+    },
+    {
+      "id": "697c7ae3962ffaff39986c80",
+      "name": "T10",
+      "brandId": "697c6124924195db7dcafbfd",
+      "brandName": "Wiko"
+    },
+    {
+      "id": "697c7ae4962ffaff39986c83",
+      "name": "T3",
+      "brandId": "697c6124924195db7dcafbfd",
+      "brandName": "Wiko"
+    },
+    {
+      "id": "697c7ae5962ffaff39986c86",
+      "name": "T50",
+      "brandId": "697c6124924195db7dcafbfd",
+      "brandName": "Wiko"
+    },
+    {
+      "id": "697c7ae6962ffaff39986c89",
+      "name": "View",
+      "brandId": "697c6124924195db7dcafbfd",
+      "brandName": "Wiko"
+    },
+    {
+      "id": "697c7ae7962ffaff39986c8c",
+      "name": "View2",
+      "brandId": "697c6124924195db7dcafbfd",
+      "brandName": "Wiko"
+    },
+    {
+      "id": "697c7ae8962ffaff39986c8f",
+      "name": "View2 Go",
+      "brandId": "697c6124924195db7dcafbfd",
+      "brandName": "Wiko"
+    },
+    {
+      "id": "697c7ae9962ffaff39986c92",
+      "name": "View2 Pro",
+      "brandId": "697c6124924195db7dcafbfd",
+      "brandName": "Wiko"
+    },
+    {
+      "id": "697c7aea962ffaff39986c95",
+      "name": "View Max",
+      "brandId": "697c6124924195db7dcafbfd",
+      "brandName": "Wiko"
+    },
+    {
+      "id": "697c7aeb962ffaff39986c99",
+      "name": "11T Pro 5G",
+      "brandId": "697c6125924195db7dcafc00",
+      "brandName": "Xiaomi"
+    },
+    {
+      "id": "697c7aec962ffaff39986c9c",
+      "name": "Pocophone F1",
+      "brandId": "697c6125924195db7dcafc00",
+      "brandName": "Xiaomi"
+    },
+    {
+      "id": "697c7aed962ffaff39986c9f",
+      "name": "Redmi 9 Power",
+      "brandId": "697c6125924195db7dcafc00",
+      "brandName": "Xiaomi"
+    },
+    {
+      "id": "697c7aef962ffaff39986ca2",
+      "name": "Redmi K20 Pro",
+      "brandId": "697c6125924195db7dcafc00",
+      "brandName": "Xiaomi"
+    },
+    {
+      "id": "697c7af1962ffaff39986ca5",
+      "name": "Redmi Note 7 Pro",
+      "brandId": "697c6125924195db7dcafc00",
+      "brandName": "Xiaomi"
+    },
+    {
+      "id": "697c7af3962ffaff39986ca8",
+      "name": "Redmi Note 8",
+      "brandId": "697c6125924195db7dcafc00",
+      "brandName": "Xiaomi"
+    },
+    {
+      "id": "697c7af4962ffaff39986cab",
+      "name": "Redmi Note 8 Pro",
+      "brandId": "697c6125924195db7dcafc00",
+      "brandName": "Xiaomi"
+    },
+    {
+      "id": "697c7af5962ffaff39986cae",
+      "name": "Redmi Note 9 Pro",
+      "brandId": "697c6125924195db7dcafc00",
+      "brandName": "Xiaomi"
+    },
+    {
+      "id": "697c7af6962ffaff39986cb1",
+      "name": "Redmi Note 9 Pro Max",
+      "brandId": "697c6125924195db7dcafc00",
+      "brandName": "Xiaomi"
+    },
+    {
+      "id": "697c7af7962ffaff39986cb7",
+      "name": "Blade A35",
+      "brandId": "697c6129924195db7dcafc09",
+      "brandName": "ZTE"
+    },
+    {
+      "id": "697c7af8962ffaff39986cba",
+      "name": "Nubia Focus Pro 5G",
+      "brandId": "697c6129924195db7dcafc09",
+      "brandName": "ZTE"
+    },
+    {
+      "id": "697c7af9962ffaff39986cbd",
+      "name": "Nubia Neo 2",
+      "brandId": "697c6129924195db7dcafc09",
+      "brandName": "ZTE"
+    },
+    {
+      "id": "697c7afa962ffaff39986cc0",
+      "name": "Nubia Neo 3",
+      "brandId": "697c6129924195db7dcafc09",
+      "brandName": "ZTE"
+    },
+    {
+      "id": "697c7afb962ffaff39986cc3",
+      "name": "Nubia Neo 3 GT",
+      "brandId": "697c6129924195db7dcafc09",
+      "brandName": "ZTE"
+    },
+    {
+      "id": "697c7afc962ffaff39986cc6",
+      "name": "Nubia RedMagic 10 Pro",
+      "brandId": "697c6129924195db7dcafc09",
+      "brandName": "ZTE"
+    },
+    {
+      "id": "697c7afd962ffaff39986cc9",
+      "name": "Nubia RedMagic 10 Pro Plus",
+      "brandId": "697c6129924195db7dcafc09",
+      "brandName": "ZTE"
+    },
+    {
+      "id": "697c7aff962ffaff39986ccc",
+      "name": "Nubia RedMagic Astra",
+      "brandId": "697c6129924195db7dcafc09",
+      "brandName": "ZTE"
+    },
+    {
+      "id": "697c7b00962ffaff39986ccf",
+      "name": "Nubia Red Magic 9 Pro",
+      "brandId": "697c6129924195db7dcafc09",
+      "brandName": "ZTE"
+    },
+    {
+      "id": "697c7b01962ffaff39986cd2",
+      "name": "Nubia Z70 Ultra",
+      "brandId": "697c6129924195db7dcafc09",
+      "brandName": "ZTE"
+    }
+  ],
+  "categories": [
+    {
+      "id": "697c57ed48818ac7004838c7",
+      "name": "Mobile Tool Kits"
+    },
+    {
+      "id": "697c57ed48818ac7004838ca",
+      "name": "Screw Driver"
+    },
+    {
+      "id": "697c57ee48818ac7004838cd",
+      "name": "Glue"
+    },
+    {
+      "id": "697c57ee48818ac7004838d0",
+      "name": "Touch Changing Machine"
+    },
+    {
+      "id": "697c57ee48818ac7004838d3",
+      "name": "Opening Tool Set"
+    },
+    {
+      "id": "697c57ee48818ac7004838d6",
+      "name": "Solar, Lighting & Essentials"
+    },
+    {
+      "id": "697c57ee48818ac7004838d9",
+      "name": "Street Light Fixtures"
+    },
+    {
+      "id": "697c57ee48818ac7004838dc",
+      "name": "Solar Panels"
+    },
+    {
+      "id": "697c57ef48818ac7004838df",
+      "name": "Indoor LED Lighting"
+    },
+    {
+      "id": "697c57ef48818ac7004838e2",
+      "name": "Mobile Spare Parts"
+    },
+    {
+      "id": "697c57ef48818ac7004838e5",
+      "name": "Display Screen"
+    },
+    {
+      "id": "697c57ef48818ac7004838e8",
+      "name": "Touch Screen"
+    },
+    {
+      "id": "697c57ef48818ac7004838eb",
+      "name": "LCD"
+    },
+    {
+      "id": "697c57f048818ac7004838ee",
+      "name": "Housing"
+    },
+    {
+      "id": "697c57f048818ac7004838f1",
+      "name": "Mobile Accessories"
+    },
+    {
+      "id": "697c57f048818ac7004838f4",
+      "name": "Battery"
+    },
+    {
+      "id": "697c57f048818ac7004838f7",
+      "name": "Cases & Covers"
+    },
+    {
+      "id": "697c57f048818ac7004838fa",
+      "name": "Protective Films and Glasses"
+    },
+    {
+      "id": "697c57f048818ac7004838fd",
+      "name": "Chargers"
+    }
+  ]
+}
