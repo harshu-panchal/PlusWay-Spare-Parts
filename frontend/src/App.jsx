@@ -8,6 +8,7 @@ import {
 import { CartProvider } from "./module/customer/context/CartContext";
 import ScrollToTop from "./components/ScrollToTop";
 import LoadingFallback from "./components/LoadingFallback";
+import RouteTransitionLoader from "./components/RouteTransitionLoader";
 
 // Eager imports for layouts (needed immediately)
 import Layout from "./module/customer/components/Layout";
@@ -63,6 +64,7 @@ const App = () => {
     <CartProvider>
       <Router>
         <ScrollToTop />
+        <RouteTransitionLoader />
         <Suspense fallback={<LoadingFallback />}>
           <Routes>
             {/* Customer Routes */}
