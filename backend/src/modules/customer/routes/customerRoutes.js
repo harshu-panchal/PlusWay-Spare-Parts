@@ -20,6 +20,7 @@ import {
 import {
   getProducts,
   getProductById,
+  createProductReview,
 } from "../controllers/productController.js";
 import {
   addOrderItems,
@@ -56,6 +57,7 @@ router.put("/addresses/:id/default", protect, setDefaultAddress);
 // Product & Content routes
 router.get("/products", getProducts);
 router.get("/products/:id", getProductById);
+router.route("/products/:id/reviews").post(protect, createProductReview);
 router.get("/models", getModels);
 router.get("/categories", getCategories);
 router.get("/brands", getBrands);

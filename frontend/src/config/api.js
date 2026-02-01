@@ -29,6 +29,7 @@ export const API_ENDPOINTS = {
     // Products
     PRODUCTS: `${API_BASE_URL}/api/customer/products`,
     PRODUCT_DETAIL: (id) => `${API_BASE_URL}/api/customer/products/${id}`,
+    CREATE_REVIEW: (id) => `${API_BASE_URL}/api/customer/products/${id}/reviews`,
 
     // Brands & Models
     BRANDS: `${API_BASE_URL}/api/customer/brands`,
