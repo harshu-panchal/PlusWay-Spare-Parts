@@ -64,6 +64,7 @@ export const API_ENDPOINTS = {
     // Admin Dashboard & Reports
     ADMIN_DASHBOARD_STATS: `${API_BASE_URL}/api/admin/dashboard-stats`,
     ADMIN_REPORTS_STATS: `${API_BASE_URL}/api/admin/reports-stats`,
+    ADMIN_WALLET_STATS: `${API_BASE_URL}/api/admin/wallet-stats`,
 
     // Admin Products
     ADMIN_PRODUCTS: `${API_BASE_URL}/api/admin/products`,

@@ -12,6 +12,10 @@ import {
   ExternalLink,
   AlertCircle,
   CheckCircle2,
+  Layers,
+  ShieldCheck,
+  Smartphone,
+  Box,
 } from "lucide-react";
 
 const Dashboard = () => {
@@ -20,6 +24,10 @@ const Dashboard = () => {
     activeOrders: 0,
     totalCustomers: 0,
     productsSold: 0,
+    totalProducts: 0,
+    totalCategories: 0,
+    totalBrands: 0,
+    totalModels: 0,
     recentOrders: [],
     lowStockProducts: [],
   });
@@ -93,6 +101,46 @@ const Dashboard = () => {
       bgColor: "bg-amber-50",
       borderColor: "border-amber-100",
     },
+    {
+      name: "Total Products",
+      value: data.totalProducts,
+      icon: Box,
+      change: "+4.1%",
+      isPositive: true,
+      color: "text-indigo-600",
+      bgColor: "bg-indigo-50",
+      borderColor: "border-indigo-100",
+    },
+    {
+      name: "Total Categories",
+      value: data.totalCategories,
+      icon: Layers,
+      change: "+2.4%",
+      isPositive: true,
+      color: "text-rose-600",
+      bgColor: "bg-rose-50",
+      borderColor: "border-rose-100",
+    },
+    {
+      name: "Total Brands",
+      value: data.totalBrands,
+      icon: ShieldCheck,
+      change: "+1.2%",
+      isPositive: true,
+      color: "text-cyan-600",
+      bgColor: "bg-cyan-50",
+      borderColor: "border-cyan-100",
+    },
+    {
+      name: "Total Models",
+      value: data.totalModels,
+      icon: Smartphone,
+      change: "+8.9%",
+      isPositive: true,
+      color: "text-orange-600",
+      bgColor: "bg-orange-50",
+      borderColor: "border-orange-100",
+    },
   ];
 
   if (loading) {
@@ -127,7 +175,7 @@ const Dashboard = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat) => (
           <div
             key={stat.name}

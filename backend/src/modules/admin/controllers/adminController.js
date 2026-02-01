@@ -2,6 +2,9 @@ import Admin from "../../../models/Admin.js";
 import Order from "../../../models/Order.js";
 import Customer from "../../../models/Customer.js";
 import Product from "../../../models/Product.js";
+import Brand from "../../../models/Brand.js";
+import Category from "../../../models/Category.js";
+import Model from "../../../models/Model.js";
 import generateToken from "../../../utils/generateToken.js";
 import asyncHandler from "../../../middleware/asyncHandler.js";
 
@@ -92,7 +95,19 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     },
   ]);
 
-  // 5. Recent Orders (limit 5)
+  // 5. Total Products
+  const totalProducts = await Product.countDocuments();
+
+  // 6. Total Categories
+  const totalCategories = await Category.countDocuments();
+
+  // 7. Total Brands
+  const totalBrands = await Brand.countDocuments();
+
+  // 8. Total Models
+  const totalModels = await Model.countDocuments();
+
+  // 9. Recent Orders (limit 5)
   const recentOrders = await Order.find()
     .populate("customer", "name")
     .sort({ createdAt: -1 })
@@ -108,6 +123,10 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     activeOrders,
     totalCustomers,
     productsSold: productsSold[0]?.total || 0,
+    totalProducts,
+    totalCategories,
+    totalBrands,
+    totalModels,
     recentOrders,
     lowStockProducts,
   });
@@ -243,5 +262,77 @@ export const getReportStats = asyncHandler(async (req, res) => {
     salesByCategory: salesByCategoryWithPercentage,
     topBrands: topBrandsFormatted,
     monthlySales
+  });
+});
+
+// @desc    Get wallet stats and transaction history
+// @route   GET /api/admin/wallet-stats
+// @access  Private/Admin
+export const getWalletStats = asyncHandler(async (req, res) => {
+  // 1. Total Earnings (Sum of all paid orders)
+  const totalEarningsResult = await Order.aggregate([
+    { $match: { isPaid: true } },
+    { $group: { _id: null, total: { $sum: "$totalPrice" } } },
+  ]);
+  const totalEarnings = totalEarningsResult[0]?.total || 0;
+
+  // 2. Pending Payments (Unpaid active orders)
+  const pendingPaymentsResult = await Order.aggregate([
+    { $match: { isPaid: false, status: { $ne: "Cancelled" } } },
+    { $group: { _id: null, total: { $sum: "$totalPrice" } } },
+  ]);
+  const pendingPayments = pendingPaymentsResult[0]?.total || 0;
+
+  // 3. Today's Earning
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const todayEarningsResult = await Order.aggregate([
+    { $match: { isPaid: true, paidAt: { $gte: startOfToday } } },
+    { $group: { _id: null, total: { $sum: "$totalPrice" } } },
+  ]);
+  const todayEarnings = todayEarningsResult[0]?.total || 0;
+
+  // 4. Transaction History (Last 50 transactions)
+  const transactions = await Order.find({ isPaid: true })
+    .populate("customer", "name email")
+    .sort({ paidAt: -1 })
+    .limit(50);
+
+  // 5. Revenue Trend (Daily for last 14 days)
+  const fourteenDaysAgo = new Date();
+  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+  const dailyRevenue = await Order.aggregate([
+    {
+      $match: {
+        isPaid: true,
+        paidAt: { $gte: fourteenDaysAgo },
+      },
+    },
+    {
+      $group: {
+        _id: { $dateToString: { format: "%Y-%m-%d", date: "$paidAt" } },
+        revenue: { $sum: "$totalPrice" },
+      },
+    },
+    { $sort: { _id: 1 } },
+  ]);
+
+  res.json({
+    summary: {
+      totalEarnings,
+      pendingPayments,
+      todayEarnings,
+      balance: totalEarnings, // For now balance is same as earnings
+    },
+    transactions: transactions.map(t => ({
+      id: t._id,
+      customer: t.customer?.name || "Guest",
+      amount: t.totalPrice,
+      method: t.paymentMethod,
+      date: t.paidAt || t.createdAt,
+      status: "COMPLETED",
+      type: "SALE"
+    })),
+    revenueTrend: dailyRevenue,
   });
 });

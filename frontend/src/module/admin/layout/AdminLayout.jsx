@@ -22,6 +22,7 @@ import {
   ChevronRight,
   User,
   Image,
+  Wallet,
 } from "lucide-react";
 
 const AdminLayout = () => {
@@ -33,6 +34,7 @@ const AdminLayout = () => {
       title: "Main",
       items: [
         { name: "Dashboard", path: "/admin", icon: LayoutDashboard },
+        { name: "Wallet", path: "/admin/wallet", icon: Wallet },
         { name: "Reports", path: "/admin/reports", icon: BarChart3 },
       ],
     },

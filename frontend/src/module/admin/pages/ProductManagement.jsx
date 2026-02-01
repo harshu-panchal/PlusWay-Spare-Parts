@@ -14,6 +14,7 @@ import {
   MoreVertical,
   ChevronRight,
   ChevronLeft,
+  AlertTriangle,
 } from "lucide-react";
 import ImageUpload from "../../../components/ImageUpload";
 import { API_ENDPOINTS } from "../../../config/api";
@@ -34,6 +35,8 @@ const ProductManagement = () => {
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState(null);
 
   const fetchData = async () => {
     try {
@@ -227,11 +230,31 @@ const ProductManagement = () => {
         await axios.post(API_ENDPOINTS.ADMIN_PRODUCTS, payload, config);
       }
       setIsModalOpen(false);
-      // Refresh products (need to lift state or fetch here)
+      fetchData();
       alert("Product Saved Successfully!");
     } catch (error) {
       console.error(error);
       alert("Failed to save product");
+    }
+  };
+
+  const handleDeleteClick = (product) => {
+    setProductToDelete(product);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!productToDelete) return;
+    try {
+      const config = { headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}` } };
+      await axios.delete(API_ENDPOINTS.ADMIN_PRODUCT_DETAIL(productToDelete._id), config);
+      setIsDeleteModalOpen(false);
+      setProductToDelete(null);
+      fetchData();
+      alert("Product Deleted Successfully");
+    } catch (error) {
+      console.error(error);
+      alert("Failed to delete product: " + (error.response?.data?.message || error.message));
     }
   };
 
@@ -389,6 +412,7 @@ const ProductManagement = () => {
                         <Edit size={18} />
                       </button>
                       <button
+                        onClick={() => handleDeleteClick(product)}
                         className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                         title="Delete Product">
                         <Trash2 size={18} />
@@ -810,6 +834,37 @@ const ProductManagement = () => {
             </form>
           </div>
         </div >
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="p-8 text-center">
+              <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                <AlertTriangle size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Product?</h3>
+              <p className="text-gray-500 mb-8 px-4">
+                Are you sure you want to delete <span className="font-bold text-gray-900">"{productToDelete?.name}"</span>?
+                This action cannot be undone and will remove the product from all categories.
+              </p>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  className="flex-1 px-6 py-3 border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-all font-bold text-sm">
+                  CANCEL
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="flex-1 px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all shadow-lg shadow-red-200 font-bold text-sm flex items-center justify-center gap-2">
+                  <Trash2 size={18} />
+                  DELETE NOW
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div >
   );

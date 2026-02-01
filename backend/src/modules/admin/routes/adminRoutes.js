@@ -1,5 +1,5 @@
 import express from "express";
-import { authAdmin, getAdminProfile, getDashboardStats, getReportStats } from "../controllers/adminController.js";
+import { authAdmin, getAdminProfile, getDashboardStats, getReportStats, getWalletStats } from "../controllers/adminController.js";
 import {
   getCustomers,
   getCustomerById,
@@ -59,6 +59,7 @@ router.post("/login", authAdmin);
 router.get("/profile", protect, admin, getAdminProfile);
 router.get("/dashboard-stats", protect, admin, getDashboardStats);
 router.get("/reports-stats", protect, admin, getReportStats);
+router.get("/wallet-stats", protect, admin, getWalletStats);
 
 // Order routes
 router.route("/orders").get(protect, admin, getOrders);
