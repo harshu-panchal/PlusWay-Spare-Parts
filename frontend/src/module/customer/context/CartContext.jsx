@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_ENDPOINTS } from '../../../config/api';
 
 export const CartContext = createContext();
 
@@ -29,7 +30,7 @@ export const CartProvider = ({ children }) => {
             return;
         }
         try {
-            const { data } = await axios.get('http://localhost:5001/api/customer/cart', getConfig());
+            const { data } = await axios.get(API_ENDPOINTS.CART, getConfig());
             // Transform backend structure to frontend structure if needed
             // Backend returns { items: [{ product: {...}, quantity: 1 }] }
             // Frontend expects flat list mostly: [{ ...product, quantity: 1 }]
@@ -57,7 +58,7 @@ export const CartProvider = ({ children }) => {
         }
 
         try {
-            await axios.post('http://localhost:5001/api/customer/cart', {
+            await axios.post(API_ENDPOINTS.CART, {
                 productId: product._id,
                 quantity
             }, getConfig());
@@ -71,7 +72,7 @@ export const CartProvider = ({ children }) => {
 
     const removeFromCart = async (productId) => {
         try {
-            await axios.delete(`http://localhost:5001/api/customer/cart/${productId}`, getConfig());
+            await axios.delete(API_ENDPOINTS.CART_ITEM(productId), getConfig());
             fetchCart();
         } catch (error) {
             console.error("Error removing from cart:", error);
@@ -81,7 +82,7 @@ export const CartProvider = ({ children }) => {
     const updateQuantity = async (productId, quantity) => {
         if (quantity < 1) return;
         try {
-            await axios.put(`http://localhost:5001/api/customer/cart/${productId}`, {
+            await axios.put(API_ENDPOINTS.CART_ITEM(productId), {
                 quantity
             }, getConfig());
             fetchCart();

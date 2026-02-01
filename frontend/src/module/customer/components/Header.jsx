@@ -11,6 +11,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 
 import { CartContext } from "../context/CartContext";
+import { API_ENDPOINTS } from "../../../config/api";
 
 import axios from "axios";
 
@@ -26,7 +27,7 @@ const Header = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const { data } = await axios.get("http://localhost:5001/api/customer/categories");
+        const { data } = await axios.get(API_ENDPOINTS.CUSTOMER_CATEGORIES);
         setCategories(data);
       } catch (error) {
         console.error("Error fetching categories:", error);

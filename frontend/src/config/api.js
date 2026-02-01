@@ -46,6 +46,10 @@ export const API_ENDPOINTS = {
     // Config
     PAYPAL_CONFIG: `${API_BASE_URL}/api/config/paypal`,
 
+    // Cart
+    CART: `${API_BASE_URL}/api/customer/cart`,
+    CART_ITEM: (id) => `${API_BASE_URL}/api/customer/cart/${id}`,
+
     // Admin Auth
     ADMIN_LOGIN: `${API_BASE_URL}/api/admin/login`,
 
