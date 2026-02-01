@@ -122,9 +122,9 @@ const ProductDetail = () => {
             </Link>
             <span className="text-gray-300">/</span>
             <Link
-              to={`/model/${product.modelId}`}
+              to={product.model ? `/products?model=${product.model._id}` : "#"}
               className="hover:text-primary">
-              Note 20 Ultra 5G
+              {product.model?.name || "Model"}
             </Link>
             <span className="text-gray-300">/</span>
             <span className="text-gray-600 font-bold">
@@ -314,18 +314,22 @@ const ProductDetail = () => {
               <div className="flex items-center justify-end gap-3 text-right">
                 <div>
                   <Link
-                    to={`/model/${product.modelId}`}
+                    to={product.model ? `/products?model=${product.model._id}` : "#"}
                     className="text-[11px] font-black text-blue-600 underline">
-                    Samsung Galaxy Note 20 Ultra 5G
+                    {product.model?.name || "View specific products"}
                   </Link>
                   <p className="text-[10px] text-gray-400 font-bold">
                     See more awesome products for your handset
                   </p>
                 </div>
-                <div className="w-10 h-10 bg-gray-100 flex items-center justify-center rounded">
-                  <span className="text-[8px] font-bold text-gray-400">
-                    NOTE 20
-                  </span>
+                <div className="w-10 h-10 bg-gray-100 flex items-center justify-center rounded overflow-hidden">
+                  {product.model?.image ? (
+                    <img src={product.model.image} alt={product.model.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-[8px] font-bold text-gray-400 text-center leading-none p-1">
+                      {product.model?.name?.substring(0, 8)}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

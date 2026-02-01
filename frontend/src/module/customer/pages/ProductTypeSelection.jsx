@@ -1,36 +1,55 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Star, ShoppingCart } from 'lucide-react';
 
-const ProductCard = ({ product }) => (
-    <div className="bg-white border border-gray-200 p-3 flex flex-col items-center text-center transition-all hover:shadow-md group">
-        <Link to={`/product/${product._id}`} className="w-full h-full flex flex-col items-center">
-            <div className="w-full aspect-square mb-3 overflow-hidden">
+import { useCart } from '../context/CartContext';
+
+const ProductCard = ({ product }) => {
+    const { addToCart } = useCart();
+
+    return (
+        <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-gray-100 group flex flex-col h-full">
+            <Link to={`/product/${product._id}`} className="block relative aspect-square overflow-hidden bg-gray-50">
                 <img
-                    src={product.images && product.images[0] ? product.images[0] : ""}
+                    src={product.images && product.images.length > 0 ? product.images[0] : (product.image || "https://via.placeholder.com/300")}
                     alt={product.name}
-                    className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
+                    className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500"
                 />
+                <div className="absolute top-3 left-3 flex flex-col gap-2">
+                    {product.countInStock > 0 && <span className="bg-accent text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-widest">In Stock</span>}
+                </div>
+            </Link>
+
+            <div className="p-3 md:p-5 flex-1 flex flex-col">
+                <div className="flex items-center gap-1 mb-2">
+                    <Star size={12} className="fill-yellow-400 text-yellow-400" />
+                    <span className="text-[10px] font-bold text-gray-400">{product.rating || 0} ({product.numReviews || 0})</span>
+                </div>
+                <Link to={`/product/${product._id}`} className="font-bold text-secondary text-xs md:text-sm leading-snug mb-2 md:mb-3 hover:text-primary transition-colors block">
+                    {product.name}
+                </Link>
+
+                <div className="mt-auto flex items-end justify-between">
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-base md:text-xl font-black text-secondary tracking-tighter">₹{product.price.toLocaleString()}</span>
+                            <span className="text-[10px] md:text-xs text-gray-400 line-through">₹{product.mrp.toLocaleString()}</span>
+                        </div>
+                        <span className="text-[10px] font-black text-accent uppercase tracking-widest">You Save ₹{(product.mrp - product.price).toLocaleString()}</span>
+                    </div>
+
+                    <button
+                        onClick={() => addToCart(product)}
+                        className="bg-primary text-white p-2 md:p-2.5 rounded-lg md:rounded-xl hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/20"
+                    >
+                        <ShoppingCart size={16} className="md:w-5 md:h-5" />
+                    </button>
+                </div>
             </div>
-            <h3 className="text-[12px] font-bold text-blue-600 group-hover:underline leading-tight uppercase tracking-tighter mb-2">
-                {product.name}
-            </h3>
-        </Link>
-        {product.colors && (
-            <div className="flex gap-1.5 mt-auto pb-1">
-                {product.colors.map((color, idx) => (
-                    <div
-                        key={idx}
-                        className="w-4 h-4 rounded-full border border-gray-300 shadow-sm cursor-pointer hover:scale-110 transition-transform"
-                        style={{ backgroundColor: color }}
-                        title={`Color option ${idx + 1}`}
-                    />
-                ))}
-            </div>
-        )}
-    </div>
-);
+        </div>
+    );
+};
 
 import axios from 'axios';
 import { API_ENDPOINTS, API_BASE_URL } from '../../../config/api';

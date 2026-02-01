@@ -3,6 +3,7 @@ import { useLocation, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ChevronRight, Filter, ChevronDown, ShoppingCart, Star } from 'lucide-react';
 import { API_ENDPOINTS, API_BASE_URL } from '../../../config/api';
+import { useCart } from '../context/CartContext';
 
 const ProductListing = () => {
     const location = useLocation();
@@ -10,6 +11,12 @@ const ProductListing = () => {
     const modelId = queryParams.get('model');
     const typeId = queryParams.get('type');
     const keyword = queryParams.get('keyword');
+
+    const [models, setModels] = useState([]);
+    const [brands, setBrands] = useState([]);
+
+    // Derived state for the selected model
+    const selectedModel = models.find(m => m._id === modelId);
 
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -46,8 +53,6 @@ const ProductListing = () => {
     const typeName = "Selected Category";
 
     const [loadingModels, setLoadingModels] = useState(true);
-    const [models, setModels] = useState([]);
-    const [brands, setBrands] = useState([]);
 
     // Fetch models and brands for filters
     useEffect(() => {
@@ -68,6 +73,9 @@ const ProductListing = () => {
         };
         fetchFilters();
     }, []);
+
+
+    const { addToCart } = useCart();
 
     if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
     if (error) return <div className="min-h-screen flex items-center justify-center text-red-500">{error}</div>;
@@ -113,10 +121,49 @@ const ProductListing = () => {
 
                     {/* Main Content */}
                     <div className="flex-1">
+                        {/* Model Banner - Only if model is selected */}
+                        {selectedModel && (
+                            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8 flex flex-col md:flex-row items-center gap-6">
+                                <div className="w-32 h-32 md:w-40 md:h-40 bg-gray-50 flex items-center justify-center p-4 rounded-xl flex-shrink-0">
+                                    {selectedModel.image ? (
+                                        <img src={selectedModel.image} alt={selectedModel.name} className="w-full h-full object-contain" />
+                                    ) : (
+                                        <div className="text-center">
+                                            <span className="text-orange-500 font-black italic text-xl">PLUSWAY</span>
+                                            <span className="block text-[10px] text-gray-400 uppercase font-bold tracking-widest mt-1">Handset Part</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex-1 text-center md:text-left space-y-2">
+                                    <h1 className="text-2xl md:text-3xl font-black text-secondary uppercase italic tracking-tighter leading-none">
+                                        {selectedModel.name} <span className="text-primary block md:inline">SPARE PARTS</span>
+                                    </h1>
+                                    <div className="space-y-1 pt-2">
+                                        {selectedModel.released && (
+                                            <p className="text-xs text-gray-500 font-bold">
+                                                Released: <span className="text-secondary">{selectedModel.released}</span>
+                                            </p>
+                                        )}
+                                        {selectedModel.displaySize && (
+                                            <p className="text-xs text-gray-500 font-bold">
+                                                Display Size: <span className="text-secondary">{selectedModel.displaySize}</span>
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-6 flex justify-between items-center">
-                            <h1 className="text-lg font-black text-secondary uppercase italic tracking-tighter">
-                                Products <span className="text-primary tracking-normal not-italic lowercase font-medium ml-2">({products.length} items)</span>
-                            </h1>
+                            {selectedModel ? (
+                                <div className="flex items-center gap-2 border-l-4 border-primary pl-3">
+                                    <h2 className="text-lg font-black text-secondary uppercase italic tracking-tighter">SPARE PARTS</h2>
+                                </div>
+                            ) : (
+                                <h1 className="text-lg font-black text-secondary uppercase italic tracking-tighter">
+                                    Products <span className="text-primary tracking-normal not-italic lowercase font-medium ml-2">({products.length} items)</span>
+                                </h1>
+                            )}
                             <div className="flex items-center gap-2 text-sm font-bold text-gray-500">
                                 <span>Sort by:</span>
                                 <button className="flex items-center gap-1 text-secondary">Relevance <ChevronDown size={14} /></button>
@@ -124,7 +171,7 @@ const ProductListing = () => {
                         </div>
 
                         {/* Product Grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-2 md:gap-6">
                             {products.map((product) => (
                                 <div key={product._id} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-gray-100 group flex flex-col">
                                     <Link to={`/product/${product._id}`} className="block relative aspect-square overflow-hidden bg-gray-50">
@@ -134,30 +181,33 @@ const ProductListing = () => {
                                             className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500"
                                         />
                                         <div className="absolute top-3 left-3 flex flex-col gap-2">
-                                            {product.countInStock > 0 && <span className="bg-green-500 text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-widest">In Stock</span>}
+                                            {product.countInStock > 0 && <span className="bg-accent text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-widest">In Stock</span>}
                                         </div>
                                     </Link>
 
-                                    <div className="p-5 flex-1 flex flex-col">
+                                    <div className="p-3 md:p-5 flex-1 flex flex-col">
                                         <div className="flex items-center gap-1 mb-2">
                                             <Star size={12} className="fill-yellow-400 text-yellow-400" />
                                             <span className="text-[10px] font-bold text-gray-400">{product.rating} ({product.numReviews || 0})</span>
                                         </div>
-                                        <Link to={`/product/${product._id}`} className="font-bold text-secondary text-sm leading-snug mb-3 hover:text-primary transition-colors block line-clamp-2 min-h-[40px]">
+                                        <Link to={`/product/${product._id}`} className="font-bold text-secondary text-xs md:text-sm leading-snug mb-2 md:mb-3 hover:text-primary transition-colors block">
                                             {product.name}
                                         </Link>
 
                                         <div className="mt-auto flex items-end justify-between">
                                             <div>
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-xl font-black text-secondary tracking-tighter">₹{product.price.toLocaleString()}</span>
-                                                    <span className="text-xs text-gray-400 line-through">₹{product.mrp.toLocaleString()}</span>
+                                                    <span className="text-base md:text-xl font-black text-secondary tracking-tighter">₹{product.price.toLocaleString()}</span>
+                                                    <span className="text-[10px] md:text-xs text-gray-400 line-through">₹{product.mrp.toLocaleString()}</span>
                                                 </div>
                                                 <span className="text-[10px] font-black text-accent uppercase tracking-widest">You Save ₹{(product.mrp - product.price).toLocaleString()}</span>
                                             </div>
 
-                                            <button className="bg-primary text-white p-2.5 rounded-xl hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/20">
-                                                <ShoppingCart size={20} />
+                                            <button
+                                                onClick={() => addToCart(product)}
+                                                className="bg-primary text-white p-2 md:p-2.5 rounded-lg md:rounded-xl hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/20"
+                                            >
+                                                <ShoppingCart size={16} className="md:w-5 md:h-5" />
                                             </button>
                                         </div>
                                     </div>

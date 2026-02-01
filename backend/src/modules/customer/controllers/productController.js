@@ -52,7 +52,7 @@ export const getProductById = asyncHandler(async (req, res) => {
     const product = await Product.findById(req.params.id)
         .populate("brand", "name")
         .populate("category", "name")
-        .populate("model", "name");
+        .populate("model", "name image");
 
     if (product) {
         res.json(product);
