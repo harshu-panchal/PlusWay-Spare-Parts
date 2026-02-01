@@ -95,7 +95,10 @@ const ProductDetail = () => {
             name: data.name,
             image: data.images && data.images.length > 0 ? data.images[0] : (data.image || ""),
             price: data.price,
-            mrp: data.mrp
+            mrp: data.mrp,
+            countInStock: data.countInStock,
+            wholesalePrice: data.wholesalePrice,
+            wholesaleMinQty: data.wholesaleMinQty
           },
           ...recent.filter((item) => item._id !== data._id)
         ].slice(0, 8); // Keep last 8 items

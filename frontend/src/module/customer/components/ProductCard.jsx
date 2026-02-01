@@ -19,13 +19,13 @@ const ProductCard = ({ product }) => {
                     className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute top-3 left-3 flex flex-col gap-2">
-                    {product.countInStock > 0 ? (
-                        <span className="bg-accent text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-widest">In Stock</span>
-                    ) : (
+                    {product.countInStock === 0 ? (
                         <span className="bg-gray-500 text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-widest">Out of stock</span>
+                    ) : (
+                        <span className="bg-accent text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-widest">In Stock</span>
                     )}
                 </div>
-                {savingsPercent > 0 && product.countInStock > 0 && (
+                {savingsPercent > 0 && product.countInStock !== 0 && (
                     <div className="absolute top-0 right-0 bg-red-600 text-[10px] text-white font-black px-2 py-1 rounded-bl-lg shadow-md">
                         Save {savingsPercent}%
                     </div>
@@ -60,7 +60,7 @@ const ProductCard = ({ product }) => {
                     <button
                         onClick={(e) => {
                             e.preventDefault();
-                            if (product.countInStock > 0) addToCart(product);
+                            if (product.countInStock !== 0) addToCart(product);
                         }}
                         disabled={product.countInStock === 0}
                         className={`w-full py-2 md:py-2.5 rounded-lg md:rounded-xl transition-all flex items-center justify-center gap-2 text-[9px] md:text-[10px] font-black uppercase tracking-widest shadow-lg ${product.countInStock === 0 ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none' : 'bg-primary text-white hover:bg-orange-600 shadow-orange-500/10'}`}
