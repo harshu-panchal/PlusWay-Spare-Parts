@@ -30,6 +30,10 @@ import {
   updateOrderToPaid,
   getMyOrders,
 } from "../controllers/orderController.js";
+import {
+  createRazorpayOrder,
+  verifyRazorpayPayment
+} from "../controllers/paymentController.js";
 import { getCategories } from "../../admin/controllers/categoryController.js";
 import { getBrands } from "../../admin/controllers/brandController.js";
 import { getModels } from "../../admin/controllers/modelController.js";
@@ -82,5 +86,9 @@ router.route("/orders").post(protect, addOrderItems);
 router.route("/orders/myorders").get(protect, getMyOrders);
 router.route("/orders/:id").get(protect, getOrderById);
 router.route("/orders/:id/pay").put(protect, updateOrderToPaid);
+
+// Razorpay routes
+router.post("/orders/:id/razorpay", protect, createRazorpayOrder);
+router.post("/orders/:id/razorpay/verify", protect, verifyRazorpayPayment);
 
 export default router;
