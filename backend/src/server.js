@@ -10,7 +10,7 @@ import uploadRoutes from "./modules/upload/routes/uploadRoutes.js";
 import configRoutes from "./modules/customer/routes/configRoutes.js";
 import homeSectionRoutes from "./modules/admin/routes/homeSectionRoutes.js";
 import customerHomeSectionRoutes from "./modules/customer/routes/homeSectionRoutes.js";
-
+import translationRoutes from "./routes/translationRoutes.js";
 
 // Load environment variables
 dotenv.config();
@@ -52,7 +52,7 @@ app.use("/api/admin/home-sections", homeSectionRoutes);
 app.use("/api/customer/home-sections", customerHomeSectionRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/config", configRoutes);
-
+app.use("/api/v1/translate", translationRoutes);
 
 // Basic Route
 app.get("/", (req, res) => {

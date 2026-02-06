@@ -8,6 +8,7 @@ import {
   ChevronDown,
   Send,
 } from "lucide-react";
+import LanguageSelector from "../../../components/LanguageSelector";
 import { Link, useNavigate } from "react-router-dom";
 
 import { CartContext } from "../context/CartContext";
@@ -65,7 +66,7 @@ const Header = () => {
               9599197756
             </span>
           </div>
-          <div className="flex gap-4 text-gray-600 font-medium uppercase tracking-wider">
+          <div className="flex gap-4 text-gray-600 font-medium uppercase tracking-wider items-center">
             <Link
               to="/profile"
               className="hover:text-primary transition-colors">
@@ -77,6 +78,8 @@ const Header = () => {
             <span className="hover:text-primary transition-colors cursor-pointer">
               Plusway Support
             </span>
+            <span className="text-gray-300">|</span>
+            <LanguageSelector variant="compact" showFlag={true} showNative={false} />
           </div>
         </div>
       </div>

@@ -109,6 +109,12 @@ export const API_ENDPOINTS = {
 
     // Customer Categories (public endpoint used by admin)
     CUSTOMER_CATEGORIES: `${API_BASE_URL}/api/customer/categories`,
+
+    // Translation API
+    TRANSLATE: `${API_BASE_URL}/api/v1/translate`,
+    TRANSLATE_BATCH: `${API_BASE_URL}/api/v1/translate/batch`,
+    TRANSLATE_OBJECT: `${API_BASE_URL}/api/v1/translate/object`,
+    TRANSLATE_STATS: `${API_BASE_URL}/api/v1/translate/stats`,
 };
 
 export default API_BASE_URL;

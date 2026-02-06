@@ -13,6 +13,15 @@ import axios from "axios";
 import { API_ENDPOINTS } from "../../../config/api";
 import LazyImage from "../../../components/LazyImage";
 import ProductCard from "../components/ProductCard";
+import { usePageTranslation } from "../../../hooks/usePageTranslation";
+
+// Static texts for translation
+const STATIC_TEXTS = [
+  "Select Mobile Phone Brand",
+  "No Promo Banner",
+  "No Sub Banner",
+  "Recently Viewed",
+];
 
 const CategoryCard = ({ category }) => {
   return (
@@ -33,10 +42,10 @@ const CategoryCard = ({ category }) => {
   );
 };
 
-const BrandGrid = ({ brands }) => (
+const BrandGrid = ({ brands, t }) => (
   <div className="bg-white p-0 md:p-8 rounded shadow-sm border border-gray-100 mb-12">
     <h2 className="text-center text-xl font-black text-secondary mb-4 md:mb-8 py-4 md:py-0 uppercase tracking-tight">
-      Select Mobile Phone Brand
+      {t("Select Mobile Phone Brand")}
     </h2>
     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-px bg-gray-100 border border-gray-100">
       {brands.map((brand) => (
@@ -56,6 +65,7 @@ const BrandGrid = ({ brands }) => (
 );
 
 const Home = () => {
+  const { t, isTranslating } = usePageTranslation(STATIC_TEXTS);
   const [brands, setBrands] = useState([]);
   const [homeSections, setHomeSections] = useState([]);
   const [banners, setBanners] = useState({ main: [], sub: [] });
@@ -102,7 +112,7 @@ const Home = () => {
             />
           ) : (
             <div className="h-[300px] bg-gray-100 flex items-center justify-center text-gray-400 font-bold uppercase tracking-widest">
-              No Promo Banner
+              {t("No Promo Banner")}
             </div>
           )}
         </div>
@@ -120,7 +130,7 @@ const Home = () => {
             />
           ) : (
             <div className="h-[200px] bg-gray-100 rounded shadow-sm flex items-center justify-center text-gray-400 font-bold uppercase tracking-widest">
-              No Sub Banner
+              {t("No Sub Banner")}
             </div>
           )}
           <div className="absolute inset-y-0 left-0 flex items-center">
@@ -172,7 +182,7 @@ const Home = () => {
 
       {/* Brands Selection */}
       <div className="max-w-7xl mx-auto px-[2%] md:px-4">
-        <BrandGrid brands={brands} />
+        <BrandGrid brands={brands} t={t} />
       </div>
 
       {/* Recently Viewed Block (Mock) */}
@@ -181,7 +191,7 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-[2%] md:px-4">
           <div className="bg-gray-50 px-4 py-3 border-b-2 border-primary mb-6">
             <h2 className="text-sm font-black text-secondary uppercase tracking-widest">
-              Recently Viewed
+              {t("Recently Viewed")}
             </h2>
           </div>
           <div className="flex gap-3 md:gap-4 overflow-x-auto pb-4 -mx-[2%] px-[2%] md:mx-0 md:px-0 scroll-smooth">

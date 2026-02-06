@@ -54,4 +54,43 @@ body {
     scrollbar-width: none;
     /* Firefox */
   }
+
+  /* RTL Support */
+  .rtl {
+    direction: rtl;
+    text-align: right;
+  }
+
+  .rtl .flex-row {
+    flex-direction: row-reverse;
+  }
+
+  /* Language transition animations */
+  .lang-transition {
+    transition: opacity 0.3s ease-in-out;
+  }
+
+  .lang-loading {
+    opacity: 0.7;
+  }
+
+  /* Translation loading animation */
+  @keyframes text-shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  .translating {
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(255, 102, 0, 0.1) 50%,
+        transparent 100%);
+    background-size: 200% 100%;
+    animation: text-shimmer 1.5s infinite;
+  }
 }
