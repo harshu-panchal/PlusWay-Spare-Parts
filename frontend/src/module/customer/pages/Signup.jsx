@@ -161,6 +161,7 @@ const Signup = () => {
                   {[...Array(6)].map((_, i) => (
                     <input
                       key={i}
+                      id={`otp-signup-${i}`}
                       type="text"
                       maxLength="1"
                       className="w-full aspect-square text-center bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-primary font-black text-xl text-secondary"
@@ -168,9 +169,24 @@ const Signup = () => {
                       onChange={(e) => {
                         const val = e.target.value;
                         if (/[0-9]/.test(val)) {
-                          const newOtp =
-                            otp.slice(0, i) + val + otp.slice(i + 1);
+                          const newOtp = otp.substring(0, i) + val + otp.substring(i + 1);
                           setOtp(newOtp);
+                          // Focus next input
+                          if (i < 5) {
+                            document.getElementById(`otp-signup-${i + 1}`).focus();
+                          }
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Backspace") {
+                          if (!otp[i] && i > 0) {
+                            // If current is empty and backspace pressed, go to previous
+                            document.getElementById(`otp-signup-${i - 1}`).focus();
+                          } else {
+                            // Clear current digit
+                            const newOtp = otp.substring(0, i) + otp.substring(i + 1);
+                            setOtp(newOtp);
+                          }
                         }
                       }}
                     />

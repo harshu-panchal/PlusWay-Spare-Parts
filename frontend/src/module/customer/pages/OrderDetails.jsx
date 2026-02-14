@@ -5,6 +5,7 @@ import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { API_ENDPOINTS } from "../../../config/api";
 import { CheckCircle2, Clock, Truck, Package, ChevronRight, MapPin, Phone, Loader2, AlertCircle, CreditCard } from 'lucide-react';
 import LazyImage from '../../../components/LazyImage';
+import { useCart } from '../context/CartContext';
 
 const OrderDetails = () => {
     const { id } = useParams();
@@ -13,6 +14,7 @@ const OrderDetails = () => {
     const [error, setError] = useState(null);
     const [sdkReady, setSdkReady] = useState(false);
     const [clientId, setClientId] = useState("");
+    const { fetchCart } = useCart();
 
     const getToken = () => {
         const userInfo = localStorage.getItem("userInfo");
@@ -63,9 +65,79 @@ const OrderDetails = () => {
                 getConfig()
             );
             setOrder(data);
+            fetchCart(); // Update cart count
             alert("Payment Successful!");
         } catch (err) {
             alert(err.response?.data?.message || "Payment failed");
+        }
+    };
+
+    const loadRazorpay = () => {
+        return new Promise((resolve) => {
+            const script = document.createElement("script");
+            script.src = "https://checkout.razorpay.com/v1/checkout.js";
+            script.onload = () => resolve(true);
+            script.onerror = () => resolve(false);
+            document.body.appendChild(script);
+        });
+    };
+
+    const handleRazorpayPayment = async () => {
+        const res = await loadRazorpay();
+        if (!res) {
+            alert("Razorpay SDK failed to load. Are you online?");
+            return;
+        }
+
+        try {
+            const { data: orderData } = await axios.post(
+                API_ENDPOINTS.RAZORPAY_CREATE_ORDER(order._id),
+                {},
+                getConfig()
+            );
+
+            const options = {
+                key: orderData.key_id,
+                amount: orderData.amount,
+                currency: orderData.currency,
+                name: "Plusway Spare Parts",
+                description: "Order Payment",
+                order_id: orderData.id,
+                handler: async function (response) {
+                    try {
+                        const verifyData = {
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature
+                        };
+                        const { data } = await axios.post(
+                            API_ENDPOINTS.RAZORPAY_VERIFY(order._id),
+                            verifyData,
+                            getConfig()
+                        );
+                        setOrder(data);
+                        fetchCart(); // Update cart count
+                        alert("Payment Successful!");
+                    } catch (err) {
+                        alert(err.response?.data?.message || "Payment verification failed");
+                    }
+                },
+                prefill: {
+                    name: order.customer?.name,
+                    email: order.customer?.email,
+                    contact: order.customer?.mobile
+                },
+                theme: {
+                    color: "#3399cc",
+                },
+            };
+
+            const paymentObject = new window.Razorpay(options);
+            paymentObject.open();
+
+        } catch (err) {
+            console.error(err);
+            alert(err.response?.data?.message || "Error creating Razorpay order");
         }
     };
 
@@ -196,43 +268,61 @@ const OrderDetails = () => {
                                 </div>
                             </div>
 
-                            {!order.isPaid && sdkReady && clientId && (
-                                <div className="w-full">
+                            {!order.isPaid && (
+                                <div className="w-full space-y-4">
                                     {order.paymentMethod === 'cod' ? (
                                         <div className="bg-gray-100 p-4 rounded text-center text-xs font-bold text-gray-500 uppercase">
                                             Cash on Delivery Order
                                         </div>
                                     ) : (
-                                        <div className="space-y-4">
+                                        <>
+                                            {/* PayPal Button */}
+                                            {sdkReady && clientId ? (
+                                                <PayPalScriptProvider options={{ "client-id": clientId, currency: "USD" }}>
+                                                    <PayPalButtons
+                                                        style={{ layout: "vertical" }}
+                                                        createOrder={(data, actions) => {
+                                                            const usdAmount = (order.totalPrice * 0.0106).toFixed(2);
+                                                            return actions.order.create({
+                                                                purchase_units: [{
+                                                                    amount: {
+                                                                        currency_code: "USD",
+                                                                        value: usdAmount
+                                                                    }
+                                                                }]
+                                                            })
+                                                        }}
+                                                        onApprove={(data, actions) => {
+                                                            return actions.order.capture().then((details) => {
+                                                                successPaymentHandler(details);
+                                                            });
+                                                        }}
+                                                    />
+                                                </PayPalScriptProvider>
+                                            ) : (
+                                                <div className="text-center text-xs text-gray-400">Loading PayPal...</div>
+                                            )}
 
-                                            <PayPalScriptProvider options={{ "client-id": clientId, currency: "USD" }}>
-                                                <PayPalButtons
-                                                    style={{ layout: "vertical" }}
-                                                    createOrder={(data, actions) => {
-                                                        const usdAmount = (order.totalPrice * 0.0106).toFixed(2);
-                                                        return actions.order.create({
-                                                            purchase_units: [{
-                                                                amount: {
-                                                                    currency_code: "USD",
-                                                                    value: usdAmount
-                                                                }
-                                                            }]
-                                                        })
-                                                    }}
-                                                    onApprove={(data, actions) => {
-                                                        return actions.order.capture().then((details) => {
-                                                            successPaymentHandler(details);
-                                                        });
-                                                    }}
-                                                />
-                                            </PayPalScriptProvider>
-                                        </div>
+                                            {/* Razorpay Button */}
+                                            <div className="relative">
+                                                <div className="absolute inset-0 flex items-center">
+                                                    <div className="w-full border-t border-gray-200"></div>
+                                                </div>
+                                                <div className="relative flex justify-center text-xs uppercase">
+                                                    <span className="bg-white px-2 text-gray-400 font-bold">Or pay with</span>
+                                                </div>
+                                            </div>
+
+                                            <button
+                                                onClick={handleRazorpayPayment}
+                                                className="w-full bg-[#3399cc] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#2b88b7] transition-colors flex items-center justify-center gap-2 shadow-sm"
+                                            >
+                                                <CreditCard size={20} />
+                                                Pay with Razorpay
+                                            </button>
+                                        </>
                                     )}
                                 </div>
-                            )}
-                            {/* Fallback for loading sdk */}
-                            {!order.isPaid && (!sdkReady || !clientId) && order.paymentMethod !== 'cod' && (
-                                <div className="text-center text-xs text-gray-400">Loading Payment Gateway...</div>
                             )}
                         </div>
                     </div>

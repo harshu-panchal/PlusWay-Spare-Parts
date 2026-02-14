@@ -45,6 +45,8 @@ export const API_ENDPOINTS = {
     MY_REVIEWS: `${API_BASE_URL}/api/customer/reviews`,
     ORDER_DETAIL: (id) => `${API_BASE_URL}/api/customer/orders/${id}`,
     ORDER_PAY: (id) => `${API_BASE_URL}/api/customer/orders/${id}/pay`,
+    RAZORPAY_CREATE_ORDER: (id) => `${API_BASE_URL}/api/customer/orders/${id}/razorpay`,
+    RAZORPAY_VERIFY: (id) => `${API_BASE_URL}/api/customer/orders/${id}/razorpay/verify`,
 
     // Config
     PAYPAL_CONFIG: `${API_BASE_URL}/api/config/paypal`,
