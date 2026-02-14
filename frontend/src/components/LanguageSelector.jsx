@@ -95,7 +95,7 @@ const LanguageSelector = ({
                     disabled={isChangingLanguage}
                 >
                     {showFlag && <span className="text-base">{currentLang?.flag}</span>}
-                    <span className="font-medium text-gray-700">{currentLang?.code?.toUpperCase()}</span>
+                    <span className="font-medium text-gray-700">{currentLang?.label || currentLang?.code?.toUpperCase()}</span>
                     <ChevronDown size={14} className={`text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                 </button>
 
@@ -109,7 +109,7 @@ const LanguageSelector = ({
                                     }`}
                             >
                                 {showFlag && <span>{lang.flag}</span>}
-                                <span className="flex-1 text-left font-medium">{lang.code.toUpperCase()}</span>
+                                <span className="flex-1 text-left font-medium">{lang.label}</span>
                                 {language === lang.code && <Check size={14} />}
                             </button>
                         ))}
@@ -177,7 +177,7 @@ export const HeaderLanguageButton = () => {
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-gray-800/50 hover:bg-gray-700 transition-colors cursor-pointer">
             <Globe size={12} className={isChangingLanguage ? 'animate-pulse' : ''} />
             <span className="text-[10px] font-bold uppercase">{currentLang?.flag}</span>
-            <span className="text-[10px] font-bold uppercase">{language}</span>
+            <span className="text-[10px] font-bold uppercase">{currentLang?.label || language}</span>
         </div>
     );
 };
