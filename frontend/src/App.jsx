@@ -31,6 +31,21 @@ const Orders = lazy(() => import("./module/customer/pages/Orders"));
 const Addresses = lazy(() => import("./module/customer/pages/Addresses"));
 const SettingsPage = lazy(() => import("./module/customer/pages/Settings"));
 
+// Lazy-loaded Informational Pages
+const About = lazy(() => import("./module/customer/pages/About"));
+const Contact = lazy(() => import("./module/customer/pages/Contact"));
+const PrivacyPolicy = lazy(() => import("./module/customer/pages/PrivacyPolicy"));
+const RefundPolicy = lazy(() => import("./module/customer/pages/RefundPolicy"));
+const TermsConditions = lazy(() => import("./module/customer/pages/TermsConditions"));
+const Warranty = lazy(() => import("./module/customer/pages/Warranty"));
+const Support = lazy(() => import("./module/customer/pages/Support"));
+const Career = lazy(() => import("./module/customer/pages/Career"));
+const TrackOrder = lazy(() => import("./module/customer/pages/TrackOrder"));
+const ReplacementRequests = lazy(() => import("./module/customer/pages/ReplacementRequests"));
+const Sitemap = lazy(() => import("./module/customer/pages/Sitemap"));
+const HowToManuals = lazy(() => import("./module/customer/pages/HowToManuals"));
+const MobileDirectory = lazy(() => import("./module/customer/pages/MobileDirectory"));
+
 // Lazy-loaded Admin Pages
 const AdminLogin = lazy(() => import("./module/admin/pages/AdminLogin"));
 const Dashboard = lazy(() => import("./module/admin/pages/Dashboard"));
@@ -87,6 +102,21 @@ const App = () => {
               <Route path="profile/orders" element={<Orders />} />
               <Route path="profile/addresses" element={<Addresses />} />
               <Route path="profile/settings" element={<SettingsPage />} />
+
+              {/* Informational Pages */}
+              <Route path="about" element={<About />} />
+              <Route path="contact" element={<Contact />} />
+              <Route path="privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="refund-policy" element={<RefundPolicy />} />
+              <Route path="terms-conditions" element={<TermsConditions />} />
+              <Route path="warranty" element={<Warranty />} />
+              <Route path="support" element={<Support />} />
+              <Route path="career" element={<Career />} />
+              <Route path="track-order" element={<TrackOrder />} />
+              <Route path="replacement-requests" element={<ReplacementRequests />} />
+              <Route path="sitemap" element={<Sitemap />} />
+              <Route path="how-to-manuals" element={<HowToManuals />} />
+              <Route path="mobile-directory" element={<MobileDirectory />} />
             </Route>
 
             {/* Admin Routes */}

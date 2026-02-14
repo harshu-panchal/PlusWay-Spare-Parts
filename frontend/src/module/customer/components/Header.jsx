@@ -176,22 +176,26 @@ const Header = () => {
                     </Link>
                   </li>
                   <li>
-                    <div className="px-4 py-2.5 hover:bg-gray-50 flex items-center justify-between border-b border-gray-50 cursor-pointer">
+                    <Link
+                      to="/replacement-requests"
+                      className="px-4 py-2.5 hover:bg-gray-50 flex items-center justify-between border-b border-gray-50">
                       Replacement Requests{" "}
                       <ChevronDown
                         size={12}
                         className="-rotate-90 text-gray-300"
                       />
-                    </div>
+                    </Link>
                   </li>
                   <li>
-                    <div className="px-4 py-2.5 hover:bg-gray-50 flex items-center justify-between cursor-pointer">
+                    <Link
+                      to="/support"
+                      className="px-4 py-2.5 hover:bg-gray-50 flex items-center justify-between">
                       Plusway Support{" "}
                       <ChevronDown
                         size={12}
                         className="-rotate-90 text-gray-300"
                       />
-                    </div>
+                    </Link>
                   </li>
                 </ul>
                 <div className="p-4 bg-gray-50 border-t border-gray-100">

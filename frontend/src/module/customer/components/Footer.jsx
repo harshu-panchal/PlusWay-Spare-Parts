@@ -56,29 +56,29 @@ const Footer = () => {
             </h4>
             <ul className="space-y-3 text-[13px] font-bold text-gray-500">
               <li>
-                <span className="hover:text-primary transition-colors cursor-pointer">
+                <Link to="/about" className={"hover:text-primary transition-colors cursor-pointer"}>
                   About us
-                </span>
+                </Link>
               </li>
               <li>
-                <span className="hover:text-primary transition-colors cursor-pointer">
+                <Link to="/contact" className={"hover:text-primary transition-colors cursor-pointer"}>
                   Contact us
-                </span>
+                </Link>
               </li>
               <li>
-                <span className="hover:text-primary transition-colors cursor-pointer">
+                <Link to="/career" className={"hover:text-primary transition-colors cursor-pointer"}>
                   Career with us
-                </span>
+                </Link>
               </li>
               <li>
-                <span className="hover:text-primary transition-colors cursor-pointer">
+                <Link to="/sitemap" className={"hover:text-primary transition-colors cursor-pointer"}>
                   Sitemap
-                </span>
+                </Link>
               </li>
               <li>
-                <span className="hover:text-primary transition-colors cursor-pointer">
+                <Link to="/mobile-directory" className={"hover:text-primary transition-colors cursor-pointer"}>
                   Mobile Directory
-                </span>
+                </Link>
               </li>
             </ul>
           </div>
@@ -90,24 +90,24 @@ const Footer = () => {
             </h4>
             <ul className="space-y-3 text-[13px] font-bold text-gray-500">
               <li>
-                <span className="hover:text-primary transition-colors cursor-pointer">
+                <Link to="/support" className={"hover:text-primary transition-colors cursor-pointer"}>
                   Contact Customer Support
-                </span>
+                </Link>
               </li>
               <li>
-                <span className="hover:text-primary transition-colors cursor-pointer">
+                <Link to="/track-order" className={"hover:text-primary transition-colors cursor-pointer"}>
                   Track Order Status
-                </span>
+                </Link>
               </li>
               <li>
-                <span className="hover:text-primary transition-colors cursor-pointer">
+                <Link to="/terms-conditions" className={"hover:text-primary transition-colors cursor-pointer"}>
                   Terms & Conditions
-                </span>
+                </Link>
               </li>
               <li>
-                <span className="hover:text-primary transition-colors cursor-pointer">
+                <Link to="/warranty" className={"hover:text-primary transition-colors cursor-pointer"}>
                   Warranty T&C
-                </span>
+                </Link>
               </li>
             </ul>
           </div>
@@ -119,9 +119,9 @@ const Footer = () => {
             </h4>
             <ul className="space-y-3 text-[13px] font-bold text-gray-500">
               <li>
-                <span className="hover:text-primary transition-colors cursor-pointer">
-                  How to manual's
-                </span>
+                <Link to="/how-to-manuals" className={"hover:text-primary transition-colors cursor-pointer"}>
+                  How to Manual's
+                </Link>
               </li>
             </ul>
           </div>
