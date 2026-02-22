@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./config/db.js";
 import path from "path";
+import { fileURLToPath } from 'url';
 import customerRoutes from "./modules/customer/routes/customerRoutes.js";
 import adminRoutes from "./modules/admin/routes/adminRoutes.js";
 import bannerRoutes from "./modules/admin/routes/bannerRoutes.js";
@@ -12,8 +13,12 @@ import homeSectionRoutes from "./modules/admin/routes/homeSectionRoutes.js";
 import customerHomeSectionRoutes from "./modules/customer/routes/homeSectionRoutes.js";
 import translationRoutes from "./routes/translationRoutes.js";
 
+// Define __dirname for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // Load environment variables
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 // Connect to Database
 connectDB();
@@ -41,8 +46,7 @@ app.use(cors({
 
 // Middleware
 app.use(express.json());
-const __dirname = path.resolve();
-app.use("/uploads", express.static(path.join(__dirname, "/uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // Routes
 app.use("/api/customer", customerRoutes);
