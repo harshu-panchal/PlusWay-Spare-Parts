@@ -1,5 +1,6 @@
 import Customer from "../../../models/Customer.js";
 import generateToken from "../../../utils/generateToken.js";
+import { verifySmsOtp } from "../../../services/otpService.js";
 
 // @desc    Register a new customer
 // @route   POST /api/customer/register
@@ -7,8 +8,9 @@ import generateToken from "../../../utils/generateToken.js";
 export const registerCustomer = async (req, res) => {
   const { name, mobile, email, otp } = req.body;
 
-  if (otp !== "123456") {
-    return res.status(400).json({ message: "Invalid OTP" });
+  const isValidOtp = await verifySmsOtp(null, otp, mobile, "Customer");
+  if (!isValidOtp) {
+    return res.status(400).json({ message: "Invalid or expired OTP" });
   }
 
   const customerExists = await Customer.findOne({ mobile });
@@ -42,8 +44,9 @@ export const registerCustomer = async (req, res) => {
 export const authCustomer = async (req, res) => {
   const { mobile, otp } = req.body;
 
-  if (otp !== "123456") {
-    return res.status(400).json({ message: "Invalid OTP" });
+  const isValidOtp = await verifySmsOtp(null, otp, mobile, "Customer");
+  if (!isValidOtp) {
+    return res.status(400).json({ message: "Invalid or expired OTP" });
   }
 
   const customer = await Customer.findOne({ mobile });

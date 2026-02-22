@@ -11,6 +11,8 @@ import {
   authCustomer,
   updateCustomerProfile,
 } from "../controllers/customerController.js";
+import { sendOtp } from "../controllers/authController.js";
+import { otpLimiter } from "../../../middleware/rateLimiter.js";
 import {
   getAddresses,
   addAddress,
@@ -32,7 +34,7 @@ import {
 } from "../controllers/orderController.js";
 import {
   createRazorpayOrder,
-  verifyRazorpayPayment
+  verifyRazorpayPayment,
 } from "../controllers/paymentController.js";
 import { getCategories } from "../../admin/controllers/categoryController.js";
 import { getBrands } from "../../admin/controllers/brandController.js";
@@ -43,6 +45,7 @@ import { protect } from "../../../middleware/authMiddleware.js";
 const router = express.Router();
 
 // Auth routes
+router.post("/send-otp", otpLimiter, sendOtp);
 router.post("/register", registerCustomer);
 router.post("/login", authCustomer);
 
@@ -50,11 +53,10 @@ router.post("/login", authCustomer);
 router.put("/profile", protect, updateCustomerProfile);
 
 // Address routes (Protected)
-router.route("/addresses")
-  .get(protect, getAddresses)
-  .post(protect, addAddress);
+router.route("/addresses").get(protect, getAddresses).post(protect, addAddress);
 
-router.route("/addresses/:id")
+router
+  .route("/addresses/:id")
   .put(protect, updateAddress)
   .delete(protect, deleteAddress);
 
@@ -73,11 +75,13 @@ router.get("/banners", getActiveBanners);
 router.get("/reviews", protect, getMyReviews);
 
 // Cart routes (Protected)
-router.route("/cart")
+router
+  .route("/cart")
   .get(protect, getCart)
   .post(protect, addToCart)
   .delete(protect, clearCart);
-router.route("/cart/:itemId")
+router
+  .route("/cart/:itemId")
   .put(protect, updateCartItem)
   .delete(protect, removeCartItem);
 

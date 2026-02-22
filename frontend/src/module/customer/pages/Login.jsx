@@ -11,26 +11,38 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const inputRefs = useRef([]);
 
-  const handleSendOTP = (e) => {
+  const handleSendOTP = async (e) => {
     e.preventDefault();
     if (mobile.length === 10) {
-      setStep(2);
+      setLoading(true);
+      setError("");
+      try {
+        await axios.post("http://localhost:5001/api/customer/send-otp", {
+          mobile,
+          type: "login",
+        });
+        setStep(2);
+      } catch (err) {
+        setError(
+          err.response?.data?.message ||
+            "Failed to send OTP. Please try again.",
+        );
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
-    if (otp.length === 6) {
-      if (otp !== "123456") {
-        setError("Invalid OTP. Use 123456 for testing.");
-        return;
-      }
+    if (otp.length === 4) {
       try {
         setLoading(true);
         setError("");
         const { data } = await axios.post(
-          API_ENDPOINTS.CUSTOMER_LOGIN,
+          "http://localhost:5001/api/customer/login",
           { mobile, otp },
         );
 
@@ -102,36 +114,29 @@ const Login = () => {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-6 gap-2">
-                  {[...Array(6)].map((_, i) => (
+                <div className="flex gap-3 justify-between">
+                  {Array.from({ length: 4 }).map((_, i) => (
                     <input
                       key={i}
-                      id={`otp-${i}`}
+                      ref={(el) => (inputRefs.current[i] = el)}
                       type="text"
-                      maxLength="1"
-                      className="w-full aspect-square text-center bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-primary font-black text-xl text-secondary"
+                      maxLength={1}
+                      className="w-14 h-16 bg-gray-50 border border-gray-200 rounded-2xl text-center text-2xl font-black text-secondary focus:outline-none focus:border-primary focus:bg-white transition-all"
                       value={otp[i] || ""}
                       onChange={(e) => {
-                        const val = e.target.value;
-                        if (/[0-9]/.test(val)) {
-                          const newOtp = otp.substring(0, i) + val + otp.substring(i + 1);
-                          setOtp(newOtp);
-                          // Focus next input
-                          if (i < 5) {
-                            document.getElementById(`otp-${i + 1}`).focus();
-                          }
+                        const val = e.target.value.replace(/\D/g, "");
+                        const newOtp = otp.split("");
+                        newOtp[i] = val;
+                        const finalOtp = newOtp.join("");
+                        setOtp(finalOtp);
+
+                        if (val && i < 3) {
+                          inputRefs.current[i + 1].focus();
                         }
                       }}
                       onKeyDown={(e) => {
-                        if (e.key === "Backspace") {
-                          if (!otp[i] && i > 0) {
-                            // If current is empty and backspace pressed, go to previous
-                            document.getElementById(`otp-${i - 1}`).focus();
-                          } else {
-                            // Clear current digit
-                            const newOtp = otp.substring(0, i) + otp.substring(i + 1);
-                            setOtp(newOtp);
-                          }
+                        if (e.key === "Backspace" && !otp[i] && i > 0) {
+                          inputRefs.current[i - 1].focus();
                         }
                       }}
                     />
@@ -141,14 +146,19 @@ const Login = () => {
 
               <button
                 type="submit"
-                disabled={loading}
-                className={`w-full bg-secondary text-white font-black py-4 rounded-2xl shadow-lg hover:bg-black transition-all uppercase tracking-widest flex items-center justify-center gap-2 ${loading ? "opacity-50 cursor-not-allowed" : ""}`}>
-                {loading
-                  ? "Processing..."
-                  : step === 1
-                    ? "Send OTP"
-                    : "Verify & Continue"}
-                {!loading && <ChevronRight size={18} />}
+                disabled={
+                  loading ||
+                  (step === 1 ? mobile.length !== 10 : otp.length !== 4)
+                }
+                className="w-full bg-secondary text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-opacity-90 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-secondary/20">
+                {loading ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    {step === 1 ? "Send Code" : "Verify Code"}
+                    <ChevronRight size={18} strokeWidth={3} />
+                  </>
+                )}
               </button>
             </form>
 
