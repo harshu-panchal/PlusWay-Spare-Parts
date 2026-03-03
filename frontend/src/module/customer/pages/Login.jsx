@@ -19,7 +19,7 @@ const Login = () => {
       setLoading(true);
       setError("");
       try {
-        await axios.post("http://localhost:5001/api/customer/send-otp", {
+        await axios.post(API_ENDPOINTS.CUSTOMER_SEND_OTP, {
           mobile,
           type: "login",
         });
@@ -41,10 +41,10 @@ const Login = () => {
       try {
         setLoading(true);
         setError("");
-        const { data } = await axios.post(
-          "http://localhost:5001/api/customer/login",
-          { mobile, otp },
-        );
+        const { data } = await axios.post(API_ENDPOINTS.CUSTOMER_LOGIN, {
+          mobile,
+          otp,
+        });
 
         // Store customer info and token
         localStorage.setItem("userInfo", JSON.stringify(data));
