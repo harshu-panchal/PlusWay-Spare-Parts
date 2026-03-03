@@ -115,6 +115,8 @@ async function importData() {
             }
 
             const price = parsePrice(details.price);
+            const wholesaleMinQty = 10;
+            const wholesalePrice = price ? price * 0.8 : 0;
             const description = details.description || `High quality ${details.title}.`;
 
             let slug = slugify(details.title);
@@ -132,6 +134,8 @@ async function importData() {
                 code: code,
                 description: description,
                 price: price,
+                wholesalePrice,
+                wholesaleMinQty,
                 mrp: price * 1.5,
                 images: imageUrls,
                 brand: brand._id,

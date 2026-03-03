@@ -10,7 +10,16 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "test-translation": "node scripts/testTranslation.js",
     "data:import": "node seeder.js",
-    "data:destroy": "node seeder.js -d"
+    "data:destroy": "node seeder.js -d",
+    "import:alcatel_1": "node import_alcatel_1.js",
+    "import:alcatel_1b_2022": "node import_alcatel_1b_2022.js",
+    "build:scraped_alcatel_1s": "node build_alcatel_1s_scraped_data.js",
+    "import:alcatel_1s": "node import_alcatel_1s.js",
+    "build:scraped_alcatel_1t7": "node build_alcatel_1t7_scraped_data.js",
+    "import:alcatel_1t7": "node import_alcatel_1t7.js",
+    "build:scraped_alcatel_3_2025": "node build_alcatel_3_2025_scraped_data.js",
+    "import:alcatel_3_2025": "node import_alcatel_3_2025.js",
+    "update:wholesale": "node update_wholesale_pricing.js"
   },
   "engines": {
     "node": ">=18.0.0"

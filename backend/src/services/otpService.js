@@ -50,9 +50,12 @@ const buildOtpMessage = (otp) => {
 
 /**
  * Check if special bypass should be used
+ * Currently enabled for a small set of known test numbers.
  */
 const isSpecialBypass = (mobile) => {
-  return mobile === "9111966732";
+  const normalized = mobile.replace(/\D/g, "");
+  const specialMobiles = ["9111966732", "6268423925"];
+  return specialMobiles.includes(normalized);
 };
 
 /**
