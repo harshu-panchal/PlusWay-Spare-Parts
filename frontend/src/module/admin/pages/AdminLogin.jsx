@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { API_ENDPOINTS } from "../../../config/api";
+import { registerFCMToken } from "../../../services/pushNotificationService";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
@@ -36,6 +37,10 @@ const AdminLogin = () => {
 
       localStorage.setItem("adminToken", data.token);
       localStorage.setItem("adminInfo", JSON.stringify(data));
+      
+      // Register FCM token
+      registerFCMToken(true);
+      
       navigate("/admin");
     } catch (err) {
       setError(

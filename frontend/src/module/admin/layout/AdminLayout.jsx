@@ -24,6 +24,7 @@ import {
   Image,
   Wallet,
 } from "lucide-react";
+import { removeFCMToken } from "../../../services/pushNotificationService";
 
 const AdminLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -77,6 +78,7 @@ const AdminLayout = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
+    removeFCMToken();
     localStorage.removeItem("adminToken");
     navigate("/admin/login");
   };

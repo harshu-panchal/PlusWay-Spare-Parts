@@ -9,6 +9,12 @@ import { CartProvider } from "./module/customer/context/CartContext";
 import ScrollToTop from "./components/ScrollToTop";
 import LoadingFallback from "./components/LoadingFallback";
 import RouteTransitionLoader from "./components/RouteTransitionLoader";
+import { useEffect } from "react";
+import {
+  initializePushNotifications,
+  setupForegroundNotificationHandler,
+  registerFCMToken,
+} from "./services/pushNotificationService";
 
 // Eager imports for layouts (needed immediately)
 import Layout from "./module/customer/components/Layout";
@@ -76,6 +82,24 @@ const AdminProtectedRoute = ({ children }) => {
 };
 
 const App = () => {
+  useEffect(() => {
+    // Initialize push notifications on app load
+    initializePushNotifications();
+
+    // Setup foreground message handler
+    setupForegroundNotificationHandler((payload) => {
+      console.log("Foreground notification received:", payload);
+      // Optional: show a toast or custom alert here
+    });
+
+    // Try to register token if user is already logged in
+    const userInfo = localStorage.getItem("userInfo");
+    const adminToken = localStorage.getItem("adminToken");
+    if (userInfo || adminToken) {
+      registerFCMToken();
+    }
+  }, []);
+
   return (
     <CartProvider>
       <Router>

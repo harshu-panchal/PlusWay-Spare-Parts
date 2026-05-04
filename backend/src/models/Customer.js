@@ -51,6 +51,15 @@ const customerSchema = new mongoose.Schema(
       enum: ["Active", "Inactive", "Blocked"],
       default: "Active",
     },
+    // FCM Tokens for Push Notifications
+    fcmTokens: {
+      type: [String],
+      default: [],
+    },
+    fcmTokenMobile: {
+      type: [String],
+      default: [],
+    },
   },
   {
     timestamps: true,

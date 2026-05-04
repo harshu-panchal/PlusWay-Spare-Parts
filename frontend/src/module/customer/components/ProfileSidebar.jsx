@@ -10,6 +10,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { removeFCMToken } from "../../../services/pushNotificationService";
 
 const ProfileSidebar = () => {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ const ProfileSidebar = () => {
   const userInfo = JSON.parse(localStorage.getItem("userInfo"));
 
   const handleLogout = () => {
+    removeFCMToken();
     localStorage.removeItem("userInfo");
     localStorage.removeItem("token");
     navigate("/login");

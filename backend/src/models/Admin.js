@@ -26,6 +26,15 @@ const adminSchema = new mongoose.Schema(
       default: "admin",
       immutable: true,
     },
+    // FCM Tokens for Push Notifications
+    fcmTokens: {
+      type: [String],
+      default: [],
+    },
+    fcmTokenMobile: {
+      type: [String],
+      default: [],
+    },
   },
   {
     timestamps: true,

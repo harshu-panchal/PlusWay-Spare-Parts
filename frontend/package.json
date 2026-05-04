@@ -12,6 +12,7 @@
   "dependencies": {
     "@paypal/react-paypal-js": "^8.9.2",
     "axios": "^1.13.2",
+    "firebase": "^12.12.1",
     "framer-motion": "^12.27.5",
     "lottie-react": "^2.4.1",
     "lucide-react": "^0.562.0",

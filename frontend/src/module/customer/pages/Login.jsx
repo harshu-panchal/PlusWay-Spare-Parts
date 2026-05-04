@@ -3,6 +3,7 @@ import { Smartphone, ShieldCheck, Lock, ChevronRight } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { API_ENDPOINTS } from "../../../config/api";
+import { registerFCMToken } from "../../../services/pushNotificationService";
 
 const Login = () => {
   const [step, setStep] = useState(1); // 1: Mobile, 2: OTP
@@ -49,6 +50,9 @@ const Login = () => {
         // Store customer info and token
         localStorage.setItem("userInfo", JSON.stringify(data));
         localStorage.setItem("token", data.token);
+
+        // Register FCM token
+        registerFCMToken(true);
 
         setLoading(false);
         navigate("/");
