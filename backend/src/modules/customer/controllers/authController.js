@@ -1,6 +1,7 @@
 import asyncHandler from '../../../middleware/asyncHandler.js';
 import { sendSmsOtp, verifySmsOtp } from '../../../services/otpService.js';
 import Customer from '../../../models/Customer.js';
+import generateToken from '../../../utils/generateToken.js';
 
 // @desc    Send OTP for registration/login
 // @route   POST /api/customer/send-otp
@@ -52,10 +53,33 @@ export const verifyOtp = asyncHandler(async (req, res) => {
   const isValidOtp = await verifySmsOtp(null, otp, mobile, 'Customer', false);
 
   if (isValidOtp) {
-    res.status(200).json({
-      success: true,
-      message: 'OTP verified successfully',
-    });
+    const customer = await Customer.findOne({ mobile });
+
+    if (customer) {
+      res.status(200).json({
+        success: true,
+        message: 'Login successful',
+        data: {
+          token: generateToken(customer._id, 'customer'),
+          user: {
+            id: customer._id,
+            name: customer.name,
+            phone: customer.mobile,
+            email: customer.email || "",
+            walletAmount: 0,
+            refCode: "",
+            status: customer.status || "Active"
+          }
+        }
+      });
+    } else {
+      res.status(200).json({
+        success: true,
+        message: 'OTP verified successfully',
+        data: null,
+        needsRegistration: true
+      });
+    }
   } else {
     res.status(400);
     throw new Error('Invalid or expired OTP');
