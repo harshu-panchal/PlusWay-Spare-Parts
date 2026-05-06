@@ -1,5 +1,5 @@
 import asyncHandler from '../../../middleware/asyncHandler.js';
-import { sendSmsOtp } from '../../../services/otpService.js';
+import { sendSmsOtp, verifySmsOtp } from '../../../services/otpService.js';
 import Customer from '../../../models/Customer.js';
 
 // @desc    Send OTP for registration/login
@@ -36,4 +36,28 @@ export const sendOtp = asyncHandler(async (req, res) => {
   const result = await sendSmsOtp(mobile, 'Customer');
   
   res.status(200).json(result);
+});
+
+// @desc    Verify OTP
+// @route   POST /api/customer/verify-otp
+// @access  Public
+export const verifyOtp = asyncHandler(async (req, res) => {
+  const { mobile, otp } = req.body;
+
+  if (!mobile || !otp) {
+    res.status(400);
+    throw new Error('Mobile number and OTP are required');
+  }
+
+  const isValidOtp = await verifySmsOtp(null, otp, mobile, 'Customer');
+
+  if (isValidOtp) {
+    res.status(200).json({
+      success: true,
+      message: 'OTP verified successfully',
+    });
+  } else {
+    res.status(400);
+    throw new Error('Invalid or expired OTP');
+  }
 });

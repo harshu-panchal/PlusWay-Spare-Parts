@@ -11,7 +11,7 @@ import {
   authCustomer,
   updateCustomerProfile,
 } from "../controllers/customerController.js";
-import { sendOtp } from "../controllers/authController.js";
+import { sendOtp, verifyOtp } from "../controllers/authController.js";
 import { otpLimiter } from "../../../middleware/rateLimiter.js";
 import {
   getAddresses,
@@ -46,6 +46,7 @@ const router = express.Router();
 
 // Auth routes
 router.post("/send-otp", otpLimiter, sendOtp);
+router.post("/verify-otp", verifyOtp);
 router.post("/register", registerCustomer);
 router.post("/login", authCustomer);
 
