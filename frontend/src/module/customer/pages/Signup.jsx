@@ -50,6 +50,13 @@ const Signup = () => {
       try {
         setLoading(true);
         setError("");
+        // First verify OTP using the separate route
+        await axios.post(API_ENDPOINTS.CUSTOMER_VERIFY_OTP, {
+          mobile: formData.mobile,
+          otp,
+        });
+
+        // If verification is successful, proceed to registration
         const { data } = await axios.post(
           API_ENDPOINTS.CUSTOMER_REGISTER,
           { ...formData, otp },

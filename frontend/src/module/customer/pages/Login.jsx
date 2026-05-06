@@ -42,6 +42,13 @@ const Login = () => {
       try {
         setLoading(true);
         setError("");
+        // First verify OTP using the separate route
+        await axios.post(API_ENDPOINTS.CUSTOMER_VERIFY_OTP, {
+          mobile,
+          otp,
+        });
+
+        // If verification is successful, proceed to login
         const { data } = await axios.post(API_ENDPOINTS.CUSTOMER_LOGIN, {
           mobile,
           otp,

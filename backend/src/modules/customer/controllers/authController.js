@@ -49,7 +49,7 @@ export const verifyOtp = asyncHandler(async (req, res) => {
     throw new Error('Mobile number and OTP are required');
   }
 
-  const isValidOtp = await verifySmsOtp(null, otp, mobile, 'Customer');
+  const isValidOtp = await verifySmsOtp(null, otp, mobile, 'Customer', false);
 
   if (isValidOtp) {
     res.status(200).json({

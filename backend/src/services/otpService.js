@@ -204,7 +204,7 @@ const saveOtpToDb = async (mobile, otp, userType) => {
 /**
  * Verify OTP from database
  */
-const verifyOtpFromDb = async (mobile, otp, userType) => {
+const verifyOtpFromDb = async (mobile, otp, userType, shouldConsume = true) => {
   // Normalize mobile number (remove any non-digits, ensure consistent format)
   const normalizedMobile = mobile.replace(/\D/g, "");
 
@@ -233,7 +233,9 @@ const verifyOtpFromDb = async (mobile, otp, userType) => {
     return false;
   }
 
-  await Otp.deleteOne({ _id: record._id });
+  if (shouldConsume) {
+    await Otp.deleteOne({ _id: record._id });
+  }
   return true;
 };
 
@@ -294,6 +296,7 @@ export const verifySmsOtp = async (
   otpInput,
   mobile,
   userType = "Delivery",
+  shouldConsume = true,
 ) => {
   if (isDeveloperBypass(otpInput)) {
     return true;
@@ -341,7 +344,7 @@ export const verifySmsOtp = async (
     return false;
   }
 
-  return verifyOtpFromDb(normalizedMobile, normalizedOtp, userType);
+  return verifyOtpFromDb(normalizedMobile, normalizedOtp, userType, shouldConsume);
 };
 
 export const sendOTP = async (mobile, userType, _isLogin = true) => {
@@ -389,7 +392,7 @@ export const sendOTP = async (mobile, userType, _isLogin = true) => {
   }
 };
 
-export const verifyOTP = async (mobile, otpInput, userType) => {
+export const verifyOTP = async (mobile, otpInput, userType, shouldConsume = true) => {
   if (isDeveloperBypass(otpInput)) {
     return true;
   }
@@ -418,5 +421,5 @@ export const verifyOTP = async (mobile, otpInput, userType) => {
     return false;
   }
 
-  return verifyOtpFromDb(normalizedMobile, normalizedOtp, userType);
+  return verifyOtpFromDb(normalizedMobile, normalizedOtp, userType, shouldConsume);
 };
