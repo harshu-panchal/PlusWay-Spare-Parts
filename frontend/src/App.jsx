@@ -16,12 +16,12 @@ import {
   registerFCMToken,
 } from "./services/pushNotificationService";
 
-// Eager imports for layouts (needed immediately)
+// Eager imports for layouts and Home page (needed immediately)
 import Layout from "./module/customer/components/Layout";
 import AdminLayout from "./module/admin/layout/AdminLayout";
+import Home from "./module/customer/pages/Home";
 
 // Lazy-loaded Customer Pages
-const Home = lazy(() => import("./module/customer/pages/Home"));
 const BrandSelection = lazy(() => import("./module/customer/pages/BrandSelection"));
 const ModelSelection = lazy(() => import("./module/customer/pages/ModelSelection"));
 const ProductTypeSelection = lazy(() => import("./module/customer/pages/ProductTypeSelection"));
