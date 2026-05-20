@@ -28,7 +28,9 @@ const Header = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const { data } = await axios.get(`${API_ENDPOINTS.CUSTOMER_CATEGORIES}?all=true`);
+        const { data } = await axios.get(
+          `${API_ENDPOINTS.CUSTOMER_CATEGORIES}?all=true`,
+        );
         setCategories(data.categories || (Array.isArray(data) ? data : []));
       } catch (error) {
         console.error("Error fetching categories:", error);
@@ -44,13 +46,14 @@ const Header = () => {
   };
 
   const handleSearch = (e) => {
-    if (e.key === 'Enter' || e.type === 'click') {
+    if (e.key === "Enter" || e.type === "click") {
       navigate(`/products?keyword=${searchQuery}`);
     }
-  }
+  };
 
-  const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
-  const cartTotal = cartItems.reduce(
+  const safeCartItems = Array.isArray(cartItems) ? cartItems : [];
+  const cartCount = safeCartItems.reduce((acc, item) => acc + item.quantity, 0);
+  const cartTotal = safeCartItems.reduce(
     (acc, item) => acc + item.price * item.quantity,
     0,
   );
@@ -79,7 +82,11 @@ const Header = () => {
               Plusway Support
             </span>
             <span className="text-gray-300">|</span>
-            <LanguageSelector variant="compact" showFlag={true} showNative={false} />
+            <LanguageSelector
+              variant="compact"
+              showFlag={true}
+              showNative={false}
+            />
           </div>
         </div>
       </div>
@@ -103,7 +110,9 @@ const Header = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={handleSearch}
           />
-          <button onClick={handleSearch} className="absolute right-0 top-0 h-full px-4 bg-gray-50 border-l border-gray-300 rounded-r hover:bg-gray-100 transition-colors">
+          <button
+            onClick={handleSearch}
+            className="absolute right-0 top-0 h-full px-4 bg-gray-50 border-l border-gray-300 rounded-r hover:bg-gray-100 transition-colors">
             <Search size={18} className="text-gray-500" />
           </button>
         </div>
@@ -253,17 +262,20 @@ const Header = () => {
             <Menu size={16} /> All Categories
           </div>
           <div className="flex gap-8 px-8 items-center h-full text-[11px] font-black uppercase tracking-widest overflow-x-auto no-scrollbar whitespace-nowrap">
-            <Link to="/brand-selection" className="hover:text-primary transition-colors">
+            <Link
+              to="/brand-selection"
+              className="hover:text-primary transition-colors">
               Brands
             </Link>
-            {categories.map((category) => (
-              <Link
-                key={category._id}
-                to={`/products?category=${category._id}`}
-                className="hover:text-primary transition-colors">
-                {category.name}
-              </Link>
-            ))}
+            {Array.isArray(categories) &&
+              categories.map((category) => (
+                <Link
+                  key={category._id}
+                  to={`/products?category=${category._id}`}
+                  className="hover:text-primary transition-colors">
+                  {category.name}
+                </Link>
+              ))}
           </div>
         </div>
       </div>

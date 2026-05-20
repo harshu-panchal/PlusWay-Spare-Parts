@@ -102,13 +102,14 @@ export const CartProvider = ({ children }) => {
         }
     };
 
-    const cartTotal = cartItems.reduce((sum, item) => {
+    const safeCartItems = Array.isArray(cartItems) ? cartItems : [];
+    const cartTotal = safeCartItems.reduce((sum, item) => {
         const price = (item.wholesalePrice && item.quantity >= (item.wholesaleMinQty || 10))
             ? item.wholesalePrice
             : item.price;
         return sum + (price * item.quantity);
     }, 0);
-    const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+    const cartCount = safeCartItems.reduce((sum, item) => sum + item.quantity, 0);
 
     return (
         <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, clearCart, cartTotal, cartCount, fetchCart }}>

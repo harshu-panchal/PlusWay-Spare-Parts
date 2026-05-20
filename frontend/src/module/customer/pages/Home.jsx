@@ -8,7 +8,6 @@ import {
   ChevronLeft,
 } from "lucide-react";
 
-
 import axios from "axios";
 import { API_ENDPOINTS } from "../../../config/api";
 import LazyImage from "../../../components/LazyImage";
@@ -86,12 +85,16 @@ const Home = () => {
         ]);
 
         setBrands(brandsRes.data.brands || brandsRes.data || []);
-        const bannersData = Array.isArray(bannersRes.data) ? bannersRes.data : [];
+        const bannersData = Array.isArray(bannersRes.data)
+          ? bannersRes.data
+          : [];
         setBanners({
           main: bannersData.filter((b) => b.type === "main"),
           sub: bannersData.filter((b) => b.type === "sub"),
         });
-        setHomeSections(Array.isArray(sectionsRes.data) ? sectionsRes.data : []);
+        setHomeSections(
+          Array.isArray(sectionsRes.data) ? sectionsRes.data : [],
+        );
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -148,47 +151,64 @@ const Home = () => {
       </div>
 
       {/* Dynamic Home Sections */}
-      {homeSections.map((section) => {
-        const getGridColsClass = (num) => {
-          const n = num || 4; // default
-          switch (n) {
-            case 2: return "lg:grid-cols-2";
-            case 3: return "lg:grid-cols-3";
-            case 4: return "lg:grid-cols-4";
-            case 5: return "lg:grid-cols-5";
-            case 6: return "lg:grid-cols-6";
-            case 7: return "lg:grid-cols-7";
-            case 8: return "lg:grid-cols-8";
-            case 9: return "lg:grid-cols-9";
-            case 10: return "lg:grid-cols-10";
-            default: return "lg:grid-cols-4";
-          }
-        };
+      {Array.isArray(homeSections) &&
+        homeSections.map((section) => {
+          const getGridColsClass = (num) => {
+            const n = num || 4; // default
+            switch (n) {
+              case 2:
+                return "lg:grid-cols-2";
+              case 3:
+                return "lg:grid-cols-3";
+              case 4:
+                return "lg:grid-cols-4";
+              case 5:
+                return "lg:grid-cols-5";
+              case 6:
+                return "lg:grid-cols-6";
+              case 7:
+                return "lg:grid-cols-7";
+              case 8:
+                return "lg:grid-cols-8";
+              case 9:
+                return "lg:grid-cols-9";
+              case 10:
+                return "lg:grid-cols-10";
+              default:
+                return "lg:grid-cols-4";
+            }
+          };
+          const sectionCategories = Array.isArray(section.categories)
+            ? section.categories
+            : [];
 
-        return (
-          <div key={section._id} className="max-w-7xl mx-auto px-[2%] md:px-4 mb-12">
-            <div className="bg-gray-50 px-4 py-3 border-b-2 border-primary mb-6">
-              <h2 className="text-sm font-black text-secondary uppercase tracking-widest">
-                {section.title}
-              </h2>
+          return (
+            <div
+              key={section._id}
+              className="max-w-7xl mx-auto px-[2%] md:px-4 mb-12">
+              <div className="bg-gray-50 px-4 py-3 border-b-2 border-primary mb-6">
+                <h2 className="text-sm font-black text-secondary uppercase tracking-widest">
+                  {section.title}
+                </h2>
+              </div>
+              <div
+                className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 ${getGridColsClass(section.productsPerRow)} gap-4`}>
+                {sectionCategories.map((cat) => (
+                  <CategoryCard key={cat._id} category={cat} />
+                ))}
+              </div>
             </div>
-            <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 ${getGridColsClass(section.productsPerRow)} gap-4`}>
-              {section.categories.map((cat) => (
-                <CategoryCard key={cat._id} category={cat} />
-              ))}
-            </div>
-          </div>
-        )
-      })}
+          );
+        })}
 
       {/* Brands Selection */}
       <div className="max-w-7xl mx-auto px-[2%] md:px-4">
-        <BrandGrid brands={brands} t={t} />
+        <BrandGrid brands={Array.isArray(brands) ? brands : []} t={t} />
       </div>
 
       {/* Recently Viewed Block (Mock) */}
       {/* Recently Viewed Block */}
-      {recentlyViewed.length > 0 && (
+      {Array.isArray(recentlyViewed) && recentlyViewed.length > 0 && (
         <div className="max-w-7xl mx-auto px-[2%] md:px-4">
           <div className="bg-gray-50 px-4 py-3 border-b-2 border-primary mb-6">
             <h2 className="text-sm font-black text-secondary uppercase tracking-widest">
@@ -197,7 +217,9 @@ const Home = () => {
           </div>
           <div className="flex gap-3 md:gap-4 overflow-x-auto pb-4 -mx-[2%] px-[2%] md:mx-0 md:px-0 scroll-smooth">
             {recentlyViewed.map((item) => (
-              <div key={item._id} className="w-[150px] md:w-[240px] flex-shrink-0">
+              <div
+                key={item._id}
+                className="w-[150px] md:w-[240px] flex-shrink-0">
                 <ProductCard product={item} />
               </div>
             ))}
