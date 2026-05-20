@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import compression from "compression";
 import connectDB from "./config/db.js";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -25,6 +26,9 @@ dotenv.config({ path: path.join(__dirname, "../.env") });
 connectDB();
 
 const app = express();
+
+// Compression middleware (place early to compress all responses)
+app.use(compression());
 
 // CORS Configuration
 const allowedOrigins = process.env.ALLOWED_ORIGINS
@@ -51,7 +55,29 @@ app.use(
 
 // Middleware
 app.use(express.json());
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+
+// Static files with caching
+const staticOptions = {
+  maxAge: "1d",
+  etag: false,
+  lastModified: true,
+};
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "../uploads"), staticOptions),
+);
+
+// Set Cache-Control headers for API responses (optional, per route can be more specific)
+app.use((req, res, next) => {
+  // Don't cache API responses that are dynamic
+  if (req.path.startsWith("/api/")) {
+    res.set(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, proxy-revalidate",
+    );
+  }
+  next();
+});
 
 // Routes
 app.use("/api/customer", customerRoutes);
