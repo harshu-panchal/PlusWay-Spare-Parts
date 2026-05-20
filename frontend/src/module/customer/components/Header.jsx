@@ -29,7 +29,7 @@ const Header = () => {
     const fetchCategories = async () => {
       try {
         const { data } = await axios.get(`${API_ENDPOINTS.CUSTOMER_CATEGORIES}?all=true`);
-        setCategories(data.categories || data || []);
+        setCategories(data.categories || (Array.isArray(data) ? data : []));
       } catch (error) {
         console.error("Error fetching categories:", error);
       }

@@ -86,11 +86,12 @@ const Home = () => {
         ]);
 
         setBrands(brandsRes.data.brands || brandsRes.data || []);
+        const bannersData = Array.isArray(bannersRes.data) ? bannersRes.data : [];
         setBanners({
-          main: bannersRes.data.filter((b) => b.type === "main"),
-          sub: bannersRes.data.filter((b) => b.type === "sub"),
+          main: bannersData.filter((b) => b.type === "main"),
+          sub: bannersData.filter((b) => b.type === "sub"),
         });
-        setHomeSections(sectionsRes.data);
+        setHomeSections(Array.isArray(sectionsRes.data) ? sectionsRes.data : []);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
