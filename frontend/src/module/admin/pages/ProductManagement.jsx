@@ -33,6 +33,16 @@ const ProductManagement = () => {
   const [pages, setPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [categoryFilter, setCategoryFilter] = useState("All");
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setPage(1);
+  };
+
+  const handleCategoryFilterChange = (e) => {
+    setCategoryFilter(e.target.value);
+    setPage(1);
+  };
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -40,13 +50,23 @@ const ProductManagement = () => {
 
   const fetchData = async () => {
     try {
-      const config = { headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}` } };
+      const config = {
+        headers: {
+          Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}`,
+        },
+      };
+
+      let queryParams = `?pageNumber=${page}`;
+      if (searchTerm)
+        queryParams += `&search=${encodeURIComponent(searchTerm)}`;
+      if (categoryFilter && categoryFilter !== "All")
+        queryParams += `&category=${encodeURIComponent(categoryFilter)}`;
 
       const [prodRes, catRes, brandRes, modelRes] = await Promise.all([
-        axios.get(`${API_ENDPOINTS.ADMIN_PRODUCTS}?pageNumber=${page}`, config),
+        axios.get(`${API_ENDPOINTS.ADMIN_PRODUCTS}${queryParams}`, config),
         axios.get(`${API_ENDPOINTS.ADMIN_CATEGORIES}?all=true`, config),
         axios.get(`${API_ENDPOINTS.ADMIN_BRANDS}?all=true`, config),
-        axios.get(`${API_ENDPOINTS.ADMIN_MODELS}?all=true`, config)
+        axios.get(`${API_ENDPOINTS.ADMIN_MODELS}?all=true`, config),
       ]);
 
       const productData = prodRes.data;
@@ -66,17 +86,7 @@ const ProductManagement = () => {
 
   useEffect(() => {
     fetchData();
-  }, [page]);
-
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch =
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product._id.toString().includes(searchTerm);
-    const matchesCategory =
-      categoryFilter === "All" ||
-      product.category?._id === categoryFilter || product.category === categoryFilter; // Handle populated vs unpopulated
-    return matchesSearch && matchesCategory;
-  });
+  }, [page, searchTerm, categoryFilter]);
 
   const initialFormState = {
     name: "",
@@ -114,10 +124,11 @@ const ProductManagement = () => {
             period: "",
             policy: "",
             summary: "",
-            ...(product.details?.warranty || {})
+            ...(product.details?.warranty || {}),
           },
           inTheBox: product.details?.inTheBox || "",
-          highlights: product.details?.highlights?.map(h => ({ type: h })) || []
+          highlights:
+            product.details?.highlights?.map((h) => ({ type: h })) || [],
         },
         countInStock: product.countInStock || 0,
         wholesalePrice: product.wholesalePrice || 0,
@@ -166,7 +177,7 @@ const ProductManagement = () => {
         highlights: [...(formData.details.highlights || []), { type: "" }],
       },
     });
-  }
+  };
 
   const handleRemoveHighlight = (index) => {
     const newHighlights = [...(formData.details.highlights || [])];
@@ -208,7 +219,11 @@ const ProductManagement = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem("adminToken"); // Assuming token storage
-      const config = { headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}` } };
+      const config = {
+        headers: {
+          Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}`,
+        },
+      };
 
       // Ensure price/mrp are numbers
       const payload = {
@@ -220,12 +235,18 @@ const ProductManagement = () => {
         countInStock: Number(formData.countInStock),
         details: {
           ...formData.details,
-          highlights: formData.details.highlights?.map(h => h.type).filter(h => h) || []
-        }
+          highlights:
+            formData.details.highlights?.map((h) => h.type).filter((h) => h) ||
+            [],
+        },
       };
 
       if (editingProduct) {
-        await axios.put(API_ENDPOINTS.ADMIN_PRODUCT_DETAIL(editingProduct._id), payload, config);
+        await axios.put(
+          API_ENDPOINTS.ADMIN_PRODUCT_DETAIL(editingProduct._id),
+          payload,
+          config,
+        );
       } else {
         await axios.post(API_ENDPOINTS.ADMIN_PRODUCTS, payload, config);
       }
@@ -246,15 +267,25 @@ const ProductManagement = () => {
   const confirmDelete = async () => {
     if (!productToDelete) return;
     try {
-      const config = { headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}` } };
-      await axios.delete(API_ENDPOINTS.ADMIN_PRODUCT_DETAIL(productToDelete._id), config);
+      const config = {
+        headers: {
+          Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}`,
+        },
+      };
+      await axios.delete(
+        API_ENDPOINTS.ADMIN_PRODUCT_DETAIL(productToDelete._id),
+        config,
+      );
       setIsDeleteModalOpen(false);
       setProductToDelete(null);
       fetchData();
       alert("Product Deleted Successfully");
     } catch (error) {
       console.error(error);
-      alert("Failed to delete product: " + (error.response?.data?.message || error.message));
+      alert(
+        "Failed to delete product: " +
+          (error.response?.data?.message || error.message),
+      );
     }
   };
 
@@ -271,7 +302,7 @@ const ProductManagement = () => {
           <select
             className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-gray-600 bg-white font-medium text-sm"
             value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}>
+            onChange={handleCategoryFilterChange}>
             <option value="All">All Categories</option>
             {categories.map((c) => (
               <option key={c._id} value={c._id}>
@@ -299,11 +330,11 @@ const ProductManagement = () => {
             placeholder="Search by name, ID or SKU..."
             className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-transparent focus:bg-white border focus:border-blue-500 rounded-lg outline-none transition-all text-sm"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleSearchChange}
           />
         </div>
         <div className="flex items-center gap-2 text-sm text-gray-500">
-          <span>Showing {filteredProducts.length} products</span>
+          <span>Showing {products.length} products</span>
         </div>
       </div>
 
@@ -334,7 +365,7 @@ const ProductManagement = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filteredProducts.map((product) => (
+              {products.map((product) => (
                 <tr
                   key={product._id}
                   className="group hover:bg-blue-50/30 transition-colors">
@@ -342,7 +373,12 @@ const ProductManagement = () => {
                     <div className="flex items-center gap-4">
                       <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-100 bg-white p-1 flex-shrink-0 group-hover:border-blue-200 transition-colors">
                         <img
-                          src={product.images && product.images.length > 0 ? product.images[0] : (product.image || "https://via.placeholder.com/150")}
+                          src={
+                            product.images && product.images.length > 0
+                              ? product.images[0]
+                              : product.image ||
+                                "https://via.placeholder.com/150"
+                          }
                           alt={product.name}
                           className="w-full h-full object-contain"
                         />
@@ -359,7 +395,10 @@ const ProductManagement = () => {
                   </td>
                   <td className="px-6 py-4">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                      {product.category?.name || categories.find((c) => c._id === product.category)?.name || "Display"}
+                      {product.category?.name ||
+                        categories.find((c) => c._id === product.category)
+                          ?.name ||
+                        "Display"}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -385,10 +424,11 @@ const ProductManagement = () => {
                   <td className="px-6 py-4">
                     <div className="flex flex-col items-center gap-1">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider ${product.countInStock > 0
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                          }`}>
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider ${
+                          product.countInStock > 0
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-700"
+                        }`}>
                         {product.countInStock > 0 ? "In Stock" : "Out of Stock"}
                       </span>
                       {product.countInStock > 0 && (
@@ -472,7 +512,11 @@ const ProductManagement = () => {
                   {formData.images.map((img, index) => (
                     <div key={index} className="relative group aspect-square">
                       <div className="w-full h-full rounded-xl overflow-hidden border border-gray-200">
-                        <img src={img} alt={`Product ${index}`} className="w-full h-full object-contain" />
+                        <img
+                          src={img}
+                          alt={`Product ${index}`}
+                          className="w-full h-full object-contain"
+                        />
                       </div>
                       <button
                         type="button"
@@ -561,7 +605,11 @@ const ProductManagement = () => {
                       }>
                       <option value="">Select Model</option>
                       {models
-                        .filter((m) => !formData.brand || (m.brand?._id || m.brand) === formData.brand)
+                        .filter(
+                          (m) =>
+                            !formData.brand ||
+                            (m.brand?._id || m.brand) === formData.brand,
+                        )
                         .map((m) => (
                           <option key={m._id} value={m._id}>
                             {m.name}
@@ -623,7 +671,10 @@ const ProductManagement = () => {
                         className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold"
                         value={formData.countInStock}
                         onChange={(e) =>
-                          setFormData({ ...formData, countInStock: e.target.value })
+                          setFormData({
+                            ...formData,
+                            countInStock: e.target.value,
+                          })
                         }
                       />
                     </div>
@@ -645,7 +696,10 @@ const ProductManagement = () => {
                         className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold text-blue-600"
                         value={formData.wholesalePrice}
                         onChange={(e) =>
-                          setFormData({ ...formData, wholesalePrice: e.target.value })
+                          setFormData({
+                            ...formData,
+                            wholesalePrice: e.target.value,
+                          })
                         }
                         placeholder="Price for bulk orders"
                       />
@@ -663,7 +717,10 @@ const ProductManagement = () => {
                         className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold"
                         value={formData.wholesaleMinQty}
                         onChange={(e) =>
-                          setFormData({ ...formData, wholesaleMinQty: e.target.value })
+                          setFormData({
+                            ...formData,
+                            wholesaleMinQty: e.target.value,
+                          })
                         }
                         placeholder="Min qty for wholesale price"
                       />
@@ -688,8 +745,15 @@ const ProductManagement = () => {
                 {/* Specifications */}
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">Specifications</label>
-                    <button type="button" onClick={handleAddSpec} className="text-blue-600 text-xs font-bold hover:underline">+ Add Specification</button>
+                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                      Specifications
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleAddSpec}
+                      className="text-blue-600 text-xs font-bold hover:underline">
+                      + Add Specification
+                    </button>
                   </div>
                   <div className="space-y-2">
                     {formData.details.specs?.map((spec, index) => (
@@ -699,20 +763,32 @@ const ProductManagement = () => {
                           placeholder="Key (e.g. Color)"
                           className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
                           value={spec.key}
-                          onChange={(e) => handleSpecChange(index, 'key', e.target.value)}
+                          onChange={(e) =>
+                            handleSpecChange(index, "key", e.target.value)
+                          }
                         />
                         <input
                           type="text"
                           placeholder="Value (e.g. Black)"
                           className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
                           value={spec.value}
-                          onChange={(e) => handleSpecChange(index, 'value', e.target.value)}
+                          onChange={(e) =>
+                            handleSpecChange(index, "value", e.target.value)
+                          }
                         />
-                        <button type="button" onClick={() => handleRemoveSpec(index)} className="text-red-500 hover:bg-red-50 p-2 rounded"><Trash2 size={16} /></button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSpec(index)}
+                          className="text-red-500 hover:bg-red-50 p-2 rounded">
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     ))}
-                    {(!formData.details.specs || formData.details.specs.length === 0) && (
-                      <p className="text-xs text-gray-400 italic">No specifications added.</p>
+                    {(!formData.details.specs ||
+                      formData.details.specs.length === 0) && (
+                      <p className="text-xs text-gray-400 italic">
+                        No specifications added.
+                      </p>
                     )}
                   </div>
                 </div>
@@ -720,8 +796,15 @@ const ProductManagement = () => {
                 {/* Highlights */}
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">Highlights</label>
-                    <button type="button" onClick={handleAddHighlight} className="text-blue-600 text-xs font-bold hover:underline">+ Add Highlight</button>
+                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                      Highlights
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleAddHighlight}
+                      className="text-blue-600 text-xs font-bold hover:underline">
+                      + Add Highlight
+                    </button>
                   </div>
                   <div className="space-y-2">
                     {formData.details.highlights?.map((highlight, index) => (
@@ -731,9 +814,16 @@ const ProductManagement = () => {
                           placeholder="Highlight (e.g. Super AMOLED Display)"
                           className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
                           value={highlight.type}
-                          onChange={(e) => handleHighlightChange(index, e.target.value)}
+                          onChange={(e) =>
+                            handleHighlightChange(index, e.target.value)
+                          }
                         />
-                        <button type="button" onClick={() => handleRemoveHighlight(index)} className="text-red-500 hover:bg-red-50 p-2 rounded"><Trash2 size={16} /></button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveHighlight(index)}
+                          className="text-red-500 hover:bg-red-50 p-2 rounded">
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -749,7 +839,13 @@ const ProductManagement = () => {
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                     value={formData.details.inTheBox}
                     onChange={(e) =>
-                      setFormData({ ...formData, details: { ...formData.details, inTheBox: e.target.value } })
+                      setFormData({
+                        ...formData,
+                        details: {
+                          ...formData.details,
+                          inTheBox: e.target.value,
+                        },
+                      })
                     }
                     placeholder="e.g. Handset, Charger, Cable"
                   />
@@ -758,37 +854,70 @@ const ProductManagement = () => {
                 {/* Warranty */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">Warranty Period</label>
+                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                      Warranty Period
+                    </label>
                     <input
                       type="text"
                       className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl"
                       value={formData.details.warranty.period}
                       onChange={(e) =>
-                        setFormData({ ...formData, details: { ...formData.details, warranty: { ...formData.details.warranty, period: e.target.value } } })
+                        setFormData({
+                          ...formData,
+                          details: {
+                            ...formData.details,
+                            warranty: {
+                              ...formData.details.warranty,
+                              period: e.target.value,
+                            },
+                          },
+                        })
                       }
                       placeholder="e.g. 6 Months"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">Warranty Policy</label>
+                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                      Warranty Policy
+                    </label>
                     <input
                       type="text"
                       className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl"
                       value={formData.details.warranty.policy}
                       onChange={(e) =>
-                        setFormData({ ...formData, details: { ...formData.details, warranty: { ...formData.details.warranty, policy: e.target.value } } })
+                        setFormData({
+                          ...formData,
+                          details: {
+                            ...formData.details,
+                            warranty: {
+                              ...formData.details.warranty,
+                              policy: e.target.value,
+                            },
+                          },
+                        })
                       }
                       placeholder="e.g. Replacement"
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">Warranty Summary</label>
+                  <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                    Warranty Summary
+                  </label>
                   <textarea
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl h-20 resize-none"
                     value={formData.details.warranty.summary}
                     onChange={(e) =>
-                      setFormData({ ...formData, details: { ...formData.details, warranty: { ...formData.details.warranty, summary: e.target.value } } })
+                      setFormData({
+                        ...formData,
+                        details: {
+                          ...formData.details,
+                          warranty: {
+                            ...formData.details.warranty,
+                            summary: e.target.value,
+                          },
+                        },
+                      })
                     }
                     placeholder="e.g. Warranty covers manufacturing defects only..."
                   />
@@ -809,7 +938,10 @@ const ProductManagement = () => {
                       className="sr-only peer"
                       checked={formData.countInStock > 0}
                       onChange={(e) =>
-                        setFormData({ ...formData, countInStock: e.target.checked ? 100 : 0 })
+                        setFormData({
+                          ...formData,
+                          countInStock: e.target.checked ? 100 : 0,
+                        })
                       }
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
@@ -833,7 +965,7 @@ const ProductManagement = () => {
               </div>
             </form>
           </div>
-        </div >
+        </div>
       )}
 
       {/* Delete Confirmation Modal */}
@@ -844,10 +976,16 @@ const ProductManagement = () => {
               <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
                 <AlertTriangle size={32} />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Product?</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                Delete Product?
+              </h3>
               <p className="text-gray-500 mb-8 px-4">
-                Are you sure you want to delete <span className="font-bold text-gray-900">"{productToDelete?.name}"</span>?
-                This action cannot be undone and will remove the product from all categories.
+                Are you sure you want to delete{" "}
+                <span className="font-bold text-gray-900">
+                  "{productToDelete?.name}"
+                </span>
+                ? This action cannot be undone and will remove the product from
+                all categories.
               </p>
               <div className="flex gap-4">
                 <button
@@ -866,7 +1004,7 @@ const ProductManagement = () => {
           </div>
         </div>
       )}
-    </div >
+    </div>
   );
 };
 

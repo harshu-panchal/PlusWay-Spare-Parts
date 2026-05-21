@@ -433,46 +433,11 @@ const ProductDetail = () => {
                     Product <span className="text-primary">Details</span>
                   </h3>
                   <div className="text-sm text-gray-600 leading-relaxed font-bold space-y-4">
-                    <p>
-                      Got broken display in your Samsung Galaxy Note 20 Ultra
-                      5G? Buy the complete LCD with Touch Screen for Samsung
-                      Galaxy Note 20 Ultra 5G - Black and replace the broken,
-                      cracked or scratched screen in your handset. 100% Perfect
-                      fit with high manufacturing quality. With least technical
-                      know how required, it is easiest to replace display for
-                      your handset.
-                    </p>
-                    <ul className="list-disc pl-5 space-y-1">
-                      <li>
-                        Easiest part type available for your handset with least
-                        technical knowledge required.
-                      </li>
-                      <li>High quality product with 100% perfect fit.</li>
-                      <li>
-                        Complete display combo with LCD screen and digitizer
-                        touch screen.
-                      </li>
-                      <li>Tested before shipping (QC done).</li>
-                    </ul>
+                    <p>{product.description}</p>
                   </div>
                 </section>
 
-                {/* Dynamic Specifications */}
-                {product.details?.specs && product.details.specs.length > 0 && (
-                  <div className="mb-8">
-                    <h4 className="font-black text-secondary mb-4 uppercase italic">Specifications</h4>
-                    <table className="w-full border-collapse border border-gray-200 text-sm">
-                      <tbody>
-                        {product.details.specs.map((spec, index) => (
-                          <tr key={index} className="border-b border-gray-100">
-                            <td className="p-3 w-1/3 text-gray-500 font-bold border-r border-gray-100">{spec.key}</td>
-                            <td className="p-3 text-secondary font-black">{spec.value}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+
 
                 {/* Highlights */}
                 {product.details?.highlights && product.details.highlights.length > 0 && (

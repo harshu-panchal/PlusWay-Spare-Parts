@@ -4,20 +4,23 @@ import asyncHandler from '../../../middleware/asyncHandler.js';
 // @desc    Get all brands
 // @route   GET /api/admin/brands
 // @access  Private/Admin
-// @desc    Get all brands
-// @route   GET /api/admin/brands
-// @access  Private/Admin
 export const getBrands = asyncHandler(async (req, res) => {
   const pageSize = Number(req.query.pageSize) || 20;
   const page = Number(req.query.pageNumber) || 1;
+  const search = req.query.search || '';
 
   if (req.query.all === 'true') {
     const brands = await Brand.find({}).sort({ name: 1 });
     return res.json({ brands, total: brands.length });
   }
 
-  const count = await Brand.countDocuments({});
-  const brands = await Brand.find({})
+  let filter = {};
+  if (search) {
+    filter.name = { $regex: search, $options: 'i' };
+  }
+
+  const count = await Brand.countDocuments(filter);
+  const brands = await Brand.find(filter)
     .limit(pageSize)
     .skip(pageSize * (page - 1))
     .sort({ createdAt: -1 });

@@ -8,9 +8,23 @@ import Order from "../../../models/Order.js";
 export const getCustomers = asyncHandler(async (req, res) => {
     const pageSize = Number(req.query.pageSize) || 20;
     const page = Number(req.query.pageNumber) || 1;
+    const search = req.query.search || '';
+    const status = req.query.status;
 
-    const count = await Customer.countDocuments({});
-    const customers = await Customer.find({})
+    let filter = {};
+    if (search) {
+        filter.$or = [
+            { name: { $regex: search, $options: 'i' } },
+            { email: { $regex: search, $options: 'i' } },
+            { mobile: { $regex: search, $options: 'i' } }
+        ];
+    }
+    if (status && status !== 'All') {
+        filter.status = status;
+    }
+
+    const count = await Customer.countDocuments(filter);
+    const customers = await Customer.find(filter)
         .sort({ createdAt: -1 })
         .limit(pageSize)
         .skip(pageSize * (page - 1));

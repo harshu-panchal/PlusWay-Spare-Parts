@@ -6,9 +6,24 @@ import Product from '../../../models/Product.js';
 export const getProducts = async (req, res) => {
   const pageSize = Number(req.query.pageSize) || 20;
   const page = Number(req.query.pageNumber) || 1;
+  const search = req.query.search || '';
+  const category = req.query.category;
 
-  const count = await Product.countDocuments({});
-  const products = await Product.find({})
+  let filter = {};
+
+  if (search) {
+    filter.$or = [
+      { name: { $regex: search, $options: 'i' } },
+      { _id: { $regex: search, $options: 'i' } }
+    ];
+  }
+
+  if (category && category !== 'All') {
+    filter.category = category;
+  }
+
+  const count = await Product.countDocuments(filter);
+  const products = await Product.find(filter)
     .populate('brand model category')
     .limit(pageSize)
     .skip(pageSize * (page - 1))

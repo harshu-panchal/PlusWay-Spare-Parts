@@ -16,7 +16,6 @@ import ImageUpload from "../../../components/ImageUpload";
 import { API_ENDPOINTS } from "../../../config/api";
 import Pagination from "../../../components/Pagination";
 
-
 const ModelManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("all");
@@ -39,12 +38,33 @@ const ModelManagement = () => {
 
   const [formData, setFormData] = useState(initialFormState);
 
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setPage(1);
+  };
+
+  const handleBrandFilterChange = (e) => {
+    setSelectedBrand(e.target.value);
+    setPage(1);
+  };
+
   const fetchData = async () => {
     try {
-      const config = { headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}` } };
+      const config = {
+        headers: {
+          Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}`,
+        },
+      };
+
+      let queryParams = `?pageNumber=${page}`;
+      if (searchTerm)
+        queryParams += `&search=${encodeURIComponent(searchTerm)}`;
+      if (selectedBrand)
+        queryParams += `&brand=${encodeURIComponent(selectedBrand)}`;
+
       const [modelRes, brandRes] = await Promise.all([
-        axios.get(`${API_ENDPOINTS.ADMIN_MODELS}?pageNumber=${page}`, config),
-        axios.get(`${API_ENDPOINTS.ADMIN_BRANDS}?all=true`, config)
+        axios.get(`${API_ENDPOINTS.ADMIN_MODELS}${queryParams}`, config),
+        axios.get(`${API_ENDPOINTS.ADMIN_BRANDS}?all=true`, config),
       ]);
       setModels(modelRes.data.models);
       setPages(modelRes.data.pages);
@@ -59,16 +79,7 @@ const ModelManagement = () => {
 
   useEffect(() => {
     fetchData();
-  }, [page]);
-
-  const filteredModels = models.filter((model) => {
-    const matchesSearch = model.name
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    const matchesBrand =
-      selectedBrand === "all" || (model.brand?._id || model.brand) === selectedBrand;
-    return matchesSearch && matchesBrand;
-  });
+  }, [page, searchTerm, selectedBrand]);
 
   const handleOpenModal = (model = null) => {
     if (model) {
@@ -98,9 +109,17 @@ const ModelManagement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const config = { headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}` } };
+      const config = {
+        headers: {
+          Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}`,
+        },
+      };
       if (editingModel) {
-        await axios.put(API_ENDPOINTS.ADMIN_MODEL_DETAIL(editingModel._id), formData, config);
+        await axios.put(
+          API_ENDPOINTS.ADMIN_MODEL_DETAIL(editingModel._id),
+          formData,
+          config,
+        );
       } else {
         await axios.post(API_ENDPOINTS.ADMIN_MODELS, formData, config);
       }
@@ -115,7 +134,11 @@ const ModelManagement = () => {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure?")) return;
     try {
-      const config = { headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}` } };
+      const config = {
+        headers: {
+          Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}`,
+        },
+      };
       await axios.delete(API_ENDPOINTS.ADMIN_MODEL_DETAIL(id), config);
       fetchData();
     } catch (error) {
@@ -138,13 +161,13 @@ const ModelManagement = () => {
               placeholder="Search models..."
               className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchChange}
             />
           </div>
           <select
             className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             value={selectedBrand}
-            onChange={(e) => setSelectedBrand(e.target.value)}>
+            onChange={handleBrandFilterChange}>
             <option value="all">All Brands</option>
             {brands.map((brand) => (
               <option key={brand._id} value={brand._id}>
@@ -181,7 +204,7 @@ const ModelManagement = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filteredModels.map((model) => (
+              {models.map((model) => (
                 <tr
                   key={model._id}
                   className="hover:bg-gray-50 transition-colors">
@@ -189,7 +212,11 @@ const ModelManagement = () => {
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-blue-50 text-blue-600 rounded-lg overflow-hidden w-12 h-12 flex items-center justify-center">
                         {model.image ? (
-                          <img src={model.image || null} alt={model.name} className="w-full h-full object-contain" />
+                          <img
+                            src={model.image || null}
+                            alt={model.name}
+                            className="w-full h-full object-contain"
+                          />
                         ) : (
                           <Smartphone size={20} />
                         )}
@@ -230,11 +257,7 @@ const ModelManagement = () => {
         </div>
       </div>
 
-      <Pagination
-        page={page}
-        pages={pages}
-        onPageChange={(p) => setPage(p)}
-      />
+      <Pagination page={page} pages={pages} onPageChange={(p) => setPage(p)} />
       <p className="text-center text-xs text-gray-400 mt-4">
         Total {total} models found
       </p>

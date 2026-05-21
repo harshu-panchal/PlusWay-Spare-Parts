@@ -35,6 +35,16 @@ const CustomerManagement = () => {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setPage(1);
+  };
+
+  const handleStatusFilterChange = (e) => {
+    setStatusFilter(e.target.value);
+    setPage(1);
+  };
+
   const fetchCustomers = async () => {
     try {
       const token = JSON.parse(localStorage.getItem("adminInfo"))?.token;
@@ -43,20 +53,27 @@ const CustomerManagement = () => {
           Authorization: `Bearer ${token}`,
         },
       };
+
+      let queryParams = `?pageNumber=${page}`;
+      if (searchTerm)
+        queryParams += `&search=${encodeURIComponent(searchTerm)}`;
+      if (statusFilter)
+        queryParams += `&status=${encodeURIComponent(statusFilter)}`;
+
       const { data } = await axios.get(
-        `${API_ENDPOINTS.ADMIN_CUSTOMERS}?pageNumber=${page}`,
-        config
+        `${API_ENDPOINTS.ADMIN_CUSTOMERS}${queryParams}`,
+        config,
       );
 
-      const formattedData = data.customers.map(customer => ({
+      const formattedData = data.customers.map((customer) => ({
         id: customer._id,
         name: customer.name,
         email: customer.email,
         phone: customer.mobile,
-        joined: new Date(customer.joined).toISOString().split('T')[0],
+        joined: new Date(customer.joined).toISOString().split("T")[0],
         orders: customer.orders,
         totalSpent: `₹${(customer.totalSpent || 0).toLocaleString()}`,
-        status: customer.status || 'Active',
+        status: customer.status || "Active",
       }));
 
       setCustomersList(formattedData);
@@ -71,17 +88,7 @@ const CustomerManagement = () => {
 
   useEffect(() => {
     fetchCustomers();
-  }, [page]);
-
-  const filteredCustomers = customersList.filter((customer) => {
-    const matchesSearch =
-      customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.phone.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === "All" || customer.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  }, [page, searchTerm, statusFilter]);
 
   const initialFormState = {
     name: "",
@@ -125,16 +132,16 @@ const CustomerManagement = () => {
         await axios.put(
           API_ENDPOINTS.ADMIN_CUSTOMER_DETAIL(editingCustomer.id),
           formData,
-          config
+          config,
         );
       } else {
         await axios.post(
           API_ENDPOINTS.ADMIN_CUSTOMERS,
           {
             ...formData,
-            mobile: formData.phone // Mapping phone to mobile for backend
+            mobile: formData.phone, // Mapping phone to mobile for backend
           },
-          config
+          config,
         );
       }
 
@@ -176,14 +183,14 @@ const CustomerManagement = () => {
             placeholder="Search customers..."
             className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleSearchChange}
           />
         </div>
         <div className="flex items-center gap-3">
           <select
             className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-gray-600 bg-white text-sm"
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}>
+            onChange={handleStatusFilterChange}>
             <option value="All">All Status</option>
             <option value="Active">Active</option>
             <option value="Inactive">Inactive</option>
@@ -225,7 +232,7 @@ const CustomerManagement = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filteredCustomers.map((customer) => (
+              {customersList.map((customer) => (
                 <tr
                   key={customer.id}
                   className="hover:bg-gray-50 transition-colors">
@@ -236,9 +243,10 @@ const CustomerManagement = () => {
                       </div>
                       <div>
                         <button
-                          onClick={() => navigate(`/admin/customers/${customer.id}`)}
-                          className="font-medium text-gray-900 hover:text-blue-600 transition-colors text-left"
-                        >
+                          onClick={() =>
+                            navigate(`/admin/customers/${customer.id}`)
+                          }
+                          className="font-medium text-gray-900 hover:text-blue-600 transition-colors text-left">
                           {customer.name}
                         </button>
                         <p className="text-xs text-gray-500">
@@ -276,7 +284,9 @@ const CustomerManagement = () => {
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button
-                        onClick={() => navigate(`/admin/customers/${customer.id}`)}
+                        onClick={() =>
+                          navigate(`/admin/customers/${customer.id}`)
+                        }
                         className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                         <Eye size={18} />
                       </button>
@@ -297,11 +307,7 @@ const CustomerManagement = () => {
         </div>
       </div>
 
-      <Pagination
-        page={page}
-        pages={pages}
-        onPageChange={handlePageChange}
-      />
+      <Pagination page={page} pages={pages} onPageChange={handlePageChange} />
       <p className="text-center text-xs text-gray-400 mt-2">
         Total {total} customers found
       </p>

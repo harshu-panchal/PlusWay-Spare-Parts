@@ -8,9 +8,21 @@ import generateInvoice from "../../../utils/generateInvoice.js";
 export const getOrders = async (req, res) => {
   const pageSize = Number(req.query.pageSize) || 20;
   const page = Number(req.query.pageNumber) || 1;
+  const search = req.query.search || '';
+  const status = req.query.status;
 
-  const count = await Order.countDocuments({});
-  const orders = await Order.find({})
+  let filter = {};
+  if (search) {
+    filter.$or = [
+      { _id: { $regex: search, $options: 'i' } }
+    ];
+  }
+  if (status && status !== 'All') {
+    filter.status = status;
+  }
+
+  const count = await Order.countDocuments(filter);
+  const orders = await Order.find(filter)
     .populate("customer", "id name")
     .limit(pageSize)
     .skip(pageSize * (page - 1))

@@ -26,16 +26,33 @@ const OrderManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setPage(1);
+  };
+
+  const handleStatusFilterChange = (e) => {
+    setStatusFilter(e.target.value);
+    setPage(1);
+  };
+
   useEffect(() => {
     fetchOrders();
-  }, [page]);
+  }, [page, searchTerm, statusFilter]);
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
       const token = JSON.parse(localStorage.getItem("adminInfo"))?.token;
+
+      let queryParams = `?pageNumber=${page}`;
+      if (searchTerm)
+        queryParams += `&search=${encodeURIComponent(searchTerm)}`;
+      if (statusFilter)
+        queryParams += `&status=${encodeURIComponent(statusFilter)}`;
+
       const { data } = await axios.get(
-        `${API_ENDPOINTS.ADMIN_ORDERS}?pageNumber=${page}`,
+        `${API_ENDPOINTS.ADMIN_ORDERS}${queryParams}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -93,15 +110,6 @@ const OrderManagement = () => {
     }
   };
 
-  const filteredOrders = orders.filter((order) => {
-    const matchesSearch =
-      order._id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customer?.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === "All" || order.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
   const getStatusColor = (status) => {
     switch (status) {
       case "Delivered":
@@ -139,7 +147,7 @@ const OrderManagement = () => {
             placeholder="Search orders by ID or customer..."
             className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleSearchChange}
           />
         </div>
 
@@ -148,7 +156,7 @@ const OrderManagement = () => {
           <select
             className="border border-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}>
+            onChange={handleStatusFilterChange}>
             <option value="All">All Status</option>
             <option value="Pending">Pending</option>
             <option value="Processing">Processing</option>
@@ -188,12 +196,14 @@ const OrderManagement = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filteredOrders.map((order) => (
+              {orders.map((order) => (
                 <tr
                   key={order._id}
                   className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-6 py-4 font-bold text-secondary">
-                    <button onClick={() => navigate(`/admin/orders/${order._id}`)} className="hover:text-primary transition-colors">
+                    <button
+                      onClick={() => navigate(`/admin/orders/${order._id}`)}
+                      className="hover:text-primary transition-colors">
                       #{order._id.slice(-6).toUpperCase()}
                     </button>
                   </td>
@@ -257,11 +267,7 @@ const OrderManagement = () => {
         </div>
       </div>
 
-      <Pagination
-        page={page}
-        pages={pages}
-        onPageChange={(p) => setPage(p)}
-      />
+      <Pagination page={page} pages={pages} onPageChange={(p) => setPage(p)} />
       <p className="text-center text-xs text-gray-400 mt-2">
         Total {total} orders found
       </p>
