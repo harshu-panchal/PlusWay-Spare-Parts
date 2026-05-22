@@ -59,6 +59,7 @@ const CategoryManagement = lazy(() => import("./module/admin/pages/CategoryManag
 const BrandManagement = lazy(() => import("./module/admin/pages/BrandManagement"));
 const ModelManagement = lazy(() => import("./module/admin/pages/ModelManagement"));
 const ProductManagement = lazy(() => import("./module/admin/pages/ProductManagement"));
+const AdminProductDetail = lazy(() => import("./module/admin/pages/ProductDetail"));
 const StockManagement = lazy(() => import("./module/admin/pages/StockManagement"));
 const OrderManagement = lazy(() => import("./module/admin/pages/OrderManagement"));
 const OrderDetail = lazy(() => import("./module/admin/pages/OrderDetail"));
@@ -157,6 +158,7 @@ const App = () => {
               <Route path="brands" element={<BrandManagement />} />
               <Route path="models" element={<ModelManagement />} />
               <Route path="products" element={<ProductManagement />} />
+              <Route path="products/:id" element={<AdminProductDetail />} />
               <Route path="stock" element={<StockManagement />} />
               <Route path="orders" element={<OrderManagement />} />
               <Route path="orders/:id" element={<OrderDetail />} />

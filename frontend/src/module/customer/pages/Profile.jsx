@@ -71,10 +71,14 @@ const Profile = () => {
 
       const [ordersRes, reviewsRes] = await Promise.all([
         axios.get(API_ENDPOINTS.MY_ORDERS, config),
-        axios.get(`${API_ENDPOINTS.MY_REVIEWS}?pageNumber=${reviewPage}`, config).catch(() => ({ data: { reviews: [], pages: 1, total: 0 } })),
+        axios
+          .get(`${API_ENDPOINTS.MY_REVIEWS}?pageNumber=${reviewPage}`, config)
+          .catch(() => ({ data: { reviews: [], pages: 1, total: 0 } })),
       ]);
 
-      const sortedOrders = (ordersRes.data.orders || ordersRes.data).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      const sortedOrders = (ordersRes.data.orders || ordersRes.data).sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+      );
       setOrders(sortedOrders);
       setReviews(reviewsRes.data.reviews || []);
       setReviewPages(reviewsRes.data.pages || 1);
@@ -127,7 +131,6 @@ const Profile = () => {
 
           {/* Main Content */}
           <div className="lg:col-span-8 space-y-6">
-
             {/* Quick Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[
@@ -155,20 +158,20 @@ const Profile = () => {
             <div className="flex gap-4 border-b border-gray-200 mb-4 overflow-x-auto pb-2">
               <button
                 onClick={() => setActiveTab("overview")}
-                className={`nav-btn px-4 py-2 font-bold uppercase tracking-wider text-sm transition-all whitespace-nowrap ${activeTab === "overview"
-                  ? "text-primary border-b-2 border-primary"
-                  : "text-gray-400 hover:text-secondary"
-                  }`}
-              >
+                className={`nav-btn px-4 py-2 font-bold uppercase tracking-wider text-sm transition-all whitespace-nowrap ${
+                  activeTab === "overview"
+                    ? "text-primary border-b-2 border-primary"
+                    : "text-gray-400 hover:text-secondary"
+                }`}>
                 Overview
               </button>
               <button
                 onClick={() => setActiveTab("reviews")}
-                className={`nav-btn px-4 py-2 font-bold uppercase tracking-wider text-sm transition-all whitespace-nowrap ${activeTab === "reviews"
-                  ? "text-primary border-b-2 border-primary"
-                  : "text-gray-400 hover:text-secondary"
-                  }`}
-              >
+                className={`nav-btn px-4 py-2 font-bold uppercase tracking-wider text-sm transition-all whitespace-nowrap ${
+                  activeTab === "reviews"
+                    ? "text-primary border-b-2 border-primary"
+                    : "text-gray-400 hover:text-secondary"
+                }`}>
                 My Reviews
               </button>
             </div>
@@ -182,9 +185,12 @@ const Profile = () => {
                 {/* Track Order Section */}
                 <div className="bg-white p-6 md:p-8 rounded-[24px] md:rounded-[32px] shadow-sm border border-gray-100">
                   <h2 className="text-lg md:text-xl font-black text-secondary uppercase italic tracking-tighter mb-4 md:mb-6">
-                    Track your <span className="text-primary italic">Order</span>
+                    Track your{" "}
+                    <span className="text-primary italic">Order</span>
                   </h2>
-                  <form onSubmit={handleTrackOrder} className="flex flex-col md:flex-row gap-4">
+                  <form
+                    onSubmit={handleTrackOrder}
+                    className="flex flex-col md:flex-row gap-4">
                     <input
                       type="text"
                       placeholder="Enter Order ID"
@@ -192,7 +198,9 @@ const Profile = () => {
                       onChange={(e) => setTrackOrderId(e.target.value)}
                       className="w-full md:w-auto md:flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 md:py-4 font-bold focus:outline-none focus:border-primary text-secondary transition-all placeholder:text-sm md:placeholder:text-base"
                     />
-                    <button type="submit" className="w-full md:w-auto bg-secondary text-white font-black px-8 py-3 md:py-4 rounded-xl uppercase tracking-widest hover:bg-black transition-all text-sm md:text-base shadow-lg shadow-secondary/20">
+                    <button
+                      type="submit"
+                      className="w-full md:w-auto bg-secondary text-white font-black px-8 py-3 md:py-4 rounded-xl uppercase tracking-widest hover:bg-black transition-all text-sm md:text-base shadow-lg shadow-secondary/20">
                       Track
                     </button>
                   </form>
@@ -220,7 +228,10 @@ const Profile = () => {
                       </div>
                     ) : orders.length === 0 ? (
                       <div className="text-center py-12">
-                        <Package size={48} className="mx-auto text-gray-200 mb-4" />
+                        <Package
+                          size={48}
+                          className="mx-auto text-gray-200 mb-4"
+                        />
                         <p className="text-gray-400 font-bold uppercase tracking-widest">
                           No orders found
                         </p>
@@ -247,7 +258,9 @@ const Profile = () => {
                                   ORDER #{order._id.slice(-6).toUpperCase()}
                                 </h3>
                                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                  {new Date(order.createdAt).toLocaleDateString()}
+                                  {new Date(
+                                    order.createdAt,
+                                  ).toLocaleDateString()}
                                 </p>
                               </div>
                             </div>
@@ -287,7 +300,10 @@ const Profile = () => {
 
                 {reviews.length === 0 ? (
                   <div className="text-center py-12">
-                    <MessageSquare size={48} className="mx-auto text-gray-200 mb-4" />
+                    <MessageSquare
+                      size={48}
+                      className="mx-auto text-gray-200 mb-4"
+                    />
                     <p className="text-gray-400 font-bold uppercase tracking-widest">
                       You haven't written any reviews yet
                     </p>
@@ -295,7 +311,9 @@ const Profile = () => {
                 ) : (
                   <div className="grid gap-6">
                     {reviews.map((review) => (
-                      <div key={review._id} className="p-6 rounded-2xl border border-gray-50 bg-gray-50/50 flex flex-col md:flex-row gap-6">
+                      <div
+                        key={review._id}
+                        className="p-6 rounded-2xl border border-gray-50 bg-gray-50/50 flex flex-col md:flex-row gap-6">
                         <div className="w-full md:w-32 flex-shrink-0">
                           <div className="aspect-square bg-white rounded-xl p-2 border border-gray-100 flex items-center justify-center">
                             {review.product?.images?.[0] ? (
@@ -311,27 +329,48 @@ const Profile = () => {
                         </div>
                         <div className="flex-1">
                           <div className="flex justify-between items-start mb-2">
-                            <h3 className="font-bold text-secondary line-clamp-1">{review.product?.name || "Unknown Product"}</h3>
-                            <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${review.status === "Approved" ? "bg-green-100 text-green-700" :
-                              review.status === "Rejected" ? "bg-red-100 text-red-700" :
-                                "bg-yellow-100 text-yellow-700"
+                            <h3 className="font-bold text-secondary line-clamp-1">
+                              {review.product?.name || "Unknown Product"}
+                            </h3>
+                            <span
+                              className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${
+                                review.status === "Approved"
+                                  ? "bg-green-100 text-green-700"
+                                  : review.status === "Rejected"
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-yellow-100 text-yellow-700"
                               }`}>
                               {review.status}
                             </span>
                           </div>
                           <div className="flex text-yellow-400 mb-3">
                             {[...Array(5)].map((_, i) => (
-                              <Star key={i} size={14} className={i < review.rating ? "fill-current" : "text-gray-300"} />
+                              <Star
+                                key={i}
+                                size={14}
+                                className={
+                                  i < review.rating
+                                    ? "fill-current"
+                                    : "text-gray-300"
+                                }
+                              />
                             ))}
                           </div>
-                          <p className="text-gray-600 text-sm italic mb-4">"{review.comment}"</p>
+                          <p className="text-gray-600 text-sm italic mb-4">
+                            "{review.comment}"
+                          </p>
                           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                            Posted on {new Date(review.createdAt).toLocaleDateString()}
+                            Posted on{" "}
+                            {new Date(review.createdAt).toLocaleDateString()}
                           </p>
                           {review.adminReply && (
                             <div className="mt-4 bg-blue-50 p-4 rounded-xl border border-blue-100">
-                              <p className="text-[10px] font-bold text-blue-600 uppercase mb-1">Response from Admin</p>
-                              <p className="text-sm text-gray-700">{review.adminReply}</p>
+                              <p className="text-[10px] font-bold text-blue-600 uppercase mb-1">
+                                Response from Admin
+                              </p>
+                              <p className="text-sm text-gray-700">
+                                {review.adminReply}
+                              </p>
                             </div>
                           )}
                         </div>
@@ -350,7 +389,6 @@ const Profile = () => {
                 </p>
               </div>
             )}
-
           </div>
         </div>
       </div>

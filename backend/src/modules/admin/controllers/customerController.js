@@ -2,24 +2,29 @@ import asyncHandler from "../../../middleware/asyncHandler.js";
 import Customer from "../../../models/Customer.js";
 import Order from "../../../models/Order.js";
 
+const escapeRegex = (value = "") =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 // @desc    Get all customers with stats
 // @route   GET /api/admin/customers
 // @access  Private/Admin
 export const getCustomers = asyncHandler(async (req, res) => {
     const pageSize = Number(req.query.pageSize) || 20;
     const page = Number(req.query.pageNumber) || 1;
-    const search = req.query.search || '';
+    const search = req.query.search || "";
     const status = req.query.status;
 
     let filter = {};
     if (search) {
+        const escapedSearch = escapeRegex(search);
+
         filter.$or = [
-            { name: { $regex: search, $options: 'i' } },
-            { email: { $regex: search, $options: 'i' } },
-            { mobile: { $regex: search, $options: 'i' } }
+            { name: { $regex: escapedSearch, $options: "i" } },
+            { email: { $regex: escapedSearch, $options: "i" } },
+            { mobile: { $regex: escapedSearch, $options: "i" } }
         ];
     }
-    if (status && status !== 'All') {
+    if (status && status !== "All") {
         filter.status = status;
     }
 

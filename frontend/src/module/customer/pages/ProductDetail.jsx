@@ -40,6 +40,7 @@ const ProductDetail = () => {
   const [selectedImage, setSelectedImage] = useState("");
   const [activeTab, setActiveTab] = useState("Description");
   const [quantity, setQuantity] = useState(1);
+  const [selectedColor, setSelectedColor] = useState(null);
 
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -64,7 +65,7 @@ const ProductDetail = () => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
       setSubmittingReview(false);
       setRating(0);
@@ -84,26 +85,37 @@ const ProductDetail = () => {
         setLoading(true);
         const { data } = await axios.get(API_ENDPOINTS.PRODUCT_DETAIL(id));
         setProduct(data);
-        setSelectedImage(data.images && data.images.length > 0 ? data.images[0] : (data.image || "https://via.placeholder.com/400"));
+        setSelectedImage(
+          data.images && data.images.length > 0
+            ? data.images[0]
+            : data.image || "https://via.placeholder.com/400",
+        );
+        if (data.colors && data.colors.length > 0) {
+          setSelectedColor(data.colors[0]);
+        }
         setLoading(false);
 
         // Save to Recently Viewed
-        const recent = JSON.parse(localStorage.getItem("recentlyViewed") || "[]");
+        const recent = JSON.parse(
+          localStorage.getItem("recentlyViewed") || "[]",
+        );
         const newRecent = [
           {
             _id: data._id,
             name: data.name,
-            image: data.images && data.images.length > 0 ? data.images[0] : (data.image || ""),
+            image:
+              data.images && data.images.length > 0
+                ? data.images[0]
+                : data.image || "",
             price: data.price,
             mrp: data.mrp,
             countInStock: data.countInStock,
             wholesalePrice: data.wholesalePrice,
-            wholesaleMinQty: data.wholesaleMinQty
+            wholesaleMinQty: data.wholesaleMinQty,
           },
-          ...recent.filter((item) => item._id !== data._id)
+          ...recent.filter((item) => item._id !== data._id),
         ].slice(0, 8); // Keep last 8 items
         localStorage.setItem("recentlyViewed", JSON.stringify(newRecent));
-
       } catch (err) {
         setError(err.message);
         setLoading(false);
@@ -117,9 +129,13 @@ const ProductDetail = () => {
       if (product && product.category) {
         try {
           const catId = product.category._id || product.category;
-          const { data } = await axios.get(`${API_ENDPOINTS.PRODUCTS}?category=${catId}`);
+          const { data } = await axios.get(
+            `${API_ENDPOINTS.PRODUCTS}?category=${catId}`,
+          );
           // Filter out the current product and limit to 10 for scroller
-          setRelatedProducts(data.products.filter(p => p._id !== product._id).slice(0, 10));
+          setRelatedProducts(
+            data.products.filter((p) => p._id !== product._id).slice(0, 10),
+          );
         } catch (err) {
           console.error("Error fetching related products", err);
         }
@@ -128,9 +144,20 @@ const ProductDetail = () => {
     fetchRelatedProducts();
   }, [product]);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  if (error) return <div className="min-h-screen flex items-center justify-center text-red-500">{error}</div>;
-  if (!product) return <div className="p-20 text-center">Product not found</div>;
+  if (loading)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
+  if (error)
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-500">
+        {error}
+      </div>
+    );
+  if (!product)
+    return <div className="p-20 text-center">Product not found</div>;
 
   const savings = product.mrp - product.price;
   const savingsPercent = Math.round((savings / product.mrp) * 100);
@@ -223,6 +250,32 @@ const ProductDetail = () => {
               </span>
             </div>
 
+            {/* Color Variants */}
+            {product.colors && product.colors.length > 0 && (
+              <div className="mb-6">
+                <p className="text-sm font-bold text-gray-700 mb-3">
+                  Color:{" "}
+                  <span className="text-primary">
+                    {selectedColor || product.colors[0]}
+                  </span>
+                </p>
+                <div className="flex gap-3 flex-wrap">
+                  {product.colors.map((color, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setSelectedColor(color)}
+                      className={`px-4 py-2 text-sm font-bold border-2 rounded-lg transition-all ${
+                        selectedColor === color || (!selectedColor && i === 0)
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}>
+                      {color}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Pricing Stack */}
             <div className="space-y-4 mb-8">
               <div className="flex flex-col gap-1">
@@ -235,24 +288,49 @@ const ProductDetail = () => {
                 <div className="bg-[#f8f9fa] p-4 border-l-4 border-secondary flex flex-col gap-2 rounded-r-2xl">
                   <div className="flex items-baseline gap-2">
                     <span className="text-4xl font-black text-secondary italic tracking-tighter">
-                      {(quantity >= (product.wholesaleMinQty || 10) ? product.wholesalePrice : product.price).toLocaleString()}.00
+                      {(quantity >= (product.wholesaleMinQty || 10)
+                        ? product.wholesalePrice
+                        : product.price
+                      ).toLocaleString()}
+                      .00
                     </span>
-                    <span className="text-xl font-bold text-secondary tracking-tight">Rs.</span>
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-2">Current Unit Price</span>
+                    <span className="text-xl font-bold text-secondary tracking-tight">
+                      Rs.
+                    </span>
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-2">
+                      Current Unit Price
+                    </span>
                   </div>
 
                   {product.wholesalePrice > 0 && (
-                    <div className={`mt-2 p-3 rounded-xl border transition-all ${quantity >= (product.wholesaleMinQty || 10) ? 'bg-blue-50 border-blue-200 shadow-sm' : 'bg-white border-gray-100'}`}>
+                    <div
+                      className={`mt-2 p-3 rounded-xl border transition-all ${quantity >= (product.wholesaleMinQty || 10) ? "bg-blue-50 border-blue-200 shadow-sm" : "bg-white border-gray-100"}`}>
                       <div className="flex items-center justify-between">
                         <div className="flex flex-col">
-                          <span className={`text-[10px] font-black uppercase tracking-widest ${quantity >= (product.wholesaleMinQty || 10) ? 'text-blue-600' : 'text-gray-400'}`}>Wholesale Pricing</span>
-                          <span className="text-sm font-black text-secondary">₹{product.wholesalePrice.toLocaleString()} <span className="text-[10px] font-bold text-gray-400">for {product.wholesaleMinQty || 10}+ pieces</span></span>
+                          <span
+                            className={`text-[10px] font-black uppercase tracking-widest ${quantity >= (product.wholesaleMinQty || 10) ? "text-blue-600" : "text-gray-400"}`}>
+                            Wholesale Pricing
+                          </span>
+                          <span className="text-sm font-black text-secondary">
+                            ₹{product.wholesalePrice.toLocaleString()}{" "}
+                            <span className="text-[10px] font-bold text-gray-400">
+                              for {product.wholesaleMinQty || 10}+ pieces
+                            </span>
+                          </span>
                         </div>
                         {quantity >= (product.wholesaleMinQty || 10) ? (
-                          <span className="bg-blue-600 text-white text-[8px] font-black px-2 py-1 rounded-full uppercase">Applied</span>
+                          <span className="bg-blue-600 text-white text-[8px] font-black px-2 py-1 rounded-full uppercase">
+                            Applied
+                          </span>
                         ) : (
-                          <span className="text-[10px] font-bold text-blue-600 cursor-help" title={`Buy ${product.wholesaleMinQty || 10} or more to get this price`}>
-                            Save ₹{(product.price - product.wholesalePrice).toLocaleString()} per unit!
+                          <span
+                            className="text-[10px] font-bold text-blue-600 cursor-help"
+                            title={`Buy ${product.wholesaleMinQty || 10} or more to get this price`}>
+                            Save ₹
+                            {(
+                              product.price - product.wholesalePrice
+                            ).toLocaleString()}{" "}
+                            per unit!
                           </span>
                         )}
                       </div>
@@ -262,8 +340,19 @@ const ProductDetail = () => {
               </div>
 
               <div className="text-sm text-red-600 font-bold flex flex-col">
-                <span>You save: {(product.mrp - (quantity >= (product.wholesaleMinQty || 10) ? product.wholesalePrice : product.price)).toLocaleString()}.00 Rs.</span>
-                <span className="text-[10px] uppercase tracking-widest opacity-70">Total Savings on MRP</span>
+                <span>
+                  You save:{" "}
+                  {(
+                    product.mrp -
+                    (quantity >= (product.wholesaleMinQty || 10)
+                      ? product.wholesalePrice
+                      : product.price)
+                  ).toLocaleString()}
+                  .00 Rs.
+                </span>
+                <span className="text-[10px] uppercase tracking-widest opacity-70">
+                  Total Savings on MRP
+                </span>
               </div>
               <div className="text-sm text-secondary font-bold flex items-center gap-1.5 pt-2">
                 Cash Back:{" "}
@@ -296,11 +385,22 @@ const ProductDetail = () => {
 
             <div className="p-4 bg-orange-50 rounded-2xl mb-8 border border-orange-100 flex justify-between items-center">
               <div>
-                <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest mb-1">Total Amount Payable</p>
-                <p className="text-2xl font-black text-secondary tracking-tighter">₹{((quantity >= (product.wholesaleMinQty || 10) ? product.wholesalePrice : product.price) * quantity).toLocaleString()}</p>
+                <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest mb-1">
+                  Total Amount Payable
+                </p>
+                <p className="text-2xl font-black text-secondary tracking-tighter">
+                  ₹
+                  {(
+                    (quantity >= (product.wholesaleMinQty || 10)
+                      ? product.wholesalePrice
+                      : product.price) * quantity
+                  ).toLocaleString()}
+                </p>
               </div>
               <div className="text-right">
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Quantity</p>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                  Quantity
+                </p>
                 <p className="text-xl font-black text-secondary">{quantity}</p>
               </div>
             </div>
@@ -313,7 +413,14 @@ const ProductDetail = () => {
                 <input
                   type="number"
                   value={quantity}
-                  onChange={(e) => setQuantity(Math.min(product.countInStock, Math.max(1, e.target.value)))}
+                  onChange={(e) =>
+                    setQuantity(
+                      Math.min(
+                        product.countInStock,
+                        Math.max(1, e.target.value),
+                      ),
+                    )
+                  }
                   className="w-16 h-10 border border-gray-300 text-center font-bold outline-none"
                   max={product.countInStock}
                   min={1}
@@ -323,19 +430,33 @@ const ProductDetail = () => {
                 <button
                   onClick={async () => {
                     await clearCart();
-                    await addToCart({ ...product, image: selectedImage }, Number(quantity));
+                    await addToCart(
+                      {
+                        ...product,
+                        image: selectedImage,
+                        color: selectedColor,
+                      },
+                      Number(quantity),
+                    );
                     navigate("/checkout");
                   }}
                   disabled={product.countInStock === 0}
-                  className={`flex-1 border-2 border-primary font-black py-3 px-4 transition-colors uppercase italic tracking-tighter text-sm ${product.countInStock === 0 ? 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed' : 'bg-white text-primary hover:bg-orange-50'}`}>
-                  {product.countInStock === 0 ? 'Out of Stock' : 'Buy Now'}
+                  className={`flex-1 border-2 border-primary font-black py-3 px-4 transition-colors uppercase italic tracking-tighter text-sm ${product.countInStock === 0 ? "bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed" : "bg-white text-primary hover:bg-orange-50"}`}>
+                  {product.countInStock === 0 ? "Out of Stock" : "Buy Now"}
                 </button>
                 <button
                   onClick={() => {
-                    addToCart({ ...product, image: selectedImage }, Number(quantity));
+                    addToCart(
+                      {
+                        ...product,
+                        image: selectedImage,
+                        color: selectedColor,
+                      },
+                      Number(quantity),
+                    );
                   }}
                   disabled={product.countInStock === 0}
-                  className={`flex-1 font-black py-3 px-4 transition-colors uppercase italic tracking-tighter text-sm ${product.countInStock === 0 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-primary text-white hover:bg-orange-600'}`}>
+                  className={`flex-1 font-black py-3 px-4 transition-colors uppercase italic tracking-tighter text-sm ${product.countInStock === 0 ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-primary text-white hover:bg-orange-600"}`}>
                   Add to Cart
                 </button>
               </div>
@@ -385,7 +506,11 @@ const ProductDetail = () => {
               <div className="flex items-center justify-end gap-3 text-right">
                 <div>
                   <Link
-                    to={product.model ? `/products?model=${product.model._id}` : "#"}
+                    to={
+                      product.model
+                        ? `/products?model=${product.model._id}`
+                        : "#"
+                    }
                     className="text-[11px] font-black text-blue-600 underline">
                     {product.model?.name || "View specific products"}
                   </Link>
@@ -395,7 +520,11 @@ const ProductDetail = () => {
                 </div>
                 <div className="w-10 h-10 bg-gray-100 flex items-center justify-center rounded overflow-hidden">
                   {product.model?.image ? (
-                    <LazyImage src={product.model.image} alt={product.model.name} className="w-full h-full object-cover" />
+                    <LazyImage
+                      src={product.model.image}
+                      alt={product.model.name}
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <span className="text-[8px] font-bold text-gray-400 text-center leading-none p-1">
                       {product.model?.name?.substring(0, 8)}
@@ -433,23 +562,32 @@ const ProductDetail = () => {
                     Product <span className="text-primary">Details</span>
                   </h3>
                   <div className="text-sm text-gray-600 leading-relaxed font-bold space-y-4">
-                    <p>{product.description}</p>
+                    {product.description && <p>{product.description}</p>}
+                    {product.details?.descriptionPoints &&
+                      product.details.descriptionPoints.length > 0 && (
+                        <ul className="list-disc pl-5 space-y-2 mt-4">
+                          {product.details.descriptionPoints.map((point, i) => (
+                            <li key={i}>{point}</li>
+                          ))}
+                        </ul>
+                      )}
                   </div>
                 </section>
 
-
-
                 {/* Highlights */}
-                {product.details?.highlights && product.details.highlights.length > 0 && (
-                  <div className="mb-8">
-                    <h4 className="font-black text-secondary mb-4 uppercase italic">Highlights</h4>
-                    <ul className="list-disc pl-5 space-y-1 text-sm text-gray-600 font-bold">
-                      {product.details.highlights.map((h, i) => (
-                        <li key={i}>{typeof h === 'string' ? h : h.type}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                {product.details?.highlights &&
+                  product.details.highlights.length > 0 && (
+                    <div className="mb-8">
+                      <h4 className="font-black text-secondary mb-4 uppercase italic">
+                        Highlights
+                      </h4>
+                      <ul className="list-disc pl-5 space-y-1 text-sm text-gray-600 font-bold">
+                        {product.details.highlights.map((h, i) => (
+                          <li key={i}>{typeof h === "string" ? h : h.type}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
                 <div className="grid md:grid-cols-2 gap-8">
                   {product.details?.inTheBox && (
@@ -487,19 +625,27 @@ const ProductDetail = () => {
                       </thead>
                       <tbody>
                         {/* Check if compatibility is object or string */}
-                        {typeof product.details.compatibility === 'object' ? Object.entries(product.details.compatibility).map(
-                          ([key, val]) => (
-                            <tr key={key} className="border-b border-gray-100">
-                              <td className="p-3 w-1/3 text-gray-500 font-bold border-r border-gray-100">
-                                {key}
-                              </td>
-                              <td className="p-3 text-secondary font-black">
-                                {val}
-                              </td>
-                            </tr>
-                          ),
+                        {typeof product.details.compatibility === "object" ? (
+                          Object.entries(product.details.compatibility).map(
+                            ([key, val]) => (
+                              <tr
+                                key={key}
+                                className="border-b border-gray-100">
+                                <td className="p-3 w-1/3 text-gray-500 font-bold border-r border-gray-100">
+                                  {key}
+                                </td>
+                                <td className="p-3 text-secondary font-black">
+                                  {val}
+                                </td>
+                              </tr>
+                            ),
+                          )
                         ) : (
-                          <tr><td className="p-3">{product.details.compatibility}</td></tr>
+                          <tr>
+                            <td className="p-3">
+                              {product.details.compatibility}
+                            </td>
+                          </tr>
                         )}
                       </tbody>
                     </table>
@@ -532,7 +678,9 @@ const ProductDetail = () => {
                   <table className="w-full border-collapse border border-gray-200 text-sm">
                     <thead>
                       <tr>
-                        <th colSpan="2" className="bg-gray-50 p-3 text-left font-black uppercase italic border border-gray-200">
+                        <th
+                          colSpan="2"
+                          className="bg-gray-50 p-3 text-left font-black uppercase italic border border-gray-200">
                           Warranty Information
                         </th>
                       </tr>
@@ -540,20 +688,32 @@ const ProductDetail = () => {
                     <tbody>
                       {product.details.warranty.period && (
                         <tr className="border-b border-gray-100">
-                          <td className="p-3 w-1/4 text-gray-500 font-bold border-r border-gray-100">Period</td>
-                          <td className="p-3 text-secondary font-black">{product.details.warranty.period}</td>
+                          <td className="p-3 w-1/4 text-gray-500 font-bold border-r border-gray-100">
+                            Period
+                          </td>
+                          <td className="p-3 text-secondary font-black">
+                            {product.details.warranty.period}
+                          </td>
                         </tr>
                       )}
                       {product.details.warranty.policy && (
                         <tr className="border-b border-gray-100">
-                          <td className="p-3 w-1/4 text-gray-500 font-bold border-r border-gray-100">Policy</td>
-                          <td className="p-3 text-secondary font-black">{product.details.warranty.policy}</td>
+                          <td className="p-3 w-1/4 text-gray-500 font-bold border-r border-gray-100">
+                            Policy
+                          </td>
+                          <td className="p-3 text-secondary font-black">
+                            {product.details.warranty.policy}
+                          </td>
                         </tr>
                       )}
                       {product.details.warranty.summary && (
                         <tr className="border-b border-gray-100">
-                          <td className="p-3 w-1/4 text-gray-500 font-bold border-r border-gray-100">Summary</td>
-                          <td className="p-3 text-secondary font-black">{product.details.warranty.summary}</td>
+                          <td className="p-3 w-1/4 text-gray-500 font-bold border-r border-gray-100">
+                            Summary
+                          </td>
+                          <td className="p-3 text-secondary font-black">
+                            {product.details.warranty.summary}
+                          </td>
                         </tr>
                       )}
                     </tbody>
@@ -581,7 +741,9 @@ const ProductDetail = () => {
                             key={i}
                             size={18}
                             className={
-                              i < Math.round(product.rating || 0) ? "fill-current" : ""
+                              i < Math.round(product.rating || 0)
+                                ? "fill-current"
+                                : ""
                             }
                           />
                         ))}
@@ -594,50 +756,74 @@ const ProductDetail = () => {
 
                   <div className="md:col-span-8">
                     {userInfo ? (
-                      <form onSubmit={submitReviewHandler} className="bg-white p-6 border border-gray-100 mb-8">
-                        <h4 className="text-lg font-black text-secondary uppercase italic mb-4">Write a Review</h4>
+                      <form
+                        onSubmit={submitReviewHandler}
+                        className="bg-white p-6 border border-gray-100 mb-8">
+                        <h4 className="text-lg font-black text-secondary uppercase italic mb-4">
+                          Write a Review
+                        </h4>
                         <div className="mb-4">
-                          <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Rating</label>
+                          <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">
+                            Rating
+                          </label>
                           <div className="flex gap-1">
                             {[1, 2, 3, 4, 5].map((star) => (
-                              <button type="button" key={star} onClick={() => setRating(star)}>
-                                <Star size={24} className={`${star <= rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`} />
+                              <button
+                                type="button"
+                                key={star}
+                                onClick={() => setRating(star)}>
+                                <Star
+                                  size={24}
+                                  className={`${star <= rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                                />
                               </button>
                             ))}
                           </div>
                         </div>
                         <div className="mb-4">
-                          <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Comment</label>
+                          <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-2">
+                            Comment
+                          </label>
                           <textarea
                             rows="3"
                             value={comment}
                             onChange={(e) => setComment(e.target.value)}
                             className="w-full border border-gray-300 rounded p-2 focus:outline-none focus:border-primary"
-                            placeholder="Share your experience..."
-                          ></textarea>
+                            placeholder="Share your experience..."></textarea>
                         </div>
                         <button
                           type="submit"
                           disabled={submittingReview}
-                          className="bg-primary text-white font-black py-3 px-6 uppercase italic text-sm hover:bg-orange-600 transition-all disabled:opacity-50"
-                        >
+                          className="bg-primary text-white font-black py-3 px-6 uppercase italic text-sm hover:bg-orange-600 transition-all disabled:opacity-50">
                           {submittingReview ? "Submitting..." : "Submit Review"}
                         </button>
                       </form>
                     ) : (
                       <div className="bg-gray-50 p-6 border border-gray-200 mb-8 text-center">
-                        <p className="font-bold text-gray-600 mb-4">Please sign in to write a review</p>
-                        <Link to="/login" className="inline-block bg-secondary text-white font-black py-2 px-6 uppercase italic text-xs hover:bg-primary transition-all">Sign In</Link>
+                        <p className="font-bold text-gray-600 mb-4">
+                          Please sign in to write a review
+                        </p>
+                        <Link
+                          to="/login"
+                          className="inline-block bg-secondary text-white font-black py-2 px-6 uppercase italic text-xs hover:bg-primary transition-all">
+                          Sign In
+                        </Link>
                       </div>
                     )}
 
                     <div className="space-y-6">
-                      {product.reviews.length === 0 && <p className="text-gray-500 italic">No reviews yet.</p>}
+                      {product.reviews.length === 0 && (
+                        <p className="text-gray-500 italic">No reviews yet.</p>
+                      )}
                       {product.reviews.map((rev) => (
-                        <div key={rev._id} className="bg-white p-6 border border-gray-100">
+                        <div
+                          key={rev._id}
+                          className="bg-white p-6 border border-gray-100">
                           <div className="flex justify-between items-start mb-2">
                             <div>
-                              <h5 className="font-black text-secondary text-sm">{rev.name}</h5>
+                              <h5 className="font-black text-secondary text-sm">
+                                {rev.name}
+                              </h5>
                               <div className="flex items-center text-yellow-500 mt-1">
                                 {[...Array(5)].map((_, i) => (
                                   <Star
@@ -650,13 +836,21 @@ const ProductDetail = () => {
                                 ))}
                               </div>
                             </div>
-                            <span className="text-[10px] text-gray-400 font-bold uppercase">{rev.createdAt?.substring(0, 10)}</span>
+                            <span className="text-[10px] text-gray-400 font-bold uppercase">
+                              {rev.createdAt?.substring(0, 10)}
+                            </span>
                           </div>
-                          <p className="text-sm text-gray-600 font-bold mt-2">"{rev.comment}"</p>
+                          <p className="text-sm text-gray-600 font-bold mt-2">
+                            "{rev.comment}"
+                          </p>
                           {rev.adminReply && (
                             <div className="mt-4 bg-gray-50 border-l-4 border-secondary p-3">
-                              <p className="text-[10px] font-black text-secondary uppercase mb-1">Response from Plusway</p>
-                              <p className="text-xs text-gray-600">{rev.adminReply}</p>
+                              <p className="text-[10px] font-black text-secondary uppercase mb-1">
+                                Response from Plusway
+                              </p>
+                              <p className="text-xs text-gray-600">
+                                {rev.adminReply}
+                              </p>
                             </div>
                           )}
                         </div>
@@ -678,14 +872,15 @@ const ProductDetail = () => {
               </h2>
               <Link
                 to={`/products?type=${product.category._id || product.category}`}
-                className="text-xs font-black text-primary uppercase tracking-widest hover:underline"
-              >
+                className="text-xs font-black text-primary uppercase tracking-widest hover:underline">
                 View all related
               </Link>
             </div>
             <div className="flex gap-3 md:gap-4 overflow-x-auto pb-4 -mx-[2%] px-[2%] md:mx-0 md:px-0 scroll-smooth">
               {relatedProducts.map((p) => (
-                <div key={p._id} className="w-[150px] md:w-[240px] flex-shrink-0">
+                <div
+                  key={p._id}
+                  className="w-[150px] md:w-[240px] flex-shrink-0">
                   <ProductCard product={p} />
                 </div>
               ))}

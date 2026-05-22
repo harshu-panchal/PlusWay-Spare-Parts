@@ -8,6 +8,7 @@ import asyncHandler from "../../../middleware/asyncHandler.js";
 export const getProducts = asyncHandler(async (req, res) => {
     const pageSize = 20;
     const page = Number(req.query.pageNumber) || 1;
+    const sort = req.query.sort || "relevance";
 
     const keyword = req.query.keyword
         ? {
@@ -36,6 +37,28 @@ export const getProducts = asyncHandler(async (req, res) => {
 
 
 
+    let sortQuery = { createdAt: -1 };
+    switch (sort) {
+        case "priceAsc":
+            sortQuery = { price: 1 };
+            break;
+        case "priceDesc":
+            sortQuery = { price: -1 };
+            break;
+        case "rating":
+            sortQuery = { rating: -1, numReviews: -1 };
+            break;
+        case "nameAsc":
+            sortQuery = { name: 1 };
+            break;
+        case "newest":
+            sortQuery = { createdAt: -1 };
+            break;
+        default:
+            // Relevance fallback: newest first when explicit scoring isn't available
+            sortQuery = { createdAt: -1 };
+    }
+
     // Optimize with Promise.all
     const [count, products] = await Promise.all([
         Product.countDocuments(filters),
@@ -43,6 +66,7 @@ export const getProducts = asyncHandler(async (req, res) => {
             .populate("brand", "name")
             .populate("category", "name")
             .populate("model", "name")
+            .sort(sortQuery)
             .limit(pageSize)
             .skip(pageSize * (page - 1))
     ]);

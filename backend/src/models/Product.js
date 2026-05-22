@@ -112,6 +112,7 @@ const productSchema = new mongoose.Schema({
       summary: String // e.g., "Warranty not applicable if..."
     },
     highlights: [{ type: String }], // Quick bullet points
+    descriptionPoints: [{ type: String }], // Multiple description points
   },
   colors: [{
     type: String,

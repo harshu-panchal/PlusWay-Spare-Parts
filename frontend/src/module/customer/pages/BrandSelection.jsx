@@ -9,6 +9,7 @@ import LazyImage from "../../../components/LazyImage";
 
 const BrandSelection = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedLetter, setSelectedLetter] = useState(null);
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,9 +29,11 @@ const BrandSelection = () => {
     fetchBrands();
   }, []);
 
-  const filteredBrands = brands.filter(b =>
-    b.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredBrands = brands.filter(b => {
+    const matchesSearch = b.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesLetter = selectedLetter ? b.name.toUpperCase().startsWith(selectedLetter) : true;
+    return matchesSearch && matchesLetter;
+  });
 
   return (
     <div className="bg-[#f4f4f4] min-h-screen">
@@ -99,14 +102,25 @@ const BrandSelection = () => {
           </h3>
           <div className="flex flex-wrap justify-center gap-4">
             {alphabets.map((char) => (
-              <Link
+              <button
                 key={char}
-                to={`/searchbrand.html?query_v3=${char}&ptid=0`}
-                className="w-8 h-8 flex items-center justify-center border border-gray-200 text-blue-600 font-bold hover:bg-primary hover:text-white hover:border-primary transition-all rounded">
+                onClick={() => setSelectedLetter(selectedLetter === char ? null : char)}
+                className={`w-8 h-8 flex items-center justify-center border font-bold transition-all rounded ${
+                  selectedLetter === char
+                    ? "bg-primary text-white border-primary"
+                    : "border-gray-200 text-blue-600 hover:bg-primary hover:text-white hover:border-primary"
+                }`}>
                 {char}
-              </Link>
+              </button>
             ))}
           </div>
+          {selectedLetter && (
+            <button
+              onClick={() => setSelectedLetter(null)}
+              className="mt-4 text-sm text-blue-600 underline font-bold">
+              Clear Filter
+            </button>
+          )}
         </div>
 
         {/* Request New Brand */}

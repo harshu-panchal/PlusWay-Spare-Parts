@@ -130,7 +130,7 @@ const OrderDetail = () => {
                                         />
                                     </div>
                                     <div className="flex-1">
-                                        <Link to={`/admin/products/${item.product}`} className="font-bold text-gray-800 hover:text-blue-600 text-lg">
+                                        <Link to={`/admin/products/${item.product?._id || item.product}`} className="font-bold text-gray-800 hover:text-blue-600 text-lg">
                                             {item.name}
                                         </Link>
                                         <p className="text-sm text-gray-500">Unit Price: ₹{item.price}</p>

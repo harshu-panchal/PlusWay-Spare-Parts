@@ -1,6 +1,9 @@
 import Model from "../../../models/Model.js";
 import Brand from "../../../models/Brand.js";
 
+const escapeRegex = (value = "") =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 // @desc    Get all models
 // @route   GET /api/admin/models
 // @access  Private/Admin
@@ -19,7 +22,7 @@ export const getModels = async (req, res) => {
 
   let filter = {};
   if (search) {
-    filter.name = { $regex: search, $options: "i" };
+    filter.name = { $regex: escapeRegex(search), $options: "i" };
   }
   if (brand && brand !== "all") {
     filter.brand = brand;

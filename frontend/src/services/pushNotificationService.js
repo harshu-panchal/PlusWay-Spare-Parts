@@ -2,18 +2,28 @@ import { messaging, getToken, onMessage } from "../firebase";
 
 const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
+let swRegistrationPromise = null;
+let foregroundHandlerBound = false;
+let pushInitializationPromise = null;
 
 // Register service worker
 async function registerServiceWorker() {
+  if (swRegistrationPromise) {
+    return swRegistrationPromise;
+  }
+
   if ("serviceWorker" in navigator) {
-    try {
+    swRegistrationPromise = (async () => {
       const registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
       console.log("✅ Service Worker registered:", registration);
       return registration;
-    } catch (error) {
+    })().catch((error) => {
+      swRegistrationPromise = null;
       console.error("❌ Service Worker registration failed:", error);
       throw error;
-    }
+    });
+
+    return swRegistrationPromise;
   } else {
     throw new Error("Service Workers are not supported");
   }
@@ -150,6 +160,11 @@ async function removeFCMToken() {
 
 // Setup foreground notification handler
 function setupForegroundNotificationHandler(handler) {
+  if (foregroundHandlerBound) {
+    return;
+  }
+
+  foregroundHandlerBound = true;
   onMessage(messaging, (payload) => {
     console.log("📬 Foreground message received:", payload);
 
@@ -171,13 +186,27 @@ function setupForegroundNotificationHandler(handler) {
 
 // Initialize push notifications
 async function initializePushNotifications() {
-  try {
-    if ("serviceWorker" in navigator) {
-      await registerServiceWorker();
-      // Token registration usually happens after login
+  if (pushInitializationPromise) {
+    return pushInitializationPromise;
+  }
+
+  pushInitializationPromise = (async () => {
+    try {
+      if ("serviceWorker" in navigator) {
+        await registerServiceWorker();
+        // Token registration usually happens after login
+      }
+    } catch (error) {
+      console.error("Error initializing push notifications:", error);
     }
+  })();
+
+  try {
+    await pushInitializationPromise;
   } catch (error) {
     console.error("Error initializing push notifications:", error);
+  } finally {
+    pushInitializationPromise = null;
   }
 }
 

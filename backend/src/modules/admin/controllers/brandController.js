@@ -1,5 +1,8 @@
-import Brand from '../../../models/Brand.js';
-import asyncHandler from '../../../middleware/asyncHandler.js';
+import Brand from "../../../models/Brand.js";
+import asyncHandler from "../../../middleware/asyncHandler.js";
+
+const escapeRegex = (value = "") =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 // @desc    Get all brands
 // @route   GET /api/admin/brands
@@ -7,16 +10,16 @@ import asyncHandler from '../../../middleware/asyncHandler.js';
 export const getBrands = asyncHandler(async (req, res) => {
   const pageSize = Number(req.query.pageSize) || 20;
   const page = Number(req.query.pageNumber) || 1;
-  const search = req.query.search || '';
+  const search = req.query.search || "";
 
-  if (req.query.all === 'true') {
+  if (req.query.all === "true") {
     const brands = await Brand.find({}).sort({ name: 1 });
     return res.json({ brands, total: brands.length });
   }
 
   let filter = {};
   if (search) {
-    filter.name = { $regex: search, $options: 'i' };
+    filter.name = { $regex: escapeRegex(search), $options: "i" };
   }
 
   const count = await Brand.countDocuments(filter);
@@ -38,7 +41,7 @@ export const createBrand = asyncHandler(async (req, res) => {
 
   if (brandExists) {
     res.status(400);
-    throw new Error('Brand already exists');
+    throw new Error("Brand already exists");
   }
 
   const brand = new Brand({
@@ -66,7 +69,7 @@ export const updateBrand = asyncHandler(async (req, res) => {
     res.json(updatedBrand);
   } else {
     res.status(404);
-    throw new Error('Brand not found');
+    throw new Error("Brand not found");
   }
 });
 
@@ -78,9 +81,9 @@ export const deleteBrand = asyncHandler(async (req, res) => {
 
   if (brand) {
     await Brand.deleteOne({ _id: brand._id });
-    res.json({ message: 'Brand removed' });
+    res.json({ message: "Brand removed" });
   } else {
     res.status(404);
-    throw new Error('Brand not found');
+    throw new Error("Brand not found");
   }
 });

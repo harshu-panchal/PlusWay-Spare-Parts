@@ -2,22 +2,35 @@ import Order from "../../../models/Order.js";
 import sendEmail from "../../../utils/sendEmail.js";
 import generateInvoice from "../../../utils/generateInvoice.js";
 
+const escapeRegex = (value = "") =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 // @desc    Get all orders
 // @route   GET /api/admin/orders
 // @access  Private/Admin
 export const getOrders = async (req, res) => {
   const pageSize = Number(req.query.pageSize) || 20;
   const page = Number(req.query.pageNumber) || 1;
-  const search = req.query.search || '';
+  const search = req.query.search || "";
   const status = req.query.status;
 
   let filter = {};
   if (search) {
+    const escapedSearch = escapeRegex(search);
+
     filter.$or = [
-      { _id: { $regex: search, $options: 'i' } }
+      {
+        $expr: {
+          $regexMatch: {
+            input: { $toString: "$_id" },
+            regex: escapedSearch,
+            options: "i",
+          },
+        },
+      },
     ];
   }
-  if (status && status !== 'All') {
+  if (status && status !== "All") {
     filter.status = status;
   }
 

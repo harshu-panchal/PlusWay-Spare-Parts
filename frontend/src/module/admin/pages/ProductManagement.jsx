@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import {
   Search,
   Plus,
@@ -21,6 +22,7 @@ import { API_ENDPOINTS } from "../../../config/api";
 import Pagination from "../../../components/Pagination";
 
 const ProductManagement = () => {
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -100,11 +102,13 @@ const ProductManagement = () => {
     countInStock: 0,
     description: "",
     images: [],
+    colors: [],
     details: {
       specs: [],
       warranty: { period: "", policy: "", summary: "" },
       inTheBox: "",
       highlights: [],
+      descriptionPoints: [],
     },
   };
 
@@ -118,6 +122,7 @@ const ProductManagement = () => {
         category: product.category?._id || product.category || "",
         brand: product.brand?._id || product.brand || "",
         model: product.model?._id || product.model || "",
+        colors: product.colors?.map((c) => ({ name: c })) || [],
         details: {
           specs: product.details?.specs || [],
           warranty: {
@@ -129,6 +134,8 @@ const ProductManagement = () => {
           inTheBox: product.details?.inTheBox || "",
           highlights:
             product.details?.highlights?.map((h) => ({ type: h })) || [],
+          descriptionPoints:
+            product.details?.descriptionPoints?.map((p) => ({ text: p })) || [],
         },
         countInStock: product.countInStock || 0,
         wholesalePrice: product.wholesalePrice || 0,
@@ -197,6 +204,62 @@ const ProductManagement = () => {
     });
   };
 
+  const handleAddDescriptionPoint = () => {
+    setFormData({
+      ...formData,
+      details: {
+        ...formData.details,
+        descriptionPoints: [
+          ...(formData.details.descriptionPoints || []),
+          { text: "" },
+        ],
+      },
+    });
+  };
+
+  const handleRemoveDescriptionPoint = (index) => {
+    const newPoints = [...(formData.details.descriptionPoints || [])];
+    newPoints.splice(index, 1);
+    setFormData({
+      ...formData,
+      details: { ...formData.details, descriptionPoints: newPoints },
+    });
+  };
+
+  const handleDescriptionPointChange = (index, value) => {
+    const newPoints = [...(formData.details.descriptionPoints || [])];
+    newPoints[index].text = value;
+    setFormData({
+      ...formData,
+      details: { ...formData.details, descriptionPoints: newPoints },
+    });
+  };
+
+  const handleAddColor = () => {
+    setFormData({
+      ...formData,
+      colors: [...(formData.colors || []), { name: "" }],
+    });
+  };
+
+  const handleRemoveColor = (index) => {
+    const newColors = [...(formData.colors || [])];
+    newColors.splice(index, 1);
+    setFormData({
+      ...formData,
+      colors: newColors,
+    });
+  };
+
+  const handleColorChange = (index, value) => {
+    const newColors = [...(formData.colors || [])];
+    newColors[index].name = value;
+    setFormData({
+      ...formData,
+      colors: newColors,
+    });
+  };
+
   const handleImageUpload = (url, index = -1) => {
     if (index === -1) {
       // Add new image
@@ -233,11 +296,16 @@ const ProductManagement = () => {
         wholesaleMinQty: Number(formData.wholesaleMinQty),
         mrp: Number(formData.mrp),
         countInStock: Number(formData.countInStock),
+        colors: formData.colors?.map((c) => c.name).filter((c) => c) || [],
         details: {
           ...formData.details,
           highlights:
             formData.details.highlights?.map((h) => h.type).filter((h) => h) ||
             [],
+          descriptionPoints:
+            formData.details.descriptionPoints
+              ?.map((p) => p.text)
+              .filter((p) => p) || [],
         },
       };
 
@@ -441,6 +509,7 @@ const ProductManagement = () => {
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
+                        onClick={() => navigate(`/admin/products/${product._id}`)}
                         className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                         title="View Details">
                         <Eye size={18} />
@@ -533,6 +602,42 @@ const ProductManagement = () => {
                       placeholder="Add Image"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Color Variants */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                    Color Variants
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleAddColor}
+                    className="text-blue-600 text-xs font-bold hover:underline">
+                    + Add Color
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {formData.colors?.map((color, index) => (
+                    <div key={index} className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Color (e.g. Black, White, Blue)"
+                        className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
+                        value={color.name}
+                        onChange={(e) =>
+                          handleColorChange(index, e.target.value)
+                        }
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveColor(index)}
+                        className="text-red-500 hover:bg-red-50 p-2 rounded">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -740,6 +845,42 @@ const ProductManagement = () => {
                     }
                     placeholder="Enter detailed product description..."
                   />
+                </div>
+
+                {/* Description Points */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                      Description Points
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleAddDescriptionPoint}
+                      className="text-blue-600 text-xs font-bold hover:underline">
+                      + Add Description Point
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {formData.details.descriptionPoints?.map((point, index) => (
+                      <div key={index} className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Description point (e.g. High quality product)"
+                          className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
+                          value={point.text}
+                          onChange={(e) =>
+                            handleDescriptionPointChange(index, e.target.value)
+                          }
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveDescriptionPoint(index)}
+                          className="text-red-500 hover:bg-red-50 p-2 rounded">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Specifications */}

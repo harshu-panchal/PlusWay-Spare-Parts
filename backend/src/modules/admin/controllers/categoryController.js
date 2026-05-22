@@ -1,6 +1,9 @@
 import Category from '../../../models/Category.js';
 import asyncHandler from '../../../middleware/asyncHandler.js';
 
+const escapeRegex = (value = "") =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 // @desc    Get all categories
 // @route   GET /api/admin/categories
 // @access  Private/Admin
@@ -16,9 +19,11 @@ export const getCategories = asyncHandler(async (req, res) => {
 
   let filter = {};
   if (search) {
+    const escapedSearch = escapeRegex(search);
+
     filter.$or = [
-      { name: { $regex: search, $options: 'i' } },
-      { slug: { $regex: search, $options: 'i' } }
+      { name: { $regex: escapedSearch, $options: 'i' } },
+      { slug: { $regex: escapedSearch, $options: 'i' } }
     ];
   }
 

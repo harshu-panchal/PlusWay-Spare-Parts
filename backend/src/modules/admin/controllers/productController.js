@@ -1,4 +1,4 @@
-import Product from '../../../models/Product.js';
+import Product from "../../../models/Product.js";
 
 // @desc    Get all products
 // @route   GET /api/admin/products
@@ -6,25 +6,36 @@ import Product from '../../../models/Product.js';
 export const getProducts = async (req, res) => {
   const pageSize = Number(req.query.pageSize) || 20;
   const page = Number(req.query.pageNumber) || 1;
-  const search = req.query.search || '';
+  const search = req.query.search || "";
   const category = req.query.category;
 
   let filter = {};
 
   if (search) {
+    const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
     filter.$or = [
-      { name: { $regex: search, $options: 'i' } },
-      { _id: { $regex: search, $options: 'i' } }
+      { name: { $regex: escapedSearch, $options: "i" } },
+      { code: { $regex: escapedSearch, $options: "i" } },
+      {
+        $expr: {
+          $regexMatch: {
+            input: { $toString: "$_id" },
+            regex: escapedSearch,
+            options: "i",
+          },
+        },
+      },
     ];
   }
 
-  if (category && category !== 'All') {
+  if (category && category !== "All") {
     filter.category = category;
   }
 
   const count = await Product.countDocuments(filter);
   const products = await Product.find(filter)
-    .populate('brand model category')
+    .populate("brand model category")
     .limit(pageSize)
     .skip(pageSize * (page - 1))
     .sort({ createdAt: -1 });
@@ -36,12 +47,14 @@ export const getProducts = async (req, res) => {
 // @route   GET /api/admin/products/:id
 // @access  Private/Admin
 export const getProductById = async (req, res) => {
-  const product = await Product.findById(req.params.id).populate('brand model category');
+  const product = await Product.findById(req.params.id).populate(
+    "brand model category",
+  );
 
   if (product) {
     res.json(product);
   } else {
-    res.status(404).json({ message: 'Product not found' });
+    res.status(404).json({ message: "Product not found" });
   }
 };
 
@@ -70,7 +83,12 @@ export const createProduct = async (req, res) => {
     colors,
   } = req.body;
 
-  const generatedSlug = slug || name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+  const generatedSlug =
+    slug ||
+    name
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "-")
+      .replace(/-+/g, "-");
 
   const productData = {
     name,
@@ -143,7 +161,7 @@ export const updateProduct = async (req, res) => {
     const updatedProduct = await product.save();
     res.json(updatedProduct);
   } else {
-    res.status(404).json({ message: 'Product not found' });
+    res.status(404).json({ message: "Product not found" });
   }
 };
 
@@ -155,9 +173,9 @@ export const deleteProduct = async (req, res) => {
 
   if (product) {
     await Product.deleteOne({ _id: product._id });
-    res.json({ message: 'Product removed' });
+    res.json({ message: "Product removed" });
   } else {
-    res.status(404).json({ message: 'Product not found' });
+    res.status(404).json({ message: "Product not found" });
   }
 };
 

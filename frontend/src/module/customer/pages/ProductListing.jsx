@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { ChevronRight, Filter, ChevronDown, ShoppingCart, Star } from 'lucide-react';
+import { ChevronRight, Filter } from 'lucide-react';
 import { API_ENDPOINTS, API_BASE_URL } from '../../../config/api';
 import { useCart } from '../context/CartContext';
 import Pagination from '../../../components/Pagination';
 import ProductCard from '../components/ProductCard';
+import LazyImage from "../../../components/LazyImage";
 
 const ProductListing = () => {
     const location = useLocation();
@@ -24,6 +25,7 @@ const ProductListing = () => {
     const [page, setPage] = useState(1);
     const [pages, setPages] = useState(1);
     const [total, setTotal] = useState(0);
+    const [sortBy, setSortBy] = useState("relevance");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -35,6 +37,7 @@ const ProductListing = () => {
                 if (modelId) url += `model=${modelId}&`;
                 if (typeId) url += `category=${typeId}&`;
                 if (keyword) url += `keyword=${keyword}&`;
+                url += `sort=${sortBy}&`;
 
                 const { data } = await axios.get(url);
                 setProducts(data.products);
@@ -50,12 +53,12 @@ const ProductListing = () => {
         };
 
         fetchProducts();
-    }, [modelId, typeId, keyword, location.search, page]);
+    }, [modelId, typeId, keyword, location.search, page, sortBy]);
 
     // Reset page when filters change
     useEffect(() => {
         setPage(1);
-    }, [modelId, typeId, keyword, location.search]);
+    }, [modelId, typeId, keyword, location.search, sortBy]);
 
     // Mock data for display titles (optional, could fetch real objects)
     const modelName = "Selected Model";
@@ -175,7 +178,21 @@ const ProductListing = () => {
                             )}
                             <div className="flex items-center gap-2 text-sm font-bold text-gray-500">
                                 <span>Sort by:</span>
-                                <button className="flex items-center gap-1 text-secondary">Relevance <ChevronDown size={14} /></button>
+                                <select
+                                    value={sortBy}
+                                    onChange={(e) => {
+                                        setSortBy(e.target.value);
+                                        setPage(1);
+                                    }}
+                                    className="bg-transparent text-secondary font-bold focus:outline-none cursor-pointer"
+                                >
+                                    <option value="relevance">Relevance</option>
+                                    <option value="newest">Newest</option>
+                                    <option value="priceAsc">Price: Low to High</option>
+                                    <option value="priceDesc">Price: High to Low</option>
+                                    <option value="rating">Top Rated</option>
+                                    <option value="nameAsc">Name: A-Z</option>
+                                </select>
                             </div>
                         </div>
 
