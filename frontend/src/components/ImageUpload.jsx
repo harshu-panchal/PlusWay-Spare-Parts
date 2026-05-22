@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { Upload, X, Loader } from "lucide-react";
+import { API_BASE_URL } from "../config/api";
 
 const ImageUpload = ({ value, onChange, placeholder = "Upload Image" }) => {
     const [uploading, setUploading] = useState(false);
@@ -19,7 +20,7 @@ const ImageUpload = ({ value, onChange, placeholder = "Upload Image" }) => {
             };
 
             const { data } = await axios.post(
-                "http://localhost:5001/api/upload",
+                `${API_BASE_URL}/api/upload`,
                 formData,
                 config,
             );
