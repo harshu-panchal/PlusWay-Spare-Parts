@@ -27,6 +27,9 @@ connectDB();
 
 const app = express();
 
+// Trust proxy for express-rate-limit when behind Nginx/load balancer
+app.set('trust proxy', 1);
+
 // Compression middleware (place early to compress all responses)
 app.use(compression());
 
