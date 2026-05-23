@@ -611,42 +611,29 @@ const ProductDetail = () => {
                     </table>
                   )}
 
-                  {/* Compatibility (Mock or if implemented) */}
-                  {product.details?.compatibility && (
+                  {/* Specifications */}
+                  {product.details?.specs && product.details.specs.length > 0 && (
                     <table className="w-full border-collapse border border-gray-200 text-sm">
                       <thead>
                         <tr>
                           <th
                             colSpan="2"
                             className="bg-gray-50 p-3 text-left font-black uppercase italic border border-gray-200">
-                            Compatibility
+                            Specifications
                           </th>
                         </tr>
                       </thead>
                       <tbody>
-                        {/* Check if compatibility is object or string */}
-                        {typeof product.details.compatibility === "object" ? (
-                          Object.entries(product.details.compatibility).map(
-                            ([key, val]) => (
-                              <tr
-                                key={key}
-                                className="border-b border-gray-100">
-                                <td className="p-3 w-1/3 text-gray-500 font-bold border-r border-gray-100">
-                                  {key}
-                                </td>
-                                <td className="p-3 text-secondary font-black">
-                                  {val}
-                                </td>
-                              </tr>
-                            ),
-                          )
-                        ) : (
-                          <tr>
-                            <td className="p-3">
-                              {product.details.compatibility}
+                        {product.details.specs.map((spec, index) => (
+                          <tr key={index} className="border-b border-gray-100">
+                            <td className="p-3 w-1/3 text-gray-500 font-bold border-r border-gray-100">
+                              {spec.key}
+                            </td>
+                            <td className="p-3 text-secondary font-black">
+                              {spec.value}
                             </td>
                           </tr>
-                        )}
+                        ))}
                       </tbody>
                     </table>
                   )}

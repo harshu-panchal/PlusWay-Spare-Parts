@@ -144,6 +144,17 @@ export const updateProduct = async (req, res) => {
       }
     }
     product.slug = req.body.slug || product.slug;
+
+    // Check for duplicate name
+    const productExists = await Product.findOne({
+      _id: { $ne: req.params.id },
+      name: { $regex: new RegExp(`^${product.name}$`, "i") }
+    });
+
+    if (productExists) {
+      return res.status(400).json({ message: "Product with this name already exists" });
+    }
+
     if (req.body.code) product.code = req.body.code;
     // If explicitly empty string, maybe unset it? unique sparse index doesn't like "".
     if (req.body.code === "") product.code = undefined;

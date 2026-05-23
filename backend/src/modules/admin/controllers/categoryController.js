@@ -74,8 +74,24 @@ export const updateCategory = asyncHandler(async (req, res) => {
   const category = await Category.findById(req.params.id);
 
   if (category) {
-    category.name = name || category.name;
-    category.slug = slug || category.slug;
+    const newName = name || category.name;
+    const newSlug = slug || category.slug;
+
+    const categoryExists = await Category.findOne({
+      _id: { $ne: req.params.id },
+      $or: [
+        { name: { $regex: new RegExp(`^${newName}$`, "i") } },
+        { slug: { $regex: new RegExp(`^${newSlug}$`, "i") } }
+      ]
+    });
+
+    if (categoryExists) {
+      res.status(400);
+      throw new Error('Category with this name or slug already exists');
+    }
+
+    category.name = newName;
+    category.slug = newSlug;
     category.image = image || category.image;
     category.isAccessory = isAccessory !== undefined ? isAccessory : category.isAccessory;
 

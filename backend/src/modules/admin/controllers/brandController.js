@@ -62,7 +62,19 @@ export const updateBrand = asyncHandler(async (req, res) => {
   const brand = await Brand.findById(req.params.id);
 
   if (brand) {
-    brand.name = name || brand.name;
+    const newName = name || brand.name;
+    
+    const brandExists = await Brand.findOne({
+      _id: { $ne: req.params.id },
+      name: { $regex: new RegExp(`^${newName}$`, "i") }
+    });
+
+    if (brandExists) {
+      res.status(400);
+      throw new Error("Brand already exists");
+    }
+
+    brand.name = newName;
     brand.logo = logo || brand.logo;
 
     const updatedBrand = await brand.save();

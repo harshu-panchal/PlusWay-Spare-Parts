@@ -108,6 +108,15 @@ export const updateModel = async (req, res) => {
       finalName = `${brandDoc.name} ${finalName}`;
     }
 
+    const modelExists = await Model.findOne({
+      _id: { $ne: req.params.id },
+      name: { $regex: new RegExp(`^${finalName}$`, "i") }
+    });
+
+    if (modelExists) {
+      return res.status(400).json({ message: "Model with this name already exists" });
+    }
+
     model.name = finalName;
     model.brand = targetBrandId;
     model.released = released || model.released;
