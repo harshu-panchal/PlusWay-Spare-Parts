@@ -90,6 +90,11 @@ export const createProduct = async (req, res) => {
       .replace(/[^a-z0-9]/g, "-")
       .replace(/-+/g, "-");
 
+  const productExists = await Product.findOne({ name: { $regex: new RegExp(`^${name}$`, "i") } });
+  if (productExists) {
+    return res.status(400).json({ message: "Product with this name already exists" });
+  }
+
   const productData = {
     name,
     slug: generatedSlug,

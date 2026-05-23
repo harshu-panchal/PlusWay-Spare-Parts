@@ -42,11 +42,16 @@ export const getCategories = asyncHandler(async (req, res) => {
 export const createCategory = asyncHandler(async (req, res) => {
   const { name, slug, image, isAccessory } = req.body;
 
-  const categoryExists = await Category.findOne({ slug });
+  const categoryExists = await Category.findOne({
+    $or: [
+      { name: { $regex: new RegExp(`^${name}$`, "i") } },
+      { slug: { $regex: new RegExp(`^${slug}$`, "i") } }
+    ]
+  });
 
   if (categoryExists) {
     res.status(400);
-    throw new Error('Category with this slug already exists');
+    throw new Error('Category with this name or slug already exists');
   }
 
   const category = new Category({

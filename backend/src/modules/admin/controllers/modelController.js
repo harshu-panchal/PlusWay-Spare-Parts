@@ -63,6 +63,11 @@ export const createModel = async (req, res) => {
     finalName = `${brandDoc.name} ${name}`;
   }
 
+  const modelExists = await Model.findOne({ name: { $regex: new RegExp(`^${finalName}$`, "i") } });
+  if (modelExists) {
+    return res.status(400).json({ message: "Model with this name already exists" });
+  }
+
   const model = new Model({
     name: finalName,
     brand,

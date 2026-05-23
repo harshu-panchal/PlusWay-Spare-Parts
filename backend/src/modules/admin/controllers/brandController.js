@@ -37,7 +37,7 @@ export const getBrands = asyncHandler(async (req, res) => {
 export const createBrand = asyncHandler(async (req, res) => {
   const { name, logo } = req.body;
 
-  const brandExists = await Brand.findOne({ name });
+  const brandExists = await Brand.findOne({ name: { $regex: new RegExp(`^${name}$`, "i") } });
 
   if (brandExists) {
     res.status(400);
