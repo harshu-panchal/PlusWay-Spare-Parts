@@ -15,8 +15,10 @@ import {
   Send,
   Reply,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const ReviewManagement = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedReview, setSelectedReview] = useState(null);
@@ -43,6 +45,7 @@ const ReviewManagement = () => {
 
       const formattedReviews = data.reviews.map(review => ({
         id: review._id,
+        userId: review.user,
         author: review.name,
         date: new Date(review.createdAt).toLocaleDateString(),
         content: review.comment,
@@ -198,7 +201,12 @@ const ReviewManagement = () => {
                       <User size={20} />
                     </div>
                     <div>
-                      <h4 className="font-bold text-gray-900">{review.author}</h4>
+                      <button 
+                        onClick={() => navigate(`/admin/customers/${review.userId}`)}
+                        className="font-bold text-gray-900 hover:text-blue-600 transition-colors text-left"
+                      >
+                        {review.author}
+                      </button>
                       <div className="flex items-center gap-2">
                         <p className="text-xs text-gray-500">{review.date}</p>
                         <span

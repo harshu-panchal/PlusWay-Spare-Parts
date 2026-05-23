@@ -1,4 +1,8 @@
 import express from "express";
+import multer from "multer";
+import path from "path";
+import { fileURLToPath } from "url";
+import fs from "fs";
 import { authAdmin, getAdminProfile, getDashboardStats, getReportStats, getWalletStats } from "../controllers/adminController.js";
 import {
   getCustomers,
@@ -30,6 +34,7 @@ import {
   updateProduct,
   deleteProduct,
   updateProductStock,
+  bulkCreateProducts,
 } from "../controllers/productController.js";
 import {
   getCategories,
@@ -43,6 +48,7 @@ import {
   createModel,
   updateModel,
   deleteModel,
+  bulkCreateModels,
 } from "../controllers/modelController.js";
 import {
   getOrders,
@@ -52,6 +58,30 @@ import {
   getOrderInvoice,
 } from "../controllers/orderController.js";
 import { protect, admin } from "../../../middleware/authMiddleware.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const uploadDir = path.join(__dirname, "../../../../uploads");
+
+// Ensure uploads directory exists
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Multer config for Excel bulk upload files
+const excelUpload = multer({
+  dest: uploadDir,
+  fileFilter: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (ext === ".xlsx" || ext === ".xls") {
+      cb(null, true);
+    } else {
+      cb(new Error("Only Excel files (.xlsx, .xls) are allowed"));
+    }
+  },
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+});
+
 
 const router = express.Router();
 
@@ -79,6 +109,8 @@ router
   .delete(protect, admin, deleteBrand);
 
 // Product routes
+// IMPORTANT: bulk-upload must come BEFORE /:id to avoid route collision
+router.post("/products/bulk-upload", protect, admin, excelUpload.single("file"), bulkCreateProducts);
 router
   .route("/products")
   .get(protect, admin, getProducts)
@@ -129,6 +161,8 @@ router
   .delete(protect, admin, deleteCategory);
 
 // Model routes
+// IMPORTANT: bulk-upload must come BEFORE /:id to avoid route collision
+router.post("/models/bulk-upload", protect, admin, excelUpload.single("file"), bulkCreateModels);
 router
   .route("/models")
   .get(protect, admin, getModels)

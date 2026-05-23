@@ -85,6 +85,10 @@ export const API_ENDPOINTS = {
     ADMIN_MODELS: `${API_BASE_URL}/api/admin/models`,
     ADMIN_MODEL_DETAIL: (id) => `${API_BASE_URL}/api/admin/models/${id}`,
 
+    // Bulk Upload
+    ADMIN_PRODUCTS_BULK_UPLOAD: `${API_BASE_URL}/api/admin/products/bulk-upload`,
+    ADMIN_MODELS_BULK_UPLOAD: `${API_BASE_URL}/api/admin/models/bulk-upload`,
+
     // Admin Orders
     ADMIN_ORDERS: `${API_BASE_URL}/api/admin/orders`,
     ADMIN_ORDER_DETAIL: (id) => `${API_BASE_URL}/api/admin/orders/${id}`,

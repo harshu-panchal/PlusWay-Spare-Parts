@@ -10,6 +10,11 @@ const reviewSchema = new mongoose.Schema(
       required: true,
       ref: 'Customer', // referencing Customer model instead of User
     },
+    status: {
+      type: String,
+      enum: ["Pending", "Approved", "Rejected"],
+      default: "Pending",
+    },
     adminReply: { type: String },
   },
   {

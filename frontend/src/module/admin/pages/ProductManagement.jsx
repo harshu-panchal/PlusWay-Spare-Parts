@@ -16,8 +16,10 @@ import {
   ChevronRight,
   ChevronLeft,
   AlertTriangle,
+  FileSpreadsheet,
 } from "lucide-react";
 import ImageUpload from "../../../components/ImageUpload";
+import BulkUploadModal from "../../../components/BulkUploadModal";
 import { API_ENDPOINTS } from "../../../config/api";
 import Pagination from "../../../components/Pagination";
 
@@ -49,6 +51,7 @@ const ProductManagement = () => {
   const [editingProduct, setEditingProduct] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -357,14 +360,45 @@ const ProductManagement = () => {
     }
   };
 
+  const productTemplateColumns = [
+    { header: "name *", key: "name", example: "LCD Screen Samsung S23 Ultra", example2: "Battery iPhone 14 Pro" },
+    { header: "code", key: "code", example: "SKU-001", example2: "SKU-002" },
+    { header: "brand *", key: "brand", example: "Samsung", example2: "Apple" },
+    { header: "model *", key: "model", example: "Samsung Galaxy S23 Ultra", example2: "Apple iPhone 14 Pro" },
+    { header: "category *", key: "category", example: "LCD Display", example2: "Battery" },
+    { header: "productType", key: "productType", example: "LCD with Touch Screen", example2: "Li-Ion Battery" },
+    { header: "price *", key: "price", example: "4500", example2: "2800" },
+    { header: "mrp *", key: "mrp", example: "5500", example2: "3500" },
+    { header: "wholesalePrice *", key: "wholesalePrice", example: "3800", example2: "2300" },
+    { header: "wholesaleMinQty *", key: "wholesaleMinQty", example: "10", example2: "10" },
+    { header: "cashback", key: "cashback", example: "100", example2: "50" },
+    { header: "countInStock *", key: "countInStock", example: "50", example2: "30" },
+    { header: "description", key: "description", example: "High quality original LCD display", example2: "Long lasting battery" },
+    { header: "images", key: "images", example: "http://server/uploads/img1.jpg|http://server/uploads/img2.jpg", example2: "" },
+    { header: "videoUrl", key: "videoUrl", example: "", example2: "" },
+    { header: "colors", key: "colors", example: "Black,White,Gold", example2: "Black" },
+    { header: "specs", key: "specs", example: "Color:Black|Compatibility:S23 Ultra|Type:AMOLED", example2: "Capacity:3000mAh|Voltage:3.8V" },
+    { header: "inTheBox", key: "inTheBox", example: "LCD Display, Installation Guide", example2: "Battery" },
+    { header: "warrantyPeriod", key: "warrantyPeriod", example: "6 Months", example2: "3 Months" },
+    { header: "warrantyPolicy", key: "warrantyPolicy", example: "Replacement", example2: "Replacement" },
+    { header: "warrantySummary", key: "warrantySummary", example: "Warranty void if tampered", example2: "" },
+    { header: "highlights", key: "highlights", example: "Super AMOLED|Fast Charging|5G Ready", example2: "Long Life|Safe Chemistry" },
+    { header: "descriptionPoints", key: "descriptionPoints", example: "100% Original Part|Quality Tested", example2: "Safe and reliable" },
+  ];
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-bold text-gray-900">Products</h1>
-          <p className="text-sm text-gray-500">
-            Manage your product inventory and details
-          </p>
+        <div className="flex flex-col gap-2">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Products</h1>
+            <p className="text-sm text-gray-500">
+              Manage your product inventory and details
+            </p>
+          </div>
+          <div className="bg-blue-50 text-blue-700 text-xs px-3 py-2 rounded-lg border border-blue-100 max-w-lg">
+            <span className="font-bold">Bulk Upload Tip:</span> To view the <strong>Complete Field Reference</strong> (required fields, exact column keys, and examples), click the <strong>Bulk Upload</strong> button and download the template.
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <select
@@ -378,6 +412,12 @@ const ProductManagement = () => {
               </option>
             ))}
           </select>
+          <button
+            onClick={() => setIsBulkModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all shadow-sm hover:shadow-md active:scale-95">
+            <FileSpreadsheet size={18} />
+            <span className="font-medium">Bulk Upload</span>
+          </button>
           <button
             onClick={() => handleOpenModal()}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm hover:shadow-md active:scale-95">
@@ -1145,6 +1185,19 @@ const ProductManagement = () => {
           </div>
         </div>
       )}
+
+      {/* Bulk Upload Modal */}
+      <BulkUploadModal
+        isOpen={isBulkModalOpen}
+        onClose={() => setIsBulkModalOpen(false)}
+        onSuccess={() => { fetchData(); setIsBulkModalOpen(false); }}
+        uploadEndpoint={API_ENDPOINTS.ADMIN_PRODUCTS_BULK_UPLOAD}
+        templateColumns={productTemplateColumns}
+        templateSheetName="Products"
+        templateFileName="plusway_products_bulk_template.xlsx"
+        title="Bulk Upload Products"
+        description="Upload multiple products at once via Excel spreadsheet"
+      />
     </div>
   );
 };

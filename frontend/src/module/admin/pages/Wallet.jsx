@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 import { API_ENDPOINTS } from "../../../config/api";
 import {
     Wallet as WalletIcon,
@@ -117,6 +119,31 @@ const Wallet = () => {
         },
     ];
 
+    const handleExport = () => {
+        if (!data.transactions || data.transactions.length === 0) return;
+
+        const exportData = data.transactions.map(t => ({
+            "Transaction ID": t.id,
+            "Date": new Date(t.date).toLocaleDateString(),
+            "Time": new Date(t.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            "Type": t.type,
+            "Amount (₹)": t.amount,
+            "Customer": t.customer,
+            "Method": t.method,
+            "Status": t.status
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        ws["!cols"] = [{ wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 10 }, { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 15 }];
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Transactions");
+
+        const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+        const blob = new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+        saveAs(blob, `Wallet_Statement_${new Date().toISOString().split('T')[0]}.xlsx`);
+    };
+
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Header */}
@@ -133,7 +160,9 @@ const Wallet = () => {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 shadow-sm hover:bg-gray-50 transition-all">
+                    <button 
+                        onClick={handleExport}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 shadow-sm hover:bg-gray-50 transition-all">
                         <Download size={18} />
                         EXPORT STATEMENT
                     </button>

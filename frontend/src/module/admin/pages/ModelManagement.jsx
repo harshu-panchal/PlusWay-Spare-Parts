@@ -11,8 +11,10 @@ import {
   X,
   Save,
   Calendar,
+  FileSpreadsheet,
 } from "lucide-react";
 import ImageUpload from "../../../components/ImageUpload";
+import BulkUploadModal from "../../../components/BulkUploadModal";
 import { API_ENDPOINTS } from "../../../config/api";
 import Pagination from "../../../components/Pagination";
 
@@ -28,6 +30,7 @@ const ModelManagement = () => {
   const [total, setTotal] = useState(0);
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
 
   const initialFormState = {
     name: "",
@@ -147,9 +150,45 @@ const ModelManagement = () => {
     }
   };
 
+  const modelTemplateColumns = [
+    { header: "name *", key: "name", example: "Galaxy S23 Ultra", example2: "iPhone 14 Pro" },
+    { header: "brand *", key: "brand", example: "Samsung", example2: "Apple" },
+    { header: "released", key: "released", example: "February 2023", example2: "September 2022" },
+    { header: "displaySize", key: "displaySize", example: "6.8 inch", example2: "6.1 inch" },
+    { header: "image", key: "image", example: "http://server/uploads/s23ultra.jpg", example2: "" },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+        <div className="flex flex-col gap-2">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Models</h1>
+            <p className="text-sm text-gray-500">
+              Manage your device models and details
+            </p>
+          </div>
+          <div className="bg-blue-50 text-blue-700 text-xs px-3 py-2 rounded-lg border border-blue-100 max-w-lg">
+            <span className="font-bold">Bulk Upload Tip:</span> To view the <strong>Complete Field Reference</strong> (required fields, exact column keys, and examples), click the <strong>Bulk Upload</strong> button and download the template.
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsBulkModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm">
+            <FileSpreadsheet size={18} />
+            <span className="font-medium">Bulk Upload</span>
+          </button>
+          <button
+            onClick={() => handleOpenModal()}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+            <Plus size={18} />
+            <span className="font-medium">Add Model</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
         <div className="flex flex-1 gap-4">
           <div className="relative flex-1 max-w-md">
             <Search
@@ -176,12 +215,6 @@ const ModelManagement = () => {
             ))}
           </select>
         </div>
-        <button
-          onClick={() => handleOpenModal()}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
-          <Plus size={18} />
-          <span>Add Model</span>
-        </button>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -363,6 +396,19 @@ const ModelManagement = () => {
           </div>
         </div>
       )}
+
+      {/* Bulk Upload Modal */}
+      <BulkUploadModal
+        isOpen={isBulkModalOpen}
+        onClose={() => setIsBulkModalOpen(false)}
+        onSuccess={() => { fetchData(); setIsBulkModalOpen(false); }}
+        uploadEndpoint={API_ENDPOINTS.ADMIN_MODELS_BULK_UPLOAD}
+        templateColumns={modelTemplateColumns}
+        templateSheetName="Models"
+        templateFileName="plusway_models_bulk_template.xlsx"
+        title="Bulk Upload Models"
+        description="Upload multiple phone models at once via Excel spreadsheet"
+      />
     </div>
   );
 };

@@ -12,7 +12,8 @@ import {
   Filter
 } from 'lucide-react';
 import { brands, categories } from '../../customer/data/mockData';
-
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 import axios from "axios";
 import { API_ENDPOINTS } from "../../../config/api";
 
@@ -79,6 +80,63 @@ const Reports = () => {
     },
   ];
 
+  const handleExport = () => {
+    if (!data) return;
+
+    // 1. Overview Data
+    const overviewData = stats.map(stat => ({
+      Metric: stat.name,
+      Value: stat.value,
+      Trend: stat.trend,
+      Change: stat.change
+    }));
+
+    // 2. Sales By Category
+    const categoryData = (data.salesByCategory || []).map(cat => ({
+      "Category Name": cat.name,
+      "Sales (₹)": cat.sales,
+      "Percentage (%)": cat.percentage
+    }));
+
+    // 3. Top Brands
+    const brandData = (data.topBrands || []).map(brand => ({
+      "Brand Name": brand.name,
+      "Total Orders": brand.orders,
+      "Growth": brand.growth
+    }));
+
+    // 4. Monthly Sales
+    const monthlyData = (data.monthlySales || []).map(month => ({
+      "Month": new Date(0, month._id - 1).toLocaleString('default', { month: 'long' }),
+      "Revenue (₹)": month.revenue,
+      "Orders": month.orders
+    }));
+
+    // Create Workbook
+    const wb = XLSX.utils.book_new();
+
+    const wsOverview = XLSX.utils.json_to_sheet(overviewData);
+    const wsCategory = XLSX.utils.json_to_sheet(categoryData);
+    const wsBrand = XLSX.utils.json_to_sheet(brandData);
+    const wsMonthly = XLSX.utils.json_to_sheet(monthlyData);
+
+    // Adjust column widths
+    wsOverview["!cols"] = [{ wch: 20 }, { wch: 15 }, { wch: 10 }, { wch: 10 }];
+    wsCategory["!cols"] = [{ wch: 25 }, { wch: 15 }, { wch: 15 }];
+    wsBrand["!cols"] = [{ wch: 25 }, { wch: 15 }, { wch: 15 }];
+    wsMonthly["!cols"] = [{ wch: 15 }, { wch: 15 }, { wch: 15 }];
+
+    XLSX.utils.book_append_sheet(wb, wsOverview, "Overview");
+    XLSX.utils.book_append_sheet(wb, wsCategory, "Sales by Category");
+    XLSX.utils.book_append_sheet(wb, wsBrand, "Top Brands");
+    XLSX.utils.book_append_sheet(wb, wsMonthly, "Monthly Sales");
+
+    // Download
+    const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    const blob = new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    saveAs(blob, `Analytics_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
   if (loading) {
     return <div className="p-8 text-center">Loading reports...</div>;
   }
@@ -115,7 +173,9 @@ const Reports = () => {
               <option value="year">This Year</option>
             </select>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-secondary text-white rounded-lg hover:bg-black transition-all text-sm font-bold">
+          <button 
+            onClick={handleExport}
+            className="flex items-center gap-2 px-4 py-2 bg-secondary text-white rounded-lg hover:bg-black transition-all text-sm font-bold">
             <Download size={16} />
             <span>Export Report</span>
           </button>

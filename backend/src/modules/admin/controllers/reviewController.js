@@ -52,6 +52,14 @@ export const updateReview = asyncHandler(async (req, res) => {
             if (pReview) {
                 pReview.status = review.status;
                 pReview.adminReply = review.adminReply;
+
+                // Recalculate product rating based ONLY on approved reviews
+                const approvedReviews = product.reviews.filter(r => r.status === "Approved");
+                product.numReviews = approvedReviews.length;
+                product.rating = approvedReviews.length > 0 
+                    ? approvedReviews.reduce((acc, item) => item.rating + acc, 0) / approvedReviews.length 
+                    : 0;
+
                 await product.save();
             } else {
                 console.log(`[ReviewSync] Failed to find embedded review for ${review._id} in Product ${product._id}`);
@@ -72,7 +80,27 @@ export const deleteReview = asyncHandler(async (req, res) => {
     const review = await Review.findById(req.params.id);
 
     if (review) {
+        const productId = review.product;
         await Review.deleteOne({ _id: review._id });
+
+        // Sync deletion with Product
+        const product = await Product.findById(productId);
+        if (product) {
+            // Find and remove the embedded review
+            product.reviews = product.reviews.filter(
+                r => r.user.toString() !== review.user.toString() && r.comment !== review.comment
+            );
+
+            // Recalculate product rating based ONLY on approved reviews
+            const approvedReviews = product.reviews.filter(r => r.status === "Approved");
+            product.numReviews = approvedReviews.length;
+            product.rating = approvedReviews.length > 0 
+                ? approvedReviews.reduce((acc, item) => item.rating + acc, 0) / approvedReviews.length 
+                : 0;
+
+            await product.save();
+        }
+
         res.json({ message: "Review removed" });
     } else {
         res.status(404);

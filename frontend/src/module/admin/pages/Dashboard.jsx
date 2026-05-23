@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 import { API_ENDPOINTS } from "../../../config/api";
 import {
   Package,
@@ -143,6 +145,56 @@ const Dashboard = () => {
     },
   ];
 
+  const handleExport = () => {
+    // 1. Prepare Overview Data
+    const overviewData = stats.map(stat => ({
+      Metric: stat.name,
+      Value: stat.value,
+      Change: stat.change
+    }));
+
+    // 2. Prepare Recent Orders Data
+    const ordersData = data.recentOrders.map(order => ({
+      "Order ID": order._id,
+      "Date": new Date(order.createdAt).toLocaleDateString(),
+      "Time": new Date(order.createdAt).toLocaleTimeString(),
+      "Customer Name": order.customer?.name || "Unknown",
+      "Customer Email": order.customer?.email || "N/A",
+      "Status": order.isDelivered ? "Delivered" : "Pending",
+      "Payment Method": order.paymentMethod,
+      "Total Amount (₹)": order.totalPrice
+    }));
+
+    // 3. Prepare Low Stock Data
+    const lowStockData = data.lowStockProducts.map(product => ({
+      "Product Name": product.name,
+      "SKU": product.code || "N/A",
+      "Stock Left": product.countInStock,
+      "Price (₹)": product.price
+    }));
+
+    // 4. Create Workbook and Sheets
+    const wb = XLSX.utils.book_new();
+    
+    const wsOverview = XLSX.utils.json_to_sheet(overviewData);
+    const wsOrders = XLSX.utils.json_to_sheet(ordersData);
+    const wsStock = XLSX.utils.json_to_sheet(lowStockData);
+
+    // Adjust column widths
+    wsOverview["!cols"] = [{ wch: 25 }, { wch: 15 }, { wch: 10 }];
+    wsOrders["!cols"] = [{ wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 25 }, { wch: 30 }, { wch: 15 }, { wch: 20 }, { wch: 15 }];
+    wsStock["!cols"] = [{ wch: 40 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+
+    XLSX.utils.book_append_sheet(wb, wsOverview, "Overview");
+    XLSX.utils.book_append_sheet(wb, wsOrders, "Recent Orders");
+    XLSX.utils.book_append_sheet(wb, wsStock, "Low Stock Alerts");
+
+    // 5. Generate and Download
+    const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    const blob = new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    saveAs(blob, `Dashboard_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
   if (loading) {
     return <div className="p-8 text-center">Loading dashboard...</div>;
   }
@@ -168,7 +220,9 @@ const Dashboard = () => {
             <Clock size={16} />
             Last 30 Days
           </div>
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all">
+          <button 
+            onClick={handleExport}
+            className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all">
             Download Report
           </button>
         </div>

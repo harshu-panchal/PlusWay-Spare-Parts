@@ -13,6 +13,7 @@ const ModelSelection = () => {
     const [brand, setBrand] = useState(null);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const [sortOrder, setSortOrder] = useState("alphabetical");
 
     useEffect(() => {
         const fetchData = async () => {
@@ -41,7 +42,29 @@ const ModelSelection = () => {
         fetchData();
     }, [brandId]);
 
-    const displayModels = models.filter(m => m.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    const displayModels = models
+        .filter(m => m.name.toLowerCase().includes(searchTerm.toLowerCase()))
+        .sort((a, b) => {
+            if (sortOrder === "alphabetical") {
+                return a.name.localeCompare(b.name);
+            } else if (sortOrder === "newest" || sortOrder === "oldest") {
+                const dateA = a.released ? new Date(a.released).getTime() : 0;
+                const dateB = b.released ? new Date(b.released).getTime() : 0;
+                const valA = isNaN(dateA) ? 0 : dateA;
+                const valB = isNaN(dateB) ? 0 : dateB;
+                
+                if (valA === valB) {
+                    return a.name.localeCompare(b.name);
+                }
+                
+                if (sortOrder === "newest") {
+                    return valB - valA;
+                } else {
+                    return valA - valB;
+                }
+            }
+            return 0;
+        });
 
     return (
         <div className="bg-[#f4f4f4] min-h-screen pb-12">
@@ -62,15 +85,26 @@ const ModelSelection = () => {
                         <p className="text-gray-500">Select your specific mobile model to find compatible parts</p>
                     </div>
 
-                    <div className="relative w-full md:w-80">
-                        <input
-                            type="text"
-                            placeholder="Search model (e.g. S23 Ultra)"
-                            className="w-full pl-4 pr-10 py-3 bg-white rounded-xl shadow-sm border border-gray-200 focus:outline-none focus:border-primary"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                        <Search size={20} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <div className="flex gap-3 w-full md:w-auto">
+                        <select
+                            className="px-4 py-3 bg-white rounded-xl shadow-sm border border-gray-200 focus:outline-none focus:border-primary text-gray-600 appearance-none min-w-[200px]"
+                            value={sortOrder}
+                            onChange={(e) => setSortOrder(e.target.value)}
+                        >
+                            <option value="alphabetical">Alphabetical (A-Z)</option>
+                            <option value="newest">Release Date (Newest)</option>
+                            <option value="oldest">Release Date (Oldest)</option>
+                        </select>
+                        <div className="relative flex-1 md:w-80">
+                            <input
+                                type="text"
+                                placeholder="Search model (e.g. S23 Ultra)"
+                                className="w-full pl-4 pr-10 py-3 bg-white rounded-xl shadow-sm border border-gray-200 focus:outline-none focus:border-primary"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                            <Search size={20} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        </div>
                     </div>
                 </div>
 

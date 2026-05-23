@@ -84,7 +84,10 @@ export const getProductById = asyncHandler(async (req, res) => {
         .populate("model", "name image");
 
     if (product) {
-        res.json(product);
+        const productObj = product.toObject();
+        // Only send approved reviews to the customer frontend
+        productObj.reviews = productObj.reviews.filter(r => r.status === "Approved");
+        res.json(productObj);
     } else {
         res.status(404);
         throw new Error("Product not found");
@@ -114,14 +117,14 @@ export const createProductReview = asyncHandler(async (req, res) => {
             rating: Number(rating),
             comment,
             user: req.user._id,
+            status: "Pending", // Add status explicitly to the embedded document
         };
 
         // 1. Add to Product's review array (for seamless embedded display)
         product.reviews.push(review);
-        product.numReviews = product.reviews.length;
-        product.rating =
-            product.reviews.reduce((acc, item) => item.rating + acc, 0) /
-            product.reviews.length;
+        // We do NOT update numReviews and rating here anymore,
+        // because those should only reflect "Approved" reviews.
+        // It will be calculated in the admin review controller upon approval.
         await product.save();
 
         // 2. Create independent Review document (for Admin/My Reviews)

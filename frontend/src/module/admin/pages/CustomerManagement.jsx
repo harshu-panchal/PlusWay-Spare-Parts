@@ -196,10 +196,7 @@ const CustomerManagement = () => {
             <option value="Inactive">Inactive</option>
             <option value="Blocked">Blocked</option>
           </select>
-          <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-gray-600">
-            <Mail size={18} />
-            <span>Newsletter</span>
-          </button>
+
           <button
             onClick={() => handleOpenModal()}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
