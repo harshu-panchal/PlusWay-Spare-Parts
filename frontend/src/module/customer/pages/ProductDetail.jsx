@@ -624,7 +624,9 @@ const ProductDetail = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {product.details.specs.map((spec, index) => (
+                        {product.details.specs
+                          .filter(spec => spec.key && spec.key.toLowerCase() !== 'source url')
+                          .map((spec, index) => (
                           <tr key={index} className="border-b border-gray-100">
                             <td className="p-3 w-1/3 text-gray-500 font-bold border-r border-gray-100">
                               {spec.key}

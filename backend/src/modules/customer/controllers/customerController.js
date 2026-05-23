@@ -19,10 +19,12 @@ export const registerCustomer = async (req, res) => {
     return res.status(400).json({ message: "Customer already exists" });
   }
 
+  const finalEmail = email && email.trim() !== "" ? email : undefined;
+
   const customer = await Customer.create({
     name,
     mobile,
-    email,
+    email: finalEmail,
   });
 
   if (customer) {
