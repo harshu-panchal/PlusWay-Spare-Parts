@@ -237,15 +237,25 @@ const ProductDetail = () => {
                     key={i}
                     size={14}
                     className={
-                      i < Math.floor(product.rating) ? "fill-current" : ""
+                      i < Math.round(product.rating || 0) ? "fill-current" : ""
                     }
                   />
                 ))}
               </div>
-              <span className="text-sm text-blue-600 underline font-bold cursor-pointer">
-                {product.reviewsCount || 17} reviews
+              <span 
+                onClick={() => {
+                  setActiveTab("Customer Reviews");
+                  document.getElementById("reviews-section")?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="text-sm text-blue-600 underline font-bold cursor-pointer">
+                {product.numReviews || 0} reviews
               </span>
-              <span className="text-sm text-blue-600 underline font-bold cursor-pointer">
+              <span 
+                onClick={() => {
+                  setActiveTab("Customer Reviews");
+                  document.getElementById("reviews-section")?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="text-sm text-blue-600 underline font-bold cursor-pointer">
                 Write a review
               </span>
             </div>
@@ -537,7 +547,7 @@ const ProductDetail = () => {
         </div>
 
         {/* Tabs & Content */}
-        <div className="mt-12 bg-white border border-gray-200">
+        <div id="reviews-section" className="mt-12 bg-white border border-gray-200">
           <div className="flex border-b border-gray-200 overflow-x-auto">
             {[
               "Description",
