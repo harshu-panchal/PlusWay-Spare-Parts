@@ -1,13 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import axios from "axios";
 import { Upload, X, Loader } from "lucide-react";
 import { API_BASE_URL } from "../config/api";
 
 const ImageUpload = ({ value, onChange, placeholder = "Upload Image" }) => {
     const [uploading, setUploading] = useState(false);
+    const [isDragActive, setIsDragActive] = useState(false);
+    const inputRef = useRef(null);
 
-    const uploadFileHandler = async (e) => {
-        const file = e.target.files[0];
+    const handleFileUpload = async (file) => {
+        if (!file) return;
         const formData = new FormData();
         formData.append("image", file);
         setUploading(true);
@@ -34,6 +36,39 @@ const ImageUpload = ({ value, onChange, placeholder = "Upload Image" }) => {
         }
     };
 
+    const uploadFileHandler = (e) => {
+        handleFileUpload(e.target.files[0]);
+    };
+
+    const handleDragEnter = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragActive(true);
+    };
+
+    const handleDragLeave = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragActive(false);
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!isDragActive) {
+            setIsDragActive(true);
+        }
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragActive(false);
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            handleFileUpload(e.dataTransfer.files[0]);
+        }
+    };
+
     return (
         <div className="w-full">
             {value ? (
@@ -47,22 +82,30 @@ const ImageUpload = ({ value, onChange, placeholder = "Upload Image" }) => {
                     </button>
                 </div>
             ) : (
-                <label className="w-full flex flex-col items-center px-4 py-6 bg-white text-blue rounded-xl shadow-lg tracking-wide uppercase border border-blue cursor-pointer hover:bg-blue-50 hover:text-blue-600 transition-colors border-dashed border-gray-300">
+                <div
+                    className={`w-full flex flex-col items-center px-4 py-6 bg-white text-blue rounded-xl shadow-lg tracking-wide uppercase cursor-pointer transition-colors border-dashed ${isDragActive ? 'bg-blue-50 border-blue-600 border-2' : 'border-gray-300 border hover:bg-blue-50 hover:text-blue-600'}`}
+                    onDragEnter={handleDragEnter}
+                    onDragLeave={handleDragLeave}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    onClick={() => inputRef.current?.click()}
+                >
                     {uploading ? (
                         <Loader className="w-8 h-8 animate-spin text-primary" />
                     ) : (
-                        <Upload className="w-8 h-8 text-primary" />
+                        <Upload className={`w-8 h-8 ${isDragActive ? 'text-blue-600' : 'text-primary'}`} />
                     )}
-                    <span className="mt-2 text-base leading-normal text-gray-500 font-bold">
-                        {uploading ? "Uploading..." : placeholder}
+                    <span className="mt-2 text-base leading-normal text-gray-500 font-bold text-center">
+                        {uploading ? "Uploading..." : (isDragActive ? "Drop image here" : `${placeholder} or drag and drop`)}
                     </span>
                     <input
                         type="file"
                         className="hidden"
+                        ref={inputRef}
                         onChange={uploadFileHandler}
                         disabled={uploading}
                     />
-                </label>
+                </div>
             )}
         </div>
     );

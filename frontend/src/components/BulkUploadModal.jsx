@@ -69,12 +69,10 @@ const BulkUploadModal = ({
   // ─── Template Download ──────────────────────────────────────────────────────
 
   const downloadTemplate = () => {
-    // Row 1 only: plain field keys as column headers.
-    // NO example rows in the data sheet — users fill data from row 2 directly.
-    // This prevents accidentally uploading example/dummy rows.
     const keyHeaders = templateColumns.map((c) => c.key);
+    const exampleRow = templateColumns.map((c) => c.example || "");
 
-    const ws = XLSX.utils.aoa_to_sheet([keyHeaders]);
+    const ws = XLSX.utils.aoa_to_sheet([keyHeaders, exampleRow]);
     ws["!cols"] = templateColumns.map(() => ({ wch: 28 }));
 
     // Build field reference table for the Instructions sheet
@@ -94,7 +92,7 @@ const BulkUploadModal = ({
       ["INSTRUCTIONS FOR BULK UPLOAD"],
       [""],
       ["IMPORTANT: Do NOT change row 1 column headers in the data sheet."],
-      ["IMPORTANT: Start your data from row 2. The data sheet has no example rows — add your products directly."],
+      ["IMPORTANT: Row 2 contains sample data. You can overwrite it or delete it before uploading."],
       [""],
       ["1. Column headers (row 1 in the data sheet) are the exact field names the backend reads. Do not rename them."],
       ["2. brand / category / model must EXACTLY match existing names in the admin system (case-insensitive)."],
@@ -226,7 +224,7 @@ const BulkUploadModal = ({
                 <div>
                   <p className="font-bold text-blue-900 text-sm">Download the Excel Template</p>
                   <p className="text-blue-700 text-xs mt-1 leading-relaxed">
-                    The template has <strong>only the header row</strong> — start adding your data from <strong>Row 2</strong>.
+                    The template includes a <strong>sample data row</strong> in Row 2 — you can overwrite or delete it.
                     Do <strong>not</strong> rename column headers. Check the "Instructions" sheet for field reference and examples.
                   </p>
                 </div>
