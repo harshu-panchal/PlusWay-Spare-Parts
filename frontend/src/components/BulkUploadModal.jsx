@@ -68,58 +68,74 @@ const BulkUploadModal = ({
 
   // ─── Template Download ──────────────────────────────────────────────────────
 
-  const downloadTemplate = () => {
-    const keyHeaders = templateColumns.map((c) => c.key);
-    const exampleRow = templateColumns.map((c) => c.example || "");
+  const downloadTemplate = async () => {
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}`,
+        },
+        responseType: "blob",
+      };
 
-    const ws = XLSX.utils.aoa_to_sheet([keyHeaders, exampleRow]);
-    ws["!cols"] = templateColumns.map(() => ({ wch: 28 }));
+      const templateEndpoint = uploadEndpoint.replace("/bulk-upload", "/bulk-template");
+      const { data } = await axios.get(templateEndpoint, config);
 
-    // Build field reference table for the Instructions sheet
-    const fieldRefHeader = ["Column Key (use in Excel)", "Field Label", "Required?", "Example Value"];
-    const fieldRefRows = templateColumns.map((c) => [
-      c.key,
-      c.header.replace(" *", ""),
-      c.header.includes("*") ? "YES ✅" : "optional",
-      c.example || "",
-    ]);
+      const blob = new Blob([data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      saveAs(blob, templateFileName);
+    } catch (err) {
+      console.error("Backend template download failed, falling back to client-side XLSX generation:", err);
 
-    // Example data rows for instructions reference
-    const exampleHeader = ["--- EXAMPLE ROW 1 ---", ...templateColumns.map((c) => c.example || "")];
-    const exampleHeader2 = ["--- EXAMPLE ROW 2 ---", ...templateColumns.map((c) => c.example2 || "")];
+      // FALLBACK TO CLIENT-SIDE GENERATION
+      const keyHeaders = templateColumns.map((c) => c.key);
+      const exampleRow = templateColumns.map((c) => c.example || "");
 
-    const instructions = [
-      ["INSTRUCTIONS FOR BULK UPLOAD"],
-      [""],
-      ["IMPORTANT: Do NOT change row 1 column headers in the data sheet."],
-      ["IMPORTANT: Row 2 contains sample data. You can overwrite it or delete it before uploading."],
-      [""],
-      ["1. Column headers (row 1 in the data sheet) are the exact field names the backend reads. Do not rename them."],
-      ["2. brand / category / model must EXACTLY match existing names in the admin system (case-insensitive)."],
-      ["3. images: pipe-separated URLs -> url1|url2|url3"],
-      ["4. specs: key:value pairs, pipe-separated -> Color:Black|RAM:8GB|Storage:256GB"],
-      ["5. colors: comma-separated -> Black,White,Gold"],
-      ["6. highlights / descriptionPoints: pipe-separated -> Fast Charging|5G Ready"],
-      ["7. Image URLs must already be uploaded to the server before bulk upload."],
-      ["8. Max file size: 10 MB."],
-      [""],
-      ["--- FIELD REFERENCE (all columns and whether they are required) ---"],
-      fieldRefHeader,
-      ...fieldRefRows,
-    ];
+      const ws = XLSX.utils.aoa_to_sheet([keyHeaders, exampleRow]);
+      ws["!cols"] = templateColumns.map(() => ({ wch: 28 }));
 
-    const wsInstr = XLSX.utils.aoa_to_sheet(instructions);
-    wsInstr["!cols"] = [{ wch: 36 }, { wch: 28 }, { wch: 12 }, { wch: 45 }];
+      // Build field reference table for the Instructions sheet
+      const fieldRefHeader = ["Column Key (use in Excel)", "Field Label", "Required?", "Example Value"];
+      const fieldRefRows = templateColumns.map((c) => [
+        c.key,
+        c.header.replace(" *", ""),
+        c.header.includes("*") ? "YES ✅" : "optional",
+        c.example || "",
+      ]);
 
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, templateSheetName);
-    XLSX.utils.book_append_sheet(wb, wsInstr, "Instructions");
+      const instructions = [
+        ["INSTRUCTIONS FOR BULK UPLOAD"],
+        [""],
+        ["IMPORTANT: Do NOT change row 1 column headers in the data sheet."],
+        ["IMPORTANT: Row 2 contains sample data. You can overwrite it or delete it before uploading."],
+        [""],
+        ["1. Column headers (row 1 in the data sheet) are the exact field names the backend reads. Do not rename them."],
+        ["2. brand / category / model must EXACTLY match existing names in the admin system (case-insensitive)."],
+        ["3. images: pipe-separated URLs -> url1|url2|url3"],
+        ["4. specs: key:value pairs, pipe-separated -> Color:Black|RAM:8GB|Storage:256GB"],
+        ["5. colors: comma-separated -> Black,White,Gold"],
+        ["6. highlights / descriptionPoints: pipe-separated -> Fast Charging|5G Ready"],
+        ["7. Image URLs must already be uploaded to the server before bulk upload."],
+        ["8. Max file size: 10 MB."],
+        [""],
+        ["--- FIELD REFERENCE (all columns and whether they are required) ---"],
+        fieldRefHeader,
+        ...fieldRefRows,
+      ];
 
-    const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-    const blob = new Blob([buffer], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
-    saveAs(blob, templateFileName);
+      const wsInstr = XLSX.utils.aoa_to_sheet(instructions);
+      wsInstr["!cols"] = [{ wch: 36 }, { wch: 28 }, { wch: 12 }, { wch: 45 }];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, templateSheetName);
+      XLSX.utils.book_append_sheet(wb, wsInstr, "Instructions");
+
+      const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      saveAs(blob, templateFileName);
+    }
   };
 
   // ─── File Selection ─────────────────────────────────────────────────────────
@@ -136,7 +152,7 @@ const BulkUploadModal = ({
     e.preventDefault();
     setIsDragging(false);
     const dropped = e.dataTransfer.files[0];
-    if (dropped && /\.xlsx?$/i.test(dropped.name)) {
+    if (dropped && /\.(xlsx?|csv)$/i.test(dropped.name)) {
       setFile(dropped);
       setResults(null);
     }
@@ -262,7 +278,7 @@ const BulkUploadModal = ({
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".xlsx,.xls"
+                  accept=".xlsx,.xls,.csv"
                   className="hidden"
                   onChange={handleFileChange}
                 />
@@ -291,7 +307,7 @@ const BulkUploadModal = ({
                       {isDragging ? "Drop it here!" : "Drag & drop your Excel file here"}
                     </p>
                     <p className="text-xs text-gray-400">or <span className="text-blue-600 font-semibold">click to browse</span></p>
-                    <p className="text-[11px] text-gray-400 mt-1">.xlsx or .xls • Max 10 MB</p>
+                    <p className="text-[11px] text-gray-400 mt-1">.xlsx, .xls, or .csv • Max 10 MB</p>
                   </div>
                 )}
               </div>
