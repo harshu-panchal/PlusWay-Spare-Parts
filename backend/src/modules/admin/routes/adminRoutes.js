@@ -35,6 +35,7 @@ import {
   deleteProduct,
   updateProductStock,
   bulkCreateProducts,
+  downloadProductTemplate,
 } from "../controllers/productController.js";
 import {
   getCategories,
@@ -49,6 +50,7 @@ import {
   updateModel,
   deleteModel,
   bulkCreateModels,
+  downloadModelTemplate,
 } from "../controllers/modelController.js";
 import {
   getOrders,
@@ -73,10 +75,10 @@ const excelUpload = multer({
   dest: uploadDir,
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
-    if (ext === ".xlsx" || ext === ".xls") {
+    if (ext === ".xlsx" || ext === ".xls" || ext === ".csv") {
       cb(null, true);
     } else {
-      cb(new Error("Only Excel files (.xlsx, .xls) are allowed"));
+      cb(new Error("Only Excel/CSV files (.xlsx, .xls, .csv) are allowed"));
     }
   },
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
@@ -109,13 +111,13 @@ router
   .delete(protect, admin, deleteBrand);
 
 // Product routes
-// IMPORTANT: bulk-upload must come BEFORE /:id to avoid route collision
+// IMPORTANT: bulk-upload and bulk-template must come BEFORE /:id to avoid route collision
 router.post("/products/bulk-upload", protect, admin, excelUpload.single("file"), bulkCreateProducts);
+router.get("/products/bulk-template", protect, admin, downloadProductTemplate);
 router
   .route("/products")
   .get(protect, admin, getProducts)
   .post(protect, admin, createProduct);
-router;
 router
   .route("/products/:id")
   .get(protect, admin, getProductById)
@@ -161,8 +163,9 @@ router
   .delete(protect, admin, deleteCategory);
 
 // Model routes
-// IMPORTANT: bulk-upload must come BEFORE /:id to avoid route collision
+// IMPORTANT: bulk-upload and bulk-template must come BEFORE /:id to avoid route collision
 router.post("/models/bulk-upload", protect, admin, excelUpload.single("file"), bulkCreateModels);
+router.get("/models/bulk-template", protect, admin, downloadModelTemplate);
 router
   .route("/models")
   .get(protect, admin, getModels)
