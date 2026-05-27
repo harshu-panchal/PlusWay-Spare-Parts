@@ -3,6 +3,7 @@ import Brand from "../../../models/Brand.js";
 import XLSX from "xlsx";
 import fs from "fs";
 import ExcelJS from "exceljs";
+import ExcelJS from "exceljs";
 import BulkUploadHistory from "../../../models/BulkUploadHistory.js";
 import path from "path";
 
@@ -194,6 +195,17 @@ export const bulkCreateModels = async (req, res) => {
       }
       return cleanRow;
     });
+    const rawRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+    // Normalize keys (remove " *" from required field headers)
+    const rows = rawRows.map(row => {
+      const cleanRow = {};
+      for (const key in row) {
+        const cleanKey = key.replace(/\s*\*\s*$/, '').trim();
+        cleanRow[cleanKey] = row[key];
+      }
+      return cleanRow;
+    });
 
     if (!rows.length) {
       try { fs.unlinkSync(req.file.path); } catch (_) {}
@@ -304,6 +316,130 @@ export const bulkCreateModels = async (req, res) => {
     try { fs.unlinkSync(req.file.path); } catch (_) {}
     console.error("Bulk model upload error:", error);
     return res.status(500).json({ message: "Bulk model upload failed", error: error.message });
+  }
+};
+
+// @desc    Download Excel template for bulk model upload with dropdowns
+// @route   GET /api/admin/models/bulk-template
+// @access  Private/Admin
+export const downloadModelTemplate = async (req, res) => {
+  try {
+    const brands = await Brand.find({}, "name").sort({ name: 1 });
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = "PlusWay Admin";
+    workbook.lastModifiedBy = "PlusWay Admin";
+    workbook.created = new Date();
+    workbook.modified = new Date();
+
+    // 1. Create Models Sheet FIRST so it is parsed as the default sheet
+    const ws = workbook.addWorksheet("Models");
+
+    // 2. Create Data List Sheet (hidden)
+    const listsSheet = workbook.addWorksheet("_Lists");
+    listsSheet.state = "veryHidden";
+
+    // Set headers for _Lists
+    listsSheet.getCell("A1").value = "Brands";
+
+    // Populate Brands
+    brands.forEach((brand, idx) => {
+      listsSheet.getCell(`A${idx + 2}`).value = brand.name;
+    });
+
+    // Define columns
+    const columns = [
+      { header: "name *", key: "name", example: "Galaxy S23 Ultra", example2: "iPhone 14 Pro" },
+      { header: "brand *", key: "brand", example: "Samsung", example2: "Apple" },
+      { header: "released", key: "released", example: "February 2023", example2: "September 2022" },
+      { header: "displaySize", key: "displaySize", example: "6.8 inch", example2: "6.1 inch" },
+      { header: "image", key: "image", example: "http://server/uploads/s23ultra.jpg", example2: "" },
+    ];
+
+    ws.columns = columns.map(c => ({
+      header: c.header,
+      key: c.key,
+      width: 28,
+    }));
+
+    // Header styling
+    const headerRow = ws.getRow(1);
+    headerRow.height = 28;
+    headerRow.eachCell((cell) => {
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF4F46E5" }, // Premium Indigo
+      };
+      cell.font = {
+        name: "Segoe UI",
+        size: 11,
+        bold: true,
+        color: { argb: "FFFFFFFF" },
+      };
+      cell.alignment = {
+        vertical: "middle",
+        horizontal: "center",
+      };
+    });
+
+    // Add Example rows
+    const row2 = ws.addRow(columns.map(c => c.example));
+    row2.height = 20;
+    row2.eachCell((cell) => {
+      cell.font = {
+        name: "Segoe UI",
+        size: 10,
+        italic: true,
+        color: { argb: "FF64748B" }, // Cool gray
+      };
+      cell.alignment = {
+        vertical: "middle",
+      };
+    });
+
+    const row3 = ws.addRow(columns.map(c => c.example2));
+    row3.height = 20;
+    row3.eachCell((cell) => {
+      cell.font = {
+        name: "Segoe UI",
+        size: 10,
+        italic: true,
+        color: { argb: "FF64748B" }, // Cool gray
+      };
+      cell.alignment = {
+        vertical: "middle",
+      };
+    });
+
+    // Data validation for brand (col B)
+    const brandEnd = Math.max(2, brands.length + 1);
+
+    for (let i = 2; i <= 1000; i++) {
+      ws.getCell(`B${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: [`_Lists!$A$2:$A$${brandEnd}`],
+        showErrorMessage: true,
+        errorTitle: "Invalid Brand",
+        error: "Please select a Brand from the dropdown list."
+      };
+    }
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=plusway_models_bulk_template.xlsx"
+    );
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error("Error generating model template:", error);
+    res.status(500).json({ message: "Failed to generate Excel template", error: error.message });
   }
 };
 
