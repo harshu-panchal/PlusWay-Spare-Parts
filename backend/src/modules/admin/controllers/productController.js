@@ -5,6 +5,7 @@ import Model from "../../../models/Model.js";
 import XLSX from "xlsx";
 import fs from "fs";
 import ExcelJS from "exceljs";
+import ExcelJS from "exceljs";
 import BulkUploadHistory from "../../../models/BulkUploadHistory.js";
 import path from "path";
 
@@ -250,6 +251,17 @@ export const bulkCreateProducts = async (req, res) => {
       }
       return cleanRow;
     });
+    const rawRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+    
+    // Normalize keys (remove " *" from required field headers)
+    const rows = rawRows.map(row => {
+      const cleanRow = {};
+      for (const key in row) {
+        const cleanKey = key.replace(/\s*\*\s*$/, '').trim();
+        cleanRow[cleanKey] = row[key];
+      }
+      return cleanRow;
+    });
 
     if (!rows.length) {
       try { fs.unlinkSync(req.file.path); } catch (_) {}
@@ -434,6 +446,185 @@ export const bulkCreateProducts = async (req, res) => {
     try { fs.unlinkSync(req.file.path); } catch (_) {}
     console.error("Bulk product upload error:", error);
     return res.status(500).json({ message: "Bulk upload failed", error: error.message });
+  }
+};
+
+// @desc    Download Excel template for bulk product upload with dropdowns
+// @route   GET /api/admin/products/bulk-template
+// @access  Private/Admin
+export const downloadProductTemplate = async (req, res) => {
+  try {
+    const [brands, categories, models] = await Promise.all([
+      Brand.find({}, "name").sort({ name: 1 }),
+      Category.find({}, "name").sort({ name: 1 }),
+      Model.find({}, "name").sort({ name: 1 }),
+    ]);
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = "PlusWay Admin";
+    workbook.lastModifiedBy = "PlusWay Admin";
+    workbook.created = new Date();
+    workbook.modified = new Date();
+
+    // 1. Create Products Sheet FIRST so it is parsed as the default sheet
+    const ws = workbook.addWorksheet("Products");
+
+    // 2. Create Data List Sheet (hidden)
+    const listsSheet = workbook.addWorksheet("_Lists");
+    listsSheet.state = "veryHidden";
+
+    // Set headers for _Lists
+    listsSheet.getCell("A1").value = "Brands";
+    listsSheet.getCell("B1").value = "Categories";
+    listsSheet.getCell("C1").value = "Models";
+
+    // Populate Brands
+    brands.forEach((brand, idx) => {
+      listsSheet.getCell(`A${idx + 2}`).value = brand.name;
+    });
+
+    // Populate Categories
+    categories.forEach((cat, idx) => {
+      listsSheet.getCell(`B${idx + 2}`).value = cat.name;
+    });
+
+    // Populate Models
+    models.forEach((model, idx) => {
+      listsSheet.getCell(`C${idx + 2}`).value = model.name;
+    });
+
+    // Define columns
+    const columns = [
+      { header: "name *", key: "name", example: "LCD Screen Samsung S23 Ultra", example2: "Battery iPhone 14 Pro" },
+      { header: "code", key: "code", example: "SKU-001", example2: "SKU-002" },
+      { header: "brand *", key: "brand", example: "Samsung", example2: "Apple" },
+      { header: "model *", key: "model", example: "Samsung Galaxy S23 Ultra", example2: "Apple iPhone 14 Pro" },
+      { header: "category *", key: "category", example: "LCD Display", example2: "Battery" },
+      { header: "productType", key: "productType", example: "LCD with Touch Screen", example2: "Li-Ion Battery" },
+      { header: "price *", key: "price", example: "4500", example2: "2800" },
+      { header: "mrp *", key: "mrp", example: "5500", example2: "3500" },
+      { header: "wholesalePrice *", key: "wholesalePrice", example: "3800", example2: "2300" },
+      { header: "wholesaleMinQty *", key: "wholesaleMinQty", example: "10", example2: "10" },
+      { header: "cashback", key: "cashback", example: "100", example2: "50" },
+      { header: "countInStock *", key: "countInStock", example: "50", example2: "30" },
+      { header: "description", key: "description", example: "High quality original LCD display", example2: "Long lasting battery" },
+      { header: "images", key: "images", example: "http://server/uploads/img1.jpg|http://server/uploads/img2.jpg", example2: "" },
+      { header: "videoUrl", key: "videoUrl", example: "", example2: "" },
+      { header: "colors", key: "colors", example: "Black,White,Gold", example2: "Black" },
+      { header: "specs", key: "specs", example: "Color:Black|Compatibility:S23 Ultra|Type:AMOLED", example2: "Capacity:3000mAh|Voltage:3.8V" },
+      { header: "inTheBox", key: "inTheBox", example: "LCD Display, Installation Guide", example2: "Battery" },
+      { header: "warrantyPeriod", key: "warrantyPeriod", example: "6 Months", example2: "3 Months" },
+      { header: "warrantyPolicy", key: "warrantyPolicy", example: "Replacement", example2: "Replacement" },
+      { header: "warrantySummary", key: "warrantySummary", example: "Warranty void if tampered", example2: "" },
+      { header: "highlights", key: "highlights", example: "Super AMOLED|Fast Charging|5G Ready", example2: "Long Life|Safe Chemistry" },
+      { header: "descriptionPoints", key: "descriptionPoints", example: "100% Original Part|Quality Tested", example2: "Safe and reliable" },
+    ];
+
+    ws.columns = columns.map(c => ({
+      header: c.header,
+      key: c.key,
+      width: 28,
+    }));
+
+    // Header styling
+    const headerRow = ws.getRow(1);
+    headerRow.height = 28;
+    headerRow.eachCell((cell) => {
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF4F46E5" }, // Premium Indigo
+      };
+      cell.font = {
+        name: "Segoe UI",
+        size: 11,
+        bold: true,
+        color: { argb: "FFFFFFFF" },
+      };
+      cell.alignment = {
+        vertical: "middle",
+        horizontal: "center",
+      };
+    });
+
+    // Add Example rows
+    const row2 = ws.addRow(columns.map(c => c.example));
+    row2.height = 20;
+    row2.eachCell((cell) => {
+      cell.font = {
+        name: "Segoe UI",
+        size: 10,
+        italic: true,
+        color: { argb: "FF64748B" }, // Cool gray
+      };
+      cell.alignment = {
+        vertical: "middle",
+      };
+    });
+
+    const row3 = ws.addRow(columns.map(c => c.example2));
+    row3.height = 20;
+    row3.eachCell((cell) => {
+      cell.font = {
+        name: "Segoe UI",
+        size: 10,
+        italic: true,
+        color: { argb: "FF64748B" }, // Cool gray
+      };
+      cell.alignment = {
+        vertical: "middle",
+      };
+    });
+
+    // Data validations for brand (col C), model (col D), category (col E)
+    const brandEnd = Math.max(2, brands.length + 1);
+    const categoryEnd = Math.max(2, categories.length + 1);
+    const modelEnd = Math.max(2, models.length + 1);
+
+    for (let i = 2; i <= 1000; i++) {
+      // Column C: Brand
+      ws.getCell(`C${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: [`_Lists!$A$2:$A$${brandEnd}`],
+        showErrorMessage: true,
+        errorTitle: "Invalid Brand",
+        error: "Please select a Brand from the dropdown list."
+      };
+      // Column D: Model
+      ws.getCell(`D${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: [`_Lists!$C$2:$C$${modelEnd}`],
+        showErrorMessage: true,
+        errorTitle: "Invalid Model",
+        error: "Please select a Model from the dropdown list."
+      };
+      // Column E: Category
+      ws.getCell(`E${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: [`_Lists!$B$2:$B$${categoryEnd}`],
+        showErrorMessage: true,
+        errorTitle: "Invalid Category",
+        error: "Please select a Category from the dropdown list."
+      };
+    }
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=plusway_products_bulk_template.xlsx"
+    );
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error("Error generating product template:", error);
+    res.status(500).json({ message: "Failed to generate Excel template", error: error.message });
   }
 };
 
