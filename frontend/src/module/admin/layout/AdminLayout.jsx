@@ -16,6 +16,7 @@ import {
   Smartphone,
   MessageSquare,
   LifeBuoy,
+  History,
   Bell,
   Search,
   ChevronLeft,
@@ -47,6 +48,7 @@ const AdminLayout = () => {
         { name: "Brands", path: "/admin/brands", icon: Tags },
         { name: "Models", path: "/admin/models", icon: Smartphone },
         { name: "Stock", path: "/admin/stock", icon: PlusSquare },
+        { name: "Upload History", path: "/admin/bulk-upload-history", icon: History },
       ],
     },
     {

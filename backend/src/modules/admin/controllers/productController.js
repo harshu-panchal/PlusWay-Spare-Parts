@@ -5,6 +5,8 @@ import Model from "../../../models/Model.js";
 import XLSX from "xlsx";
 import fs from "fs";
 import ExcelJS from "exceljs";
+import BulkUploadHistory from "../../../models/BulkUploadHistory.js";
+import path from "path";
 
 // @desc    Get all products
 // @route   GET /api/admin/products
@@ -392,8 +394,32 @@ export const bulkCreateProducts = async (req, res) => {
       }
     }
 
-    // Clean up uploaded Excel file
-    try { fs.unlinkSync(req.file.path); } catch (_) {}
+    // Clean up uploaded Excel file only if it was completely empty
+    // Otherwise we rename and save it for history
+
+    let savedFileName = req.file.filename;
+    let savedFilePath = req.file.path;
+
+    if (rows.length > 0) {
+      // Append original extension so it can be downloaded properly
+      const ext = path.extname(req.file.originalname) || '.xlsx';
+      savedFileName = `${req.file.filename}${ext}`;
+      savedFilePath = `${req.file.path}${ext}`;
+      fs.renameSync(req.file.path, savedFilePath);
+
+      // Record in history
+      await BulkUploadHistory.create({
+        fileName: req.file.originalname,
+        filePath: savedFileName, // just store the filename in uploads dir
+        uploadType: "Products",
+        totalRows: rows.length,
+        successCount: results.success.length,
+        errorCount: results.errors.length,
+        uploadedBy: req.user._id, // Assumes admin user is in req.user
+      });
+    } else {
+      try { fs.unlinkSync(req.file.path); } catch (_) {}
+    }
 
     const statusCode = results.success.length > 0 ? 200 : 400;
     return res.status(statusCode).json({

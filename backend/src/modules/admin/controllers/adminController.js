@@ -5,6 +5,7 @@ import Product from "../../../models/Product.js";
 import Brand from "../../../models/Brand.js";
 import Category from "../../../models/Category.js";
 import Model from "../../../models/Model.js";
+import BulkUploadHistory from "../../../models/BulkUploadHistory.js";
 import generateToken from "../../../utils/generateToken.js";
 import asyncHandler from "../../../middleware/asyncHandler.js";
 
@@ -335,4 +336,14 @@ export const getWalletStats = asyncHandler(async (req, res) => {
     })),
     revenueTrend: dailyRevenue,
   });
+});
+
+// @desc    Get bulk upload history
+// @route   GET /api/admin/bulk-upload-history
+// @access  Private/Admin
+export const getBulkUploadHistory = asyncHandler(async (req, res) => {
+  const history = await BulkUploadHistory.find()
+    .populate("uploadedBy", "name email")
+    .sort({ createdAt: -1 });
+  res.json(history);
 });

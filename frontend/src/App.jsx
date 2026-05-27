@@ -72,6 +72,7 @@ const Wallet = lazy(() => import("./module/admin/pages/Wallet"));
 const SupportManagement = lazy(() => import("./module/admin/pages/SupportManagement"));
 const BannerManagement = lazy(() => import("./module/admin/pages/BannerManagement"));
 const HomeSectionManagement = lazy(() => import("./module/admin/pages/HomeSectionManagement"));
+const BulkUploadHistory = lazy(() => import("./module/admin/pages/BulkUploadHistory"));
 
 const AdminProtectedRoute = ({ children }) => {
   const isAdminAuthenticated = !!localStorage.getItem("adminToken");
@@ -160,6 +161,7 @@ const App = () => {
               <Route path="products" element={<ProductManagement />} />
               <Route path="products/:id" element={<AdminProductDetail />} />
               <Route path="stock" element={<StockManagement />} />
+              <Route path="bulk-upload-history" element={<BulkUploadHistory />} />
               <Route path="orders" element={<OrderManagement />} />
               <Route path="orders/:id" element={<OrderDetail />} />
               <Route path="customers" element={<CustomerManagement />} />
