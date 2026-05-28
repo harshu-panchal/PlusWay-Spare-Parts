@@ -19,6 +19,7 @@ import {
   FileSpreadsheet,
 } from "lucide-react";
 import ImageUpload from "../../../components/ImageUpload";
+import MultiImageUpload from "../../../components/MultiImageUpload";
 import BulkUploadModal from "../../../components/BulkUploadModal";
 import { API_ENDPOINTS } from "../../../config/api";
 import Pagination from "../../../components/Pagination";
@@ -37,6 +38,10 @@ const ProductManagement = () => {
   const [pages, setPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [categoryFilter, setCategoryFilter] = useState("All");
+  const [brandFilter, setBrandFilter] = useState("All");
+
+  const [selectedProducts, setSelectedProducts] = useState([]);
+  const [isBulkPriceModalOpen, setIsBulkPriceModalOpen] = useState(false);
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
@@ -45,6 +50,11 @@ const ProductManagement = () => {
 
   const handleCategoryFilterChange = (e) => {
     setCategoryFilter(e.target.value);
+    setPage(1);
+  };
+
+  const handleBrandFilterChange = (e) => {
+    setBrandFilter(e.target.value);
     setPage(1);
   };
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -66,6 +76,8 @@ const ProductManagement = () => {
         queryParams += `&search=${encodeURIComponent(searchTerm)}`;
       if (categoryFilter && categoryFilter !== "All")
         queryParams += `&category=${encodeURIComponent(categoryFilter)}`;
+      if (brandFilter && brandFilter !== "All")
+        queryParams += `&brand=${encodeURIComponent(brandFilter)}`;
 
       const [prodRes, catRes, brandRes, modelRes] = await Promise.all([
         axios.get(`${API_ENDPOINTS.ADMIN_PRODUCTS}${queryParams}`, config),
@@ -91,7 +103,7 @@ const ProductManagement = () => {
 
   useEffect(() => {
     fetchData();
-  }, [page, searchTerm, categoryFilter]);
+  }, [page, searchTerm, categoryFilter, brandFilter]);
 
   const initialFormState = {
     name: "",
@@ -103,8 +115,9 @@ const ProductManagement = () => {
     model: "",
     code: "",
     countInStock: 0,
-    description: "",
+    description: [""],
     images: [],
+    colorVariants: [],
     colors: [],
     details: {
       specs: [],
@@ -125,6 +138,8 @@ const ProductManagement = () => {
         category: product.category?._id || product.category || "",
         brand: product.brand?._id || product.brand || "",
         model: product.model?._id || product.model || "",
+        description: Array.isArray(product.description) && product.description.length > 0 ? product.description : [product.description || ""],
+        colorVariants: product.colorVariants || [],
         colors: product.colors?.map((c) => ({ name: c })) || [],
         details: {
           specs: product.details?.specs || [],
@@ -263,15 +278,66 @@ const ProductManagement = () => {
     });
   };
 
-  const handleImageUpload = (url, index = -1) => {
+  const handleAddParagraph = () => {
+    setFormData({
+      ...formData,
+      description: [...(formData.description || []), ""],
+    });
+  };
+
+  const handleRemoveParagraph = (index) => {
+    const newDesc = [...(formData.description || [])];
+    newDesc.splice(index, 1);
+    setFormData({ ...formData, description: newDesc });
+  };
+
+  const handleParagraphChange = (index, value) => {
+    const newDesc = [...(formData.description || [])];
+    newDesc[index] = value;
+    setFormData({ ...formData, description: newDesc });
+  };
+
+  const handleAddColorVariant = () => {
+    setFormData({
+      ...formData,
+      colorVariants: [...(formData.colorVariants || []), { colorName: "", images: [] }],
+    });
+  };
+
+  const handleRemoveColorVariant = (index) => {
+    const newVariants = [...(formData.colorVariants || [])];
+    newVariants.splice(index, 1);
+    setFormData({ ...formData, colorVariants: newVariants });
+  };
+
+  const handleColorVariantChange = (index, value) => {
+    const newVariants = [...(formData.colorVariants || [])];
+    newVariants[index].colorName = value;
+    setFormData({ ...formData, colorVariants: newVariants });
+  };
+
+  const handleColorVariantImages = (index, urls) => {
+    const newVariants = [...(formData.colorVariants || [])];
+    newVariants[index].images = [...(newVariants[index].images || []), ...urls];
+    setFormData({ ...formData, colorVariants: newVariants });
+  };
+
+  const handleRemoveColorVariantImage = (variantIndex, imageIndex) => {
+    const newVariants = [...(formData.colorVariants || [])];
+    newVariants[variantIndex].images.splice(imageIndex, 1);
+    setFormData({ ...formData, colorVariants: newVariants });
+  };
+
+  const handleImageUpload = (urls, index = -1) => {
     if (index === -1) {
-      // Add new image
-      setFormData({ ...formData, images: [...formData.images, url] });
+      // Add new multiple images
+      setFormData({ ...formData, images: [...formData.images, ...urls] });
     } else {
       // Update existing image (optional, mostly we just add)
       const newImages = [...formData.images];
-      newImages[index] = url;
-      setFormData({ ...formData, images: newImages });
+      // urls should be single string here if index is provided, but since MultiUpload returns array
+      // we'll handle multiple addition only for now
+      setFormData({ ...formData, images: [...formData.images, ...urls] });
     }
   };
 
@@ -299,7 +365,9 @@ const ProductManagement = () => {
         wholesaleMinQty: Number(formData.wholesaleMinQty),
         mrp: Number(formData.mrp),
         countInStock: Number(formData.countInStock),
+        description: formData.description.filter(p => p.trim() !== ""),
         colors: formData.colors?.map((c) => c.name).filter((c) => c) || [],
+        colorVariants: formData.colorVariants?.filter(c => c.colorName.trim() !== "") || [],
         details: {
           ...formData.details,
           highlights:
@@ -360,6 +428,66 @@ const ProductManagement = () => {
     }
   };
 
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      const allIds = products.map((p) => p._id);
+      setSelectedProducts(allIds);
+    } else {
+      setSelectedProducts([]);
+    }
+  };
+
+  const handleSelectProduct = (id) => {
+    if (selectedProducts.includes(id)) {
+      setSelectedProducts(selectedProducts.filter((pid) => pid !== id));
+    } else {
+      setSelectedProducts([...selectedProducts, id]);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!window.confirm(`Are you sure you want to delete ${selectedProducts.length} products?`)) return;
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}`,
+        },
+      };
+      await axios.delete(API_ENDPOINTS.ADMIN_PRODUCTS_BULK_DELETE, {
+        ...config,
+        data: { ids: selectedProducts },
+      });
+      setSelectedProducts([]);
+      fetchData();
+      alert("Products deleted successfully");
+    } catch (error) {
+      console.error(error);
+      alert("Failed to bulk delete products");
+    }
+  };
+
+  const handleExportBackup = async () => {
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}`,
+        },
+        responseType: 'blob',
+      };
+      const response = await axios.get(API_ENDPOINTS.ADMIN_PRODUCTS_BACKUP, config);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "plusway_products_backup.xlsx");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error(error);
+      alert("Failed to export backup");
+    }
+  };
+
   const productTemplateColumns = [
     { header: "name *", key: "name", example: "LCD Screen Samsung S23 Ultra", example2: "Battery iPhone 14 Pro" },
     { header: "code", key: "code", example: "SKU-001", example2: "SKU-002" },
@@ -400,7 +528,18 @@ const ProductManagement = () => {
             <span className="font-bold">Bulk Upload Tip:</span> To view the <strong>Complete Field Reference</strong> (required fields, exact column keys, and examples), click the <strong>Bulk Upload</strong> button and download the template.
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <select
+            className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-gray-600 bg-white font-medium text-sm"
+            value={brandFilter}
+            onChange={handleBrandFilterChange}>
+            <option value="All">All Brands</option>
+            {brands.map((b) => (
+              <option key={b._id} value={b._id}>
+                {b.name}
+              </option>
+            ))}
+          </select>
           <select
             className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-gray-600 bg-white font-medium text-sm"
             value={categoryFilter}
@@ -412,6 +551,18 @@ const ProductManagement = () => {
               </option>
             ))}
           </select>
+          <button
+            onClick={handleExportBackup}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all shadow-sm hover:shadow-md active:scale-95">
+            <Save size={18} />
+            <span className="font-medium">Export</span>
+          </button>
+          <button
+            onClick={() => setIsBulkPriceModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all shadow-sm hover:shadow-md active:scale-95">
+            <Upload size={18} />
+            <span className="font-medium">Bulk Price</span>
+          </button>
           <button
             onClick={() => setIsBulkModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all shadow-sm hover:shadow-md active:scale-95">
@@ -442,6 +593,14 @@ const ProductManagement = () => {
           />
         </div>
         <div className="flex items-center gap-2 text-sm text-gray-500">
+          {selectedProducts.length > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              className="flex items-center gap-2 px-3 py-1.5 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg transition-colors mr-2">
+              <Trash2 size={16} />
+              <span className="font-bold">Delete {selectedProducts.length}</span>
+            </button>
+          )}
           <span>Showing {products.length} products</span>
         </div>
       </div>
@@ -452,6 +611,14 @@ const ProductManagement = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50/50 border-b border-gray-100">
+                <th className="px-6 py-4 w-10">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    onChange={handleSelectAll}
+                    checked={products.length > 0 && selectedProducts.length === products.length}
+                  />
+                </th>
                 <th className="px-6 py-4 text-[13px] font-bold text-gray-500 uppercase tracking-wider">
                   Product
                 </th>
@@ -477,6 +644,14 @@ const ProductManagement = () => {
                 <tr
                   key={product._id}
                   className="group hover:bg-blue-50/30 transition-colors">
+                  <td className="px-6 py-4">
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                      checked={selectedProducts.includes(product._id)}
+                      onChange={() => handleSelectProduct(product._id)}
+                    />
+                  </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-4">
                       <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-100 bg-white p-1 flex-shrink-0 group-hover:border-blue-200 transition-colors">
@@ -636,10 +811,9 @@ const ProductManagement = () => {
                     </div>
                   ))}
                   <div className="aspect-square">
-                    <ImageUpload
-                      value={""}
-                      onChange={(url) => handleImageUpload(url)}
-                      placeholder="Add Image"
+                    <MultiImageUpload
+                      onUpload={(urls) => handleImageUpload(urls)}
+                      placeholder="Add Images"
                     />
                   </div>
                 </div>
@@ -653,31 +827,63 @@ const ProductManagement = () => {
                   </label>
                   <button
                     type="button"
-                    onClick={handleAddColor}
+                    onClick={handleAddColorVariant}
                     className="text-blue-600 text-xs font-bold hover:underline">
-                    + Add Color
+                    + Add Color Variant
                   </button>
                 </div>
-                <div className="space-y-2">
-                  {formData.colors?.map((color, index) => (
-                    <div key={index} className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="Color (e.g. Black, White, Blue)"
-                        className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm"
-                        value={color.name}
-                        onChange={(e) =>
-                          handleColorChange(index, e.target.value)
-                        }
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveColor(index)}
-                        className="text-red-500 hover:bg-red-50 p-2 rounded">
-                        <Trash2 size={16} />
-                      </button>
+                <div className="space-y-4">
+                  {formData.colorVariants?.map((variant, index) => (
+                    <div key={index} className="p-4 border border-gray-200 rounded-xl bg-gray-50/50 space-y-3">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Color Name (e.g. Midnight Black)"
+                          className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold"
+                          value={variant.colorName}
+                          onChange={(e) =>
+                            handleColorVariantChange(index, e.target.value)
+                          }
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveColorVariant(index)}
+                          className="text-red-500 hover:bg-red-50 p-2 rounded transition-colors">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                      
+                      {/* Variant Images */}
+                      <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
+                        {variant.images?.map((img, imgIndex) => (
+                          <div key={imgIndex} className="relative group aspect-square">
+                            <div className="w-full h-full rounded-lg overflow-hidden border border-gray-200 bg-white">
+                              <img
+                                src={img}
+                                alt={`${variant.colorName} ${imgIndex}`}
+                                className="w-full h-full object-contain"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveColorVariantImage(index, imgIndex)}
+                              className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
+                              <X size={12} />
+                            </button>
+                          </div>
+                        ))}
+                        <div className="aspect-square">
+                          <MultiImageUpload
+                            onUpload={(urls) => handleColorVariantImages(index, urls)}
+                            placeholder="Images"
+                          />
+                        </div>
+                      </div>
                     </div>
                   ))}
+                  {(!formData.colorVariants || formData.colorVariants.length === 0) && (
+                    <p className="text-xs text-gray-400 italic">No color variants added.</p>
+                  )}
                 </div>
               </div>
 
@@ -873,18 +1079,41 @@ const ProductManagement = () => {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
-                    Description
-                  </label>
-                  <textarea
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all h-32 resize-none"
-                    value={formData.description}
-                    onChange={(e) =>
-                      setFormData({ ...formData, description: e.target.value })
-                    }
-                    placeholder="Enter detailed product description..."
-                  />
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                      Description Paragraphs
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleAddParagraph}
+                      className="text-blue-600 text-xs font-bold hover:underline">
+                      + Add Paragraph
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    {formData.description?.map((para, index) => (
+                      <div key={index} className="flex gap-2">
+                        <textarea
+                          className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all h-24 resize-none text-sm"
+                          value={para}
+                          onChange={(e) =>
+                            handleParagraphChange(index, e.target.value)
+                          }
+                          placeholder={`Paragraph ${index + 1}...`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveParagraph(index)}
+                          className="text-red-500 hover:bg-red-50 p-2 rounded h-fit mt-1">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                    {(!formData.description || formData.description.length === 0) && (
+                      <p className="text-xs text-gray-400 italic">No description paragraphs added.</p>
+                    )}
+                  </div>
                 </div>
 
                 {/* Description Points */}
@@ -1197,6 +1426,25 @@ const ProductManagement = () => {
         templateFileName="plusway_products_bulk_template.xlsx"
         title="Bulk Upload Products"
         description="Upload multiple products at once via Excel spreadsheet"
+      />
+
+      {/* Bulk Price Update Modal */}
+      <BulkUploadModal
+        isOpen={isBulkPriceModalOpen}
+        onClose={() => setIsBulkPriceModalOpen(false)}
+        onSuccess={() => { fetchData(); setIsBulkPriceModalOpen(false); }}
+        uploadEndpoint={API_ENDPOINTS.ADMIN_PRODUCTS_BULK_PRICE_UPDATE}
+        templateColumns={[
+          { header: "SKU *", key: "SKU", example: "PW-123456", example2: "PW-654321" },
+          { header: "Price *", key: "Price", example: "500", example2: "1500" },
+          { header: "MRP", key: "MRP", example: "600", example2: "1800" },
+          { header: "WholesalePrice", key: "WholesalePrice", example: "450", example2: "1350" },
+          { header: "WholesaleMinQty", key: "WholesaleMinQty", example: "10", example2: "5" }
+        ]}
+        templateSheetName="Bulk Price Update"
+        templateFileName="plusway_bulk_price_update.xlsx"
+        title="Bulk Update Prices"
+        description="Update prices for multiple products using their SKUs"
       />
     </div>
   );

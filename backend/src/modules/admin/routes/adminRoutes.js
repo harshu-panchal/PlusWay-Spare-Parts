@@ -36,6 +36,10 @@ import {
   updateProductStock,
   bulkCreateProducts,
   downloadProductTemplate,
+  deleteBulkProducts,
+  exportProductsBackup,
+  bulkUpdatePrices,
+  downloadPriceUpdateTemplate,
 } from "../controllers/productController.js";
 import {
   getCategories,
@@ -115,6 +119,10 @@ router
 // IMPORTANT: bulk-upload and bulk-template must come BEFORE /:id to avoid route collision
 router.post("/products/bulk-upload", protect, admin, excelUpload.single("file"), bulkCreateProducts);
 router.get("/products/bulk-template", protect, admin, downloadProductTemplate);
+router.delete("/products/bulk", protect, admin, deleteBulkProducts);
+router.get("/products/export", protect, admin, exportProductsBackup);
+router.post("/products/bulk-update-price", protect, admin, excelUpload.single("file"), bulkUpdatePrices);
+router.get("/products/bulk-price-template", protect, admin, downloadPriceUpdateTemplate);
 router
   .route("/products")
   .get(protect, admin, getProducts)

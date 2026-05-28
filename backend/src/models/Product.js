@@ -37,9 +37,9 @@ const productSchema = new mongoose.Schema({
     unique: true,
     sparse: true,
   },
-  description: {
+  description: [{
     type: String,
-  },
+  }],
   price: {
     type: Number,
     required: true,
@@ -121,6 +121,10 @@ const productSchema = new mongoose.Schema({
   },
   colors: [{
     type: String,
+  }],
+  colorVariants: [{
+    colorName: { type: String, required: true },
+    images: [{ type: String }],
   }],
 }, {
   timestamps: true,

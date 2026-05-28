@@ -16,6 +16,7 @@ export const getProducts = async (req, res) => {
   const page = Number(req.query.pageNumber) || 1;
   const search = req.query.search || "";
   const category = req.query.category;
+  const brand = req.query.brand;
 
   let filter = {};
 
@@ -39,6 +40,10 @@ export const getProducts = async (req, res) => {
 
   if (category && category !== "All") {
     filter.category = category;
+  }
+
+  if (brand && brand !== "All") {
+    filter.brand = brand;
   }
 
   const count = await Product.countDocuments(filter);
@@ -89,6 +94,7 @@ export const createProduct = async (req, res) => {
     countInStock,
     details,
     colors,
+    colorVariants,
   } = req.body;
 
   const generatedSlug =
@@ -121,10 +127,14 @@ export const createProduct = async (req, res) => {
     countInStock,
     details,
     colors,
+    colorVariants,
   };
 
   if (code) {
     productData.code = code;
+  } else {
+    // Auto-generate SKU
+    productData.code = `PW-${Date.now().toString().slice(-6)}${Math.floor(100 + Math.random() * 900)}`;
   }
 
   const product = new Product(productData);
@@ -181,6 +191,7 @@ export const updateProduct = async (req, res) => {
     product.countInStock = req.body.countInStock !== undefined ? req.body.countInStock : product.countInStock;
     product.details = req.body.details || product.details;
     product.colors = req.body.colors || product.colors;
+    product.colorVariants = req.body.colorVariants || product.colorVariants;
 
     const updatedProduct = await product.save();
     res.json(updatedProduct);
@@ -200,6 +211,23 @@ export const deleteProduct = async (req, res) => {
     res.json({ message: "Product removed" });
   } else {
     res.status(404).json({ message: "Product not found" });
+  }
+};
+
+// @desc    Bulk delete products
+// @route   DELETE /api/admin/products/bulk
+// @access  Private/Admin
+export const deleteBulkProducts = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: "No product IDs provided" });
+    }
+    
+    const result = await Product.deleteMany({ _id: { $in: ids } });
+    res.json({ message: `${result.deletedCount} products removed` });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -324,6 +352,17 @@ export const bulkCreateProducts = async (req, res) => {
           ? String(row.colors).split(",").map((c) => c.trim()).filter(Boolean)
           : [];
 
+        // Parse colorVariants: Black:url1,url2|White:url3
+        const colorVariants = row.colorVariants
+          ? String(row.colorVariants).split("|").map(variantStr => {
+              const colonIdx = variantStr.indexOf(":");
+              if (colonIdx === -1) return { colorName: variantStr.trim(), images: [] };
+              const colorName = variantStr.substring(0, colonIdx).trim();
+              const images = variantStr.substring(colonIdx + 1).split(",").map(i => i.trim()).filter(Boolean);
+              return { colorName, images };
+            }).filter(Boolean)
+          : [];
+
         // Parse specs: "Color:Black|RAM:8GB|Storage:256GB"
         const specs = row.specs
           ? String(row.specs).split("|").map((s) => {
@@ -363,10 +402,11 @@ export const bulkCreateProducts = async (req, res) => {
           wholesaleMinQty: Number(row.wholesaleMinQty) || 10,
           cashback: Number(row.cashback) || 0,
           countInStock: Number(row.countInStock) || 0,
-          description: row.description ? String(row.description).trim() : "",
+          description: row.description ? String(row.description).split("\n").map(p => p.trim()).filter(Boolean) : [],
           images,
           videoUrl: row.videoUrl ? String(row.videoUrl).trim() : undefined,
           colors,
+          colorVariants,
           details: {
             specs,
             inTheBox: row.inTheBox ? String(row.inTheBox).trim() : "",
@@ -383,6 +423,8 @@ export const bulkCreateProducts = async (req, res) => {
         // Only set code if non-empty (sparse unique index dislikes empty strings)
         if (row.code && String(row.code).trim()) {
           productData.code = String(row.code).trim();
+        } else {
+          productData.code = `PW-${Date.now().toString().slice(-6)}${Math.floor(100 + Math.random() * 900)}`;
         }
 
         const product = new Product(productData);
@@ -495,10 +537,11 @@ export const downloadProductTemplate = async (req, res) => {
       { header: "wholesaleMinQty *", key: "wholesaleMinQty", example: "10", example2: "10" },
       { header: "cashback", key: "cashback", example: "100", example2: "50" },
       { header: "countInStock *", key: "countInStock", example: "50", example2: "30" },
-      { header: "description", key: "description", example: "High quality original LCD display", example2: "Long lasting battery" },
+      { header: "description", key: "description", example: "Paragraph 1\nParagraph 2", example2: "Long lasting battery" },
       { header: "images", key: "images", example: "http://server/uploads/img1.jpg|http://server/uploads/img2.jpg", example2: "" },
       { header: "videoUrl", key: "videoUrl", example: "", example2: "" },
       { header: "colors", key: "colors", example: "Black,White,Gold", example2: "Black" },
+      { header: "colorVariants", key: "colorVariants", example: "Black:http://img1.jpg|White:http://img2.jpg", example2: "Black" },
       { header: "specs", key: "specs", example: "Color:Black|Compatibility:S23 Ultra|Type:AMOLED", example2: "Capacity:3000mAh|Voltage:3.8V" },
       { header: "inTheBox", key: "inTheBox", example: "LCD Display, Installation Guide", example2: "Battery" },
       { header: "warrantyPeriod", key: "warrantyPeriod", example: "6 Months", example2: "3 Months" },
@@ -615,3 +658,184 @@ export const downloadProductTemplate = async (req, res) => {
     res.status(500).json({ message: "Failed to generate Excel template", error: error.message });
   }
 };
+
+// @desc    Export Backup Excel of all products
+// @route   GET /api/admin/products/export
+// @access  Private/Admin
+export const exportProductsBackup = async (req, res) => {
+  try {
+    const products = await Product.find({})
+      .populate("brand", "name")
+      .populate("category", "name")
+      .populate("model", "name");
+
+    const workbook = new ExcelJS.Workbook();
+    const ws = workbook.addWorksheet("Products Backup");
+
+    const columns = [
+      { header: "ID", key: "_id", width: 24 },
+      { header: "name *", key: "name", width: 28 },
+      { header: "code", key: "code", width: 15 },
+      { header: "brand *", key: "brand", width: 15 },
+      { header: "model *", key: "model", width: 20 },
+      { header: "category *", key: "category", width: 15 },
+      { header: "productType", key: "productType", width: 15 },
+      { header: "price *", key: "price", width: 10 },
+      { header: "mrp *", key: "mrp", width: 10 },
+      { header: "wholesalePrice *", key: "wholesalePrice", width: 15 },
+      { header: "wholesaleMinQty *", key: "wholesaleMinQty", width: 15 },
+      { header: "cashback", key: "cashback", width: 10 },
+      { header: "countInStock *", key: "countInStock", width: 15 },
+      { header: "description", key: "description", width: 30 },
+      { header: "images", key: "images", width: 30 },
+      { header: "videoUrl", key: "videoUrl", width: 20 },
+      { header: "colors", key: "colors", width: 20 },
+      { header: "colorVariants", key: "colorVariants", width: 30 },
+      { header: "specs", key: "specs", width: 30 },
+      { header: "inTheBox", key: "inTheBox", width: 20 },
+      { header: "warrantyPeriod", key: "warrantyPeriod", width: 15 },
+      { header: "warrantyPolicy", key: "warrantyPolicy", width: 15 },
+      { header: "warrantySummary", key: "warrantySummary", width: 20 },
+      { header: "highlights", key: "highlights", width: 30 },
+      { header: "descriptionPoints", key: "descriptionPoints", width: 30 },
+      { header: "createdAt", key: "createdAt", width: 20 },
+    ];
+
+    ws.columns = columns;
+
+    const headerRow = ws.getRow(1);
+    headerRow.font = { bold: true };
+
+    products.forEach((p) => {
+      ws.addRow({
+        _id: p._id.toString(),
+        name: p.name,
+        code: p.code,
+        brand: p.brand?.name || "",
+        model: p.model?.name || "",
+        category: p.category?.name || "",
+        productType: p.productType,
+        price: p.price,
+        mrp: p.mrp,
+        wholesalePrice: p.wholesalePrice,
+        wholesaleMinQty: p.wholesaleMinQty,
+        cashback: p.cashback,
+        countInStock: p.countInStock,
+        description: Array.isArray(p.description) ? p.description.join("\n") : (p.description || ""),
+        images: p.images?.join("|") || "",
+        videoUrl: p.videoUrl,
+        colors: p.colors?.join(",") || "",
+        colorVariants: p.colorVariants?.map(v => `${v.colorName}:${v.images?.join(",")}`).join("|") || "",
+        specs: p.details?.specs?.map(s => `${s.key}:${s.value}`).join("|") || "",
+        inTheBox: p.details?.inTheBox,
+        warrantyPeriod: p.details?.warranty?.period,
+        warrantyPolicy: p.details?.warranty?.policy,
+        warrantySummary: p.details?.warranty?.summary,
+        highlights: p.details?.highlights?.join("|") || "",
+        descriptionPoints: p.details?.descriptionPoints?.join("|") || "",
+        createdAt: p.createdAt,
+      });
+    });
+
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", "attachment; filename=plusway_products_backup.xlsx");
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    res.status(500).json({ message: "Failed to generate backup", error: error.message });
+  }
+};
+
+// @desc    Download template for bulk price update
+// @route   GET /api/admin/products/bulk-price-template
+// @access  Private/Admin
+export const downloadPriceUpdateTemplate = async (req, res) => {
+  try {
+    const workbook = new ExcelJS.Workbook();
+    const ws = workbook.addWorksheet("Bulk Price Update");
+
+    ws.columns = [
+      { header: "SKU *", key: "SKU", width: 20 },
+      { header: "Price *", key: "Price", width: 15 },
+      { header: "MRP", key: "MRP", width: 15 },
+      { header: "WholesalePrice", key: "WholesalePrice", width: 15 },
+      { header: "WholesaleMinQty", key: "WholesaleMinQty", width: 15 },
+    ];
+
+    ws.getRow(1).font = { bold: true };
+    ws.addRow({ SKU: "PW-123456", Price: 500, MRP: 600, WholesalePrice: 450, WholesaleMinQty: 10 });
+
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", "attachment; filename=plusway_bulk_price_update.xlsx");
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    res.status(500).json({ message: "Failed to generate template", error: error.message });
+  }
+};
+
+// @desc    Bulk update product prices
+// @route   POST /api/admin/products/bulk-update-price
+// @access  Private/Admin
+export const bulkUpdatePrices = async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: "No Excel file provided" });
+  }
+
+  const results = { success: [], errors: [] };
+
+  try {
+    const workbook = XLSX.readFile(req.file.path);
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const rawRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+    const rows = rawRows.map(row => {
+      const cleanRow = {};
+      for (const key in row) {
+        cleanRow[key.replace(/\s*\*\s*$/, '').trim()] = row[key];
+      }
+      return cleanRow;
+    });
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const rowNum = i + 2;
+
+      if (!row.SKU || !row.Price) {
+        results.errors.push({ row: rowNum, error: "Missing SKU or Price" });
+        continue;
+      }
+
+      try {
+        const updateData = { price: Number(row.Price) };
+        if (row.MRP) updateData.mrp = Number(row.MRP);
+        if (row.WholesalePrice) updateData.wholesalePrice = Number(row.WholesalePrice);
+        if (row.WholesaleMinQty) updateData.wholesaleMinQty = Number(row.WholesaleMinQty);
+
+        const updated = await Product.findOneAndUpdate({ code: String(row.SKU).trim() }, updateData);
+        if (updated) {
+          results.success.push({ row: rowNum, sku: row.SKU });
+        } else {
+          results.errors.push({ row: rowNum, error: `SKU ${row.SKU} not found` });
+        }
+      } catch (err) {
+        results.errors.push({ row: rowNum, error: err.message });
+      }
+    }
+
+    try { fs.unlinkSync(req.file.path); } catch (_) {}
+
+    const statusCode = results.success.length > 0 ? 200 : 400;
+    res.status(statusCode).json({
+      message: `Price update complete. ${results.success.length} updated, ${results.errors.length} failed.`,
+      results
+    });
+  } catch (error) {
+    try { fs.unlinkSync(req.file.path); } catch (_) {}
+    res.status(500).json({ message: "Bulk update failed", error: error.message });
+  }
+};
+
