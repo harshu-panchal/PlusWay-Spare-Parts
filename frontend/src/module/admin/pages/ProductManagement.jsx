@@ -117,6 +117,7 @@ const ProductManagement = () => {
     countInStock: 0,
     description: [""],
     images: [],
+    videoUrl: "",
     colorVariants: [],
     colors: [],
     details: {
@@ -141,6 +142,7 @@ const ProductManagement = () => {
         description: Array.isArray(product.description) && product.description.length > 0 ? product.description : [product.description || ""],
         colorVariants: product.colorVariants || [],
         colors: product.colors?.map((c) => ({ name: c })) || [],
+        videoUrl: product.videoUrl || "",
         details: {
           specs: product.details?.specs || [],
           warranty: {
@@ -490,7 +492,7 @@ const ProductManagement = () => {
 
   const productTemplateColumns = [
     { header: "name *", key: "name", example: "LCD Screen Samsung S23 Ultra", example2: "Battery iPhone 14 Pro" },
-    { header: "code", key: "code", example: "SKU-001", example2: "SKU-002" },
+    { header: "SKU", key: "SKU", example: "SKU-001", example2: "SKU-002" },
     { header: "brand *", key: "brand", example: "Samsung", example2: "Apple" },
     { header: "model *", key: "model", example: "Samsung Galaxy S23 Ultra", example2: "Apple iPhone 14 Pro" },
     { header: "category *", key: "category", example: "LCD Display", example2: "Battery" },
@@ -515,93 +517,93 @@ const ProductManagement = () => {
   ];
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex flex-col gap-2">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Products</h1>
-            <p className="text-sm text-gray-500">
-              Manage your product inventory and details
-            </p>
+    <div className="space-y-4 animate-in fade-in duration-500">
+      {/* Top Action Bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+        {/* Left: Search & Filters */}
+        <div className="flex flex-col md:flex-row items-center gap-2 w-full md:w-auto">
+          <div className="relative w-full md:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+            <input
+              type="text"
+              placeholder="Search products..."
+              className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+              value={searchTerm}
+              onChange={handleSearchChange}
+            />
           </div>
-          <div className="bg-blue-50 text-blue-700 text-xs px-3 py-2 rounded-lg border border-blue-100 max-w-lg">
-            <span className="font-bold">Bulk Upload Tip:</span> To view the <strong>Complete Field Reference</strong> (required fields, exact column keys, and examples), click the <strong>Bulk Upload</strong> button and download the template.
+          <div className="flex gap-2 w-full md:w-auto">
+            <select
+              className="flex-1 md:flex-none px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition-all text-gray-600 bg-gray-50 text-sm font-medium"
+              value={brandFilter}
+              onChange={handleBrandFilterChange}>
+              <option value="All">All Brands</option>
+              {brands.map((b) => (
+                <option key={b._id} value={b._id}>{b.name}</option>
+              ))}
+            </select>
+            <select
+              className="flex-1 md:flex-none px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition-all text-gray-600 bg-gray-50 text-sm font-medium"
+              value={categoryFilter}
+              onChange={handleCategoryFilterChange}>
+              <option value="All">All Categories</option>
+              {categories.map((c) => (
+                <option key={c._id} value={c._id}>{c.name}</option>
+              ))}
+            </select>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <select
-            className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-gray-600 bg-white font-medium text-sm"
-            value={brandFilter}
-            onChange={handleBrandFilterChange}>
-            <option value="All">All Brands</option>
-            {brands.map((b) => (
-              <option key={b._id} value={b._id}>
-                {b.name}
-              </option>
-            ))}
-          </select>
-          <select
-            className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-gray-600 bg-white font-medium text-sm"
-            value={categoryFilter}
-            onChange={handleCategoryFilterChange}>
-            <option value="All">All Categories</option>
-            {categories.map((c) => (
-              <option key={c._id} value={c._id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+
+        {/* Right: Actions */}
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
           <button
             onClick={handleExportBackup}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all shadow-sm hover:shadow-md active:scale-95">
-            <Save size={18} />
-            <span className="font-medium">Export</span>
+            className="flex items-center gap-1.5 px-3 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all text-xs font-bold shadow-sm"
+            title="Export Backup">
+            <Save size={14} className="text-gray-500" />
+            <span className="hidden lg:inline">Export</span>
           </button>
           <button
             onClick={() => setIsBulkPriceModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all shadow-sm hover:shadow-md active:scale-95">
-            <Upload size={18} />
-            <span className="font-medium">Bulk Price</span>
+            className="flex items-center gap-1.5 px-3 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all text-xs font-bold shadow-sm"
+            title="Bulk Price Update">
+            <Upload size={14} className="text-purple-600" />
+            <span className="hidden lg:inline">Prices</span>
           </button>
           <button
             onClick={() => setIsBulkModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all shadow-sm hover:shadow-md active:scale-95">
-            <FileSpreadsheet size={18} />
-            <span className="font-medium">Bulk Upload</span>
+            className="flex items-center gap-1.5 px-3 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all text-xs font-bold shadow-sm"
+            title="Bulk Upload Products">
+            <FileSpreadsheet size={14} className="text-emerald-600" />
+            <span className="hidden lg:inline">Bulk</span>
           </button>
           <button
             onClick={() => handleOpenModal()}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm hover:shadow-md active:scale-95">
-            <Plus size={18} />
-            <span className="font-medium">Add Product</span>
+            className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm shadow-blue-200 active:scale-95 text-xs font-bold ml-1">
+            <Plus size={14} />
+            <span>Add Product</span>
           </button>
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-        <div className="relative flex-1 max-w-md">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-            size={20}
-          />
-          <input
-            type="text"
-            placeholder="Search by name, ID or SKU..."
-            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-transparent focus:bg-white border focus:border-blue-500 rounded-lg outline-none transition-all text-sm"
-            value={searchTerm}
-            onChange={handleSearchChange}
-          />
+      {/* Info Banner & Selected Actions */}
+      <div className="flex flex-col md:flex-row items-center justify-between text-sm gap-3">
+        <div className="flex items-center gap-2 text-gray-600 bg-blue-50/50 px-3 py-2 rounded-lg border border-blue-100/50 w-full md:max-w-2xl">
+          <span className="font-bold text-[10px] text-blue-700 uppercase tracking-wider bg-blue-100 px-1.5 py-0.5 rounded">Tip</span> 
+          <span className="text-xs text-blue-800">Need column keys or examples for bulk upload? Click the <strong>Bulk</strong> button and download the template.</span>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-500">
+        <div className="flex items-center gap-3 shrink-0">
           {selectedProducts.length > 0 && (
             <button
               onClick={handleBulkDelete}
-              className="flex items-center gap-2 px-3 py-1.5 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg transition-colors mr-2">
-              <Trash2 size={16} />
-              <span className="font-bold">Delete {selectedProducts.length}</span>
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors text-xs font-bold border border-red-100">
+              <Trash2 size={14} />
+              Delete Selected ({selectedProducts.length})
             </button>
           )}
-          <span>Showing {products.length} products</span>
+          <span className="text-gray-400 text-xs font-bold bg-white px-3 py-1.5 rounded-lg border border-gray-100">
+            Total: {total} items
+          </span>
         </div>
       </div>
 
@@ -610,31 +612,31 @@ const ProductManagement = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50/50 border-b border-gray-100">
-                <th className="px-6 py-4 w-10">
+              <tr className="bg-gray-50/80 border-b border-gray-100">
+                <th className="px-4 py-3 w-10">
                   <input
                     type="checkbox"
-                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    className="w-3.5 h-3.5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
                     onChange={handleSelectAll}
                     checked={products.length > 0 && selectedProducts.length === products.length}
                   />
                 </th>
-                <th className="px-6 py-4 text-[13px] font-bold text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
                   Product
                 </th>
-                <th className="px-6 py-4 text-[13px] font-bold text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
                   Category
                 </th>
-                <th className="px-6 py-4 text-[13px] font-bold text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
                   Retail
                 </th>
-                <th className="px-6 py-4 text-[13px] font-bold text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
                   Wholesale
                 </th>
-                <th className="px-6 py-4 text-[13px] font-bold text-gray-500 uppercase tracking-wider text-center">
+                <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">
                   Stock Status
                 </th>
-                <th className="px-6 py-4 text-[13px] font-bold text-gray-500 uppercase tracking-wider text-right">
+                <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-right">
                   Actions
                 </th>
               </tr>
@@ -644,17 +646,17 @@ const ProductManagement = () => {
                 <tr
                   key={product._id}
                   className="group hover:bg-blue-50/30 transition-colors">
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3">
                     <input
                       type="checkbox"
-                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                      className="w-3.5 h-3.5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
                       checked={selectedProducts.includes(product._id)}
                       onChange={() => handleSelectProduct(product._id)}
                     />
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-100 bg-white p-1 flex-shrink-0 group-hover:border-blue-200 transition-colors">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg overflow-hidden border border-gray-100 bg-white flex-shrink-0 group-hover:border-blue-200 transition-colors">
                         <img
                           src={
                             product.images && product.images.length > 0
@@ -663,83 +665,80 @@ const ProductManagement = () => {
                                 "https://via.placeholder.com/150"
                           }
                           alt={product.name}
-                          className="w-full h-full object-contain"
+                          className="w-full h-full object-contain p-0.5"
                         />
                       </div>
-                      <div className="min-w-0">
-                        <p className="font-bold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+                      <div className="min-w-0 max-w-[200px] md:max-w-[300px]">
+                        <p className="font-bold text-gray-900 text-[13px] truncate group-hover:text-blue-600 transition-colors" title={product.name}>
                           {product.name}
                         </p>
-                        <p className="text-[12px] text-gray-400 font-medium">
-                          SKU: {product._id.toString().slice(-6).toUpperCase()}
+                        <p className="text-[10px] text-gray-400 font-bold tracking-wider">
+                          SKU: {product.code || product._id.toString().slice(-6).toUpperCase()}
                         </p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                  <td className="px-4 py-3">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-gray-50 border border-gray-200 text-gray-700">
                       {product.category?.name ||
                         categories.find((c) => c._id === product.category)
                           ?.name ||
                         "Display"}
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-3">
                     <div className="flex flex-col">
-                      <span className="font-bold text-gray-900">
+                      <span className="font-bold text-gray-900 text-sm">
                         ₹{product.price?.toLocaleString()}
                       </span>
-                      <span className="text-[11px] text-gray-400 line-through">
-                        ₹{product.mrp?.toLocaleString()}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-col">
-                      <span className="font-black text-blue-600">
-                        ₹{product.wholesalePrice?.toLocaleString()}
-                      </span>
-                      <span className="text-[10px] text-gray-400 font-bold uppercase">
-                        Min: {product.wholesaleMinQty || 10}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-col items-center gap-1">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider ${
-                          product.countInStock > 0
-                            ? "bg-green-100 text-green-700"
-                            : "bg-red-100 text-red-700"
-                        }`}>
-                        {product.countInStock > 0 ? "In Stock" : "Out of Stock"}
-                      </span>
-                      {product.countInStock > 0 && (
-                        <span className="text-[10px] text-gray-400 font-medium italic">
-                          Ready to ship
+                      {product.mrp > product.price && (
+                        <span className="text-[10px] text-gray-400 line-through">
+                          ₹{product.mrp?.toLocaleString()}
                         </span>
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <td className="px-4 py-3">
+                    <div className="flex flex-col">
+                      <span className="font-black text-blue-600 text-sm">
+                        ₹{product.wholesalePrice?.toLocaleString()}
+                      </span>
+                      <span className="text-[9px] text-gray-400 font-bold uppercase">
+                        Min Qty: {product.wholesaleMinQty || 10}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <div className="flex justify-center">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest ${
+                          product.countInStock > 0
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                            : "bg-red-50 text-red-700 border border-red-100"
+                        }`}>
+                        {product.countInStock > 0 ? `${product.countInStock} In Stock` : "Out of Stock"}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => navigate(`/admin/products/${product._id}`)}
-                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                         title="View Details">
-                        <Eye size={18} />
+                        <Eye size={16} />
                       </button>
                       <button
                         onClick={() => handleOpenModal(product)}
-                        className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                        className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
                         title="Edit Product">
-                        <Edit size={18} />
+                        <Edit size={16} />
                       </button>
                       <button
                         onClick={() => handleDeleteClick(product)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                         title="Delete Product">
-                        <Trash2 size={18} />
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </td>
@@ -764,9 +763,9 @@ const ProductManagement = () => {
 
       {/* Add/Edit Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
-            <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+        <div className="fixed inset-0 bg-gray-50 z-50 flex flex-col animate-in slide-in-from-bottom-4 duration-300">
+          <div className="bg-white w-full h-full overflow-hidden flex flex-col shadow-2xl">
+            <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center shrink-0">
               <div>
                 <h3 className="text-xl font-bold text-gray-900">
                   {editingProduct ? "Edit Product" : "Create New Product"}
@@ -779,14 +778,15 @@ const ProductManagement = () => {
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-2 hover:bg-white hover:shadow-md rounded-xl transition-all text-gray-400 hover:text-gray-600">
-                <X size={20} />
+                className="p-2 bg-gray-50 hover:bg-gray-100 hover:shadow-sm rounded-xl transition-all text-gray-500 hover:text-gray-700">
+                <X size={24} />
               </button>
             </div>
 
-            <form
-              onSubmit={handleSubmit}
-              className="p-8 overflow-y-auto space-y-8">
+            <div className="flex-1 overflow-y-auto">
+              <form
+                onSubmit={handleSubmit}
+                className="p-8 space-y-8 max-w-6xl mx-auto w-full">
               {/* Product Gallery Section */}
               <div className="space-y-3">
                 <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
@@ -888,20 +888,37 @@ const ProductManagement = () => {
               </div>
 
               <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
-                    Product Name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    placeholder="e.g. LCD Screen for Samsung S23 Ultra"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                      Product Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                      value={formData.name}
+                      onChange={(e) =>
+                        setFormData({ ...formData, name: e.target.value })
+                      }
+                      placeholder="e.g. LCD Screen for Samsung S23 Ultra"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                      SKU
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                      value={formData.code || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, code: e.target.value })
+                      }
+                      placeholder={editingProduct ? "e.g. PW-123456" : "Auto-generated on save"}
+                      disabled={!editingProduct}
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1333,6 +1350,21 @@ const ProductManagement = () => {
                   />
                 </div>
 
+                <div className="space-y-2">
+                  <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                    YouTube Video URL
+                  </label>
+                  <input
+                    type="url"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                    value={formData.videoUrl || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, videoUrl: e.target.value })
+                    }
+                    placeholder="https://www.youtube.com/watch?v=..."
+                  />
+                </div>
+
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
                   <div className="flex flex-col">
                     <span className="text-sm font-bold text-gray-700">
@@ -1374,6 +1406,7 @@ const ProductManagement = () => {
                 </button>
               </div>
             </form>
+            </div>
           </div>
         </div>
       )}

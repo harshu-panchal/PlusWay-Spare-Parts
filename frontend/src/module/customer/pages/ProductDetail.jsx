@@ -162,6 +162,19 @@ const ProductDetail = () => {
   const savings = product.mrp - product.price;
   const savingsPercent = Math.round((savings / product.mrp) * 100);
 
+  const getEmbedUrl = (url) => {
+    if (!url) return null;
+    let videoId = "";
+    if (url.includes("youtube.com/watch?v=")) {
+      videoId = url.split("v=")[1].split("&")[0];
+    } else if (url.includes("youtu.be/")) {
+      videoId = url.split("youtu.be/")[1].split("?")[0];
+    } else if (url.includes("youtube.com/embed/")) {
+      return url;
+    }
+    return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+  };
+
   return (
     <div className="bg-[#f4f4f4] min-h-screen">
       {/* Breadcrumbs */}
@@ -471,6 +484,24 @@ const ProductDetail = () => {
                 </button>
               </div>
             </div>
+
+            {/* Video Section */}
+            {product.videoUrl && (
+              <div className="mt-8 bg-gray-50 border border-gray-200 p-8 flex flex-col items-center">
+                <div className="relative w-full max-w-2xl aspect-video bg-black shadow-2xl">
+                  <iframe
+                    src={getEmbedUrl(product.videoUrl)}
+                    className="w-full h-full"
+                    title="Product Video"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen></iframe>
+                </div>
+                <p className="mt-4 text-xs font-black text-gray-400 uppercase italic">
+                  Product Video Demonstration
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Right: Side Panel (3 cols) */}
@@ -572,7 +603,15 @@ const ProductDetail = () => {
                     Product <span className="text-primary">Details</span>
                   </h3>
                   <div className="text-sm text-gray-600 leading-relaxed font-bold space-y-4">
-                    {product.description && <p>{product.description}</p>}
+                    {product.description && (
+                      Array.isArray(product.description) ? (
+                        product.description.map((para, idx) => (
+                          <p key={idx}>{para}</p>
+                        ))
+                      ) : (
+                        <p>{product.description}</p>
+                      )
+                    )}
                     {product.details?.descriptionPoints &&
                       product.details.descriptionPoints.length > 0 && (
                         <ul className="list-disc pl-5 space-y-2 mt-4">
@@ -650,24 +689,6 @@ const ProductDetail = () => {
                     </table>
                   )}
                 </div>
-
-                {/* Video Section */}
-                {product.videoUrl && (
-                  <div className="mt-8 bg-gray-50 border border-gray-200 p-8 flex flex-col items-center">
-                    <div className="relative w-full max-w-2xl aspect-video bg-black shadow-2xl">
-                      <iframe
-                        src={product.videoUrl}
-                        className="w-full h-full"
-                        title="Product Video"
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen></iframe>
-                    </div>
-                    <p className="mt-4 text-xs font-black text-gray-400 uppercase italic">
-                      Product Video Demonstration
-                    </p>
-                  </div>
-                )}
               </div>
             )}
 

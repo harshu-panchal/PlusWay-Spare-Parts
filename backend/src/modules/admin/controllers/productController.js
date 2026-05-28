@@ -421,8 +421,9 @@ export const bulkCreateProducts = async (req, res) => {
         };
 
         // Only set code if non-empty (sparse unique index dislikes empty strings)
-        if (row.code && String(row.code).trim()) {
-          productData.code = String(row.code).trim();
+        const skuValue = row.SKU || row.code;
+        if (skuValue && String(skuValue).trim()) {
+          productData.code = String(skuValue).trim();
         } else {
           productData.code = `PW-${Date.now().toString().slice(-6)}${Math.floor(100 + Math.random() * 900)}`;
         }
@@ -526,7 +527,7 @@ export const downloadProductTemplate = async (req, res) => {
     // Define columns
     const columns = [
       { header: "name *", key: "name", example: "LCD Screen Samsung S23 Ultra", example2: "Battery iPhone 14 Pro" },
-      { header: "code", key: "code", example: "SKU-001", example2: "SKU-002" },
+      { header: "SKU", key: "SKU", example: "SKU-001", example2: "SKU-002" },
       { header: "brand *", key: "brand", example: "Samsung", example2: "Apple" },
       { header: "model *", key: "model", example: "Samsung Galaxy S23 Ultra", example2: "Apple iPhone 14 Pro" },
       { header: "category *", key: "category", example: "LCD Display", example2: "Battery" },
@@ -675,7 +676,7 @@ export const exportProductsBackup = async (req, res) => {
     const columns = [
       { header: "ID", key: "_id", width: 24 },
       { header: "name *", key: "name", width: 28 },
-      { header: "code", key: "code", width: 15 },
+      { header: "SKU", key: "code", width: 15 },
       { header: "brand *", key: "brand", width: 15 },
       { header: "model *", key: "model", width: 20 },
       { header: "category *", key: "category", width: 15 },

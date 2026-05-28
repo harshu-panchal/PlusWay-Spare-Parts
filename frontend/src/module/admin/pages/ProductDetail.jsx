@@ -125,7 +125,13 @@ const ProductDetail = () => {
               </div>
             </div>
             {product.description && (
-              <p className="text-sm text-gray-600 mt-4 leading-relaxed">{product.description}</p>
+              <div className="text-sm text-gray-600 mt-4 leading-relaxed space-y-2">
+                {Array.isArray(product.description) ? (
+                  product.description.map((para, idx) => <p key={idx}>{para}</p>)
+                ) : (
+                  <p>{product.description}</p>
+                )}
+              </div>
             )}
           </div>
 
