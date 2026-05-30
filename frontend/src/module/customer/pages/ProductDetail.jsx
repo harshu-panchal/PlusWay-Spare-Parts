@@ -239,7 +239,7 @@ const ProductDetail = () => {
 
           {/* Middle: Info & Actions (5 cols) */}
           <div className="lg:col-span-5 bg-white p-6 border border-gray-200 h-fit">
-            <h1 className="text-lg font-black text-secondary leading-tight mb-4 uppercase">
+            <h1 className="text-2xl font-black text-secondary leading-tight mb-4">
               {product.name}
             </h1>
 
@@ -377,26 +377,6 @@ const ProductDetail = () => {
                   Total Savings on MRP
                 </span>
               </div>
-              <div className="text-sm text-secondary font-bold flex items-center gap-1.5 pt-2">
-                Cash Back:{" "}
-                <span className="bg-gray-100 px-2 py-0.5 rounded">
-                  {product.cashback} Rs.
-                </span>
-              </div>
-            </div>
-
-            <div className="text-[11px] text-blue-600 underline font-bold mb-6 cursor-pointer block">
-              Report incorrect product information.
-            </div>
-
-            <div className="text-sm text-secondary mb-8">
-              Expected delivery to Pincode{" "}
-              <span className="font-bold underline">457001</span> by:{" "}
-              <span className="font-black">Tomorrow</span> (if ordered within{" "}
-              <span className="text-green-600 font-black">1 hr 6 mins</span>).{" "}
-              <span className="text-blue-600 underline cursor-pointer ml-1">
-                Details
-              </span>
             </div>
 
             <div className="flex items-center gap-4 mb-4 text-sm text-secondary font-black">
@@ -694,45 +674,96 @@ const ProductDetail = () => {
 
             {activeTab === "Warranty" && (
               <div className="space-y-6 mb-8">
-                {product.details?.warranty ? (
+                {product.details ? (
                   <table className="w-full border-collapse border border-gray-200 text-sm">
                     <thead>
                       <tr>
                         <th
                           colSpan="2"
                           className="bg-gray-50 p-3 text-left font-black uppercase italic border border-gray-200">
-                          Warranty Information
+                          Warranty
                         </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {product.details.warranty.period && (
+                      {product.details.warranty?.coveredInWarranty && (
                         <tr className="border-b border-gray-100">
                           <td className="p-3 w-1/4 text-gray-500 font-bold border-r border-gray-100">
-                            Period
+                            Covered in Warranty
+                          </td>
+                          <td className="p-3 text-secondary font-black">
+                            {product.details.warranty.coveredInWarranty}
+                          </td>
+                        </tr>
+                      )}
+                      {product.details.warranty?.summary && (
+                        <tr className="border-b border-gray-100">
+                          <td className="p-3 w-1/4 text-gray-500 font-bold border-r border-gray-100">
+                            Warranty Summary
+                          </td>
+                          <td className="p-3 text-secondary font-black">
+                            {product.details.warranty.summary}
+                          </td>
+                        </tr>
+                      )}
+                      {product.details.warranty?.serviceType && (
+                        <tr className="border-b border-gray-100">
+                          <td className="p-3 w-1/4 text-gray-500 font-bold border-r border-gray-100">
+                            Warranty Service Type
+                          </td>
+                          <td className="p-3 text-secondary font-black">
+                            {product.details.warranty.serviceType}
+                          </td>
+                        </tr>
+                      )}
+                      {product.details.warranty?.tnc && (
+                        <tr className="border-b border-gray-100">
+                          <td className="p-3 w-1/4 text-gray-500 font-bold border-r border-gray-100">
+                            Warranty T&C
+                          </td>
+                          <td className="p-3 text-secondary font-black">
+                            {product.details.warranty.tnc}
+                          </td>
+                        </tr>
+                      )}
+                      {product.details.countryOfOrigin && (
+                        <tr className="border-b border-gray-100">
+                          <td className="p-3 w-1/4 text-gray-500 font-bold border-r border-gray-100">
+                            Country of Origin
+                          </td>
+                          <td className="p-3 text-secondary font-black">
+                            {product.details.countryOfOrigin}
+                          </td>
+                        </tr>
+                      )}
+                      {product.details.packer && (
+                        <tr className="border-b border-gray-100">
+                          <td className="p-3 w-1/4 text-gray-500 font-bold border-r border-gray-100">
+                            Packer
+                          </td>
+                          <td className="p-3 text-secondary font-black">
+                            {product.details.packer}
+                          </td>
+                        </tr>
+                      )}
+                      {/* Fallbacks for older data */}
+                      {product.details.warranty?.period && !product.details.warranty?.coveredInWarranty && (
+                        <tr className="border-b border-gray-100">
+                          <td className="p-3 w-1/4 text-gray-500 font-bold border-r border-gray-100">
+                            Warranty Period
                           </td>
                           <td className="p-3 text-secondary font-black">
                             {product.details.warranty.period}
                           </td>
                         </tr>
                       )}
-                      {product.details.warranty.policy && (
+                      {product.details.warranty?.policy && !product.details.warranty?.serviceType && (
                         <tr className="border-b border-gray-100">
                           <td className="p-3 w-1/4 text-gray-500 font-bold border-r border-gray-100">
-                            Policy
+                            Warranty Policy
                           </td>
                           <td className="p-3 text-secondary font-black">
                             {product.details.warranty.policy}
-                          </td>
-                        </tr>
-                      )}
-                      {product.details.warranty.summary && (
-                        <tr className="border-b border-gray-100">
-                          <td className="p-3 w-1/4 text-gray-500 font-bold border-r border-gray-100">
-                            Summary
-                          </td>
-                          <td className="p-3 text-secondary font-black">
-                            {product.details.warranty.summary}
                           </td>
                         </tr>
                       )}

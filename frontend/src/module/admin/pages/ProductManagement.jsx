@@ -122,10 +122,12 @@ const ProductManagement = () => {
     colors: [],
     details: {
       specs: [],
-      warranty: { period: "", policy: "", summary: "" },
+      warranty: { summary: "", coveredInWarranty: "", serviceType: "", tnc: "" },
       inTheBox: "",
       highlights: [],
       descriptionPoints: [],
+      countryOfOrigin: "",
+      packer: "",
     },
   };
 
@@ -509,9 +511,12 @@ const ProductManagement = () => {
     { header: "colors", key: "colors", example: "Black,White,Gold", example2: "Black" },
     { header: "specs", key: "specs", example: "Color:Black|Compatibility:S23 Ultra|Type:AMOLED", example2: "Capacity:3000mAh|Voltage:3.8V" },
     { header: "inTheBox", key: "inTheBox", example: "LCD Display, Installation Guide", example2: "Battery" },
-    { header: "warrantyPeriod", key: "warrantyPeriod", example: "6 Months", example2: "3 Months" },
-    { header: "warrantyPolicy", key: "warrantyPolicy", example: "Replacement", example2: "Replacement" },
-    { header: "warrantySummary", key: "warrantySummary", example: "Warranty void if tampered", example2: "" },
+    { header: "warrantySummary", key: "warrantySummary", example: "10 Days Testing Replacement Warranty", example2: "" },
+    { header: "coveredInWarranty", key: "coveredInWarranty", example: "Yes, Replacement Only. No Returns", example2: "" },
+    { header: "warrantyServiceType", key: "warrantyServiceType", example: "Send to seller by courier", example2: "" },
+    { header: "warrantyTnC", key: "warrantyTnC", example: "Warranty Terms", example2: "" },
+    { header: "countryOfOrigin", key: "countryOfOrigin", example: "China", example2: "India" },
+    { header: "packer", key: "packer", example: "Elcotek India Pvt Ltd, New Delhi", example2: "" },
     { header: "highlights", key: "highlights", example: "Super AMOLED|Fast Charging|5G Ready", example2: "Long Life|Safe Chemistry" },
     { header: "descriptionPoints", key: "descriptionPoints", example: "100% Original Part|Quality Tested", example2: "Safe and reliable" },
   ];
@@ -1278,16 +1283,16 @@ const ProductManagement = () => {
                   />
                 </div>
 
-                {/* Warranty */}
+                {/* Warranty & General Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
-                      Warranty Period
+                      Covered in Warranty
                     </label>
                     <input
                       type="text"
                       className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl"
-                      value={formData.details.warranty.period}
+                      value={formData.details.warranty?.coveredInWarranty || ""}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
@@ -1295,22 +1300,22 @@ const ProductManagement = () => {
                             ...formData.details,
                             warranty: {
                               ...formData.details.warranty,
-                              period: e.target.value,
+                              coveredInWarranty: e.target.value,
                             },
                           },
                         })
                       }
-                      placeholder="e.g. 6 Months"
+                      placeholder="e.g. Yes, Replacement Only. No Returns"
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
-                      Warranty Policy
+                      Warranty Service Type
                     </label>
                     <input
                       type="text"
                       className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl"
-                      value={formData.details.warranty.policy}
+                      value={formData.details.warranty?.serviceType || ""}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
@@ -1318,36 +1323,106 @@ const ProductManagement = () => {
                             ...formData.details,
                             warranty: {
                               ...formData.details.warranty,
-                              policy: e.target.value,
+                              serviceType: e.target.value,
                             },
                           },
                         })
                       }
-                      placeholder="e.g. Replacement"
+                      placeholder="e.g. Send to seller by courier"
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
-                    Warranty Summary
-                  </label>
-                  <textarea
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl h-20 resize-none"
-                    value={formData.details.warranty.summary}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        details: {
-                          ...formData.details,
-                          warranty: {
-                            ...formData.details.warranty,
-                            summary: e.target.value,
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                      Warranty Summary
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl"
+                      value={formData.details.warranty?.summary || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          details: {
+                            ...formData.details,
+                            warranty: {
+                              ...formData.details.warranty,
+                              summary: e.target.value,
+                            },
                           },
-                        },
-                      })
-                    }
-                    placeholder="e.g. Warranty covers manufacturing defects only..."
-                  />
+                        })
+                      }
+                      placeholder="e.g. 10 Days Testing Replacement Warranty"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                      Warranty T&C
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl"
+                      value={formData.details.warranty?.tnc || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          details: {
+                            ...formData.details,
+                            warranty: {
+                              ...formData.details.warranty,
+                              tnc: e.target.value,
+                            },
+                          },
+                        })
+                      }
+                      placeholder="e.g. Warranty Terms"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                      Country of Origin
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl"
+                      value={formData.details.countryOfOrigin || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          details: {
+                            ...formData.details,
+                            countryOfOrigin: e.target.value,
+                          },
+                        })
+                      }
+                      placeholder="e.g. China"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                      Packer
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl"
+                      value={formData.details.packer || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          details: {
+                            ...formData.details,
+                            packer: e.target.value,
+                          },
+                        })
+                      }
+                      placeholder="e.g. Elcotek India Pvt Ltd, New Delhi"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">

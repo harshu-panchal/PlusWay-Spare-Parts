@@ -43,7 +43,7 @@ const LazyImage = ({
     }
 
     return (
-        <div className="relative">
+        <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
             {!isLoaded && (
                 <div className={`absolute inset-0 ${placeholder} animate-pulse`} />
             )}

@@ -114,10 +114,15 @@ const productSchema = new mongoose.Schema({
     warranty: {
       period: String, // e.g., "30 Days"
       policy: String, // e.g., "Replacement"
-      summary: String // e.g., "Warranty not applicable if..."
+      summary: String, // e.g., "Warranty not applicable if..."
+      coveredInWarranty: String, // e.g., "Yes, Replacement Only. No Returns"
+      serviceType: String, // e.g., "Send to seller by courier"
+      tnc: String // e.g., "Warranty Terms"
     },
     highlights: [{ type: String }], // Quick bullet points
     descriptionPoints: [{ type: String }], // Multiple description points
+    countryOfOrigin: String,
+    packer: String,
   },
   colors: [{
     type: String,
