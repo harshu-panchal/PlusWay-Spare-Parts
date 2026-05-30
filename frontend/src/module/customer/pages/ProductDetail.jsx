@@ -42,6 +42,32 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState(null);
 
+  const displayColors = React.useMemo(() => {
+    if (!product) return [];
+    if (product.colorVariants && product.colorVariants.length > 0) {
+      return product.colorVariants.map(v => v.colorName);
+    }
+    return product.colors || [];
+  }, [product]);
+
+  const displayImages = React.useMemo(() => {
+    if (!product) return [];
+    let imgs = product.images || (product.image ? [product.image] : []);
+    if (selectedColor && product.colorVariants && product.colorVariants.length > 0) {
+      const variant = product.colorVariants.find(v => v.colorName === selectedColor);
+      if (variant && variant.images && variant.images.length > 0) {
+        imgs = variant.images;
+      }
+    }
+    return imgs.length > 0 ? imgs : ["https://via.placeholder.com/400"];
+  }, [product, selectedColor]);
+
+  useEffect(() => {
+    if (displayImages && displayImages.length > 0) {
+      setSelectedImage(displayImages[0]);
+    }
+  }, [selectedColor, product]);
+
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
@@ -85,12 +111,9 @@ const ProductDetail = () => {
         setLoading(true);
         const { data } = await axios.get(API_ENDPOINTS.PRODUCT_DETAIL(id));
         setProduct(data);
-        setSelectedImage(
-          data.images && data.images.length > 0
-            ? data.images[0]
-            : data.image || "https://via.placeholder.com/400",
-        );
-        if (data.colors && data.colors.length > 0) {
+        if (data.colorVariants && data.colorVariants.length > 0) {
+          setSelectedColor(data.colorVariants[0].colorName);
+        } else if (data.colors && data.colors.length > 0) {
           setSelectedColor(data.colors[0]);
         }
         setLoading(false);
@@ -218,7 +241,7 @@ const ProductDetail = () => {
             </div>
 
             <div className="flex gap-2 overflow-x-auto pb-2">
-              {(product.images || [product.image]).map((img, idx) => (
+              {displayImages.map((img, idx) => (
                 <button
                   key={idx}
                   onClick={() => setSelectedImage(img)}
@@ -274,16 +297,16 @@ const ProductDetail = () => {
             </div>
 
             {/* Color Variants */}
-            {product.colors && product.colors.length > 0 && (
+            {displayColors && displayColors.length > 0 && (
               <div className="mb-6">
                 <p className="text-sm font-bold text-gray-700 mb-3">
                   Color:{" "}
                   <span className="text-primary">
-                    {selectedColor || product.colors[0]}
+                    {selectedColor || displayColors[0]}
                   </span>
                 </p>
                 <div className="flex gap-3 flex-wrap">
-                  {product.colors.map((color, i) => (
+                  {displayColors.map((color, i) => (
                     <button
                       key={i}
                       onClick={() => setSelectedColor(color)}
@@ -582,7 +605,7 @@ const ProductDetail = () => {
                   <h3 className="text-xl font-black text-secondary mb-4 uppercase italic">
                     Product <span className="text-primary">Details</span>
                   </h3>
-                  <div className="text-sm text-gray-600 leading-relaxed font-bold space-y-4">
+                  <div className="text-sm text-gray-600 leading-relaxed space-y-4">
                     {product.description && (
                       Array.isArray(product.description) ? (
                         product.description.map((para, idx) => (
