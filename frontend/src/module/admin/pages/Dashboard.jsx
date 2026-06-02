@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import { useNavigate } from "react-router-dom";
 import { API_ENDPOINTS } from "../../../config/api";
 import {
   Package,
@@ -21,6 +22,7 @@ import {
 } from "lucide-react";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [data, setData] = useState({
     revenue: 0,
     activeOrders: 0,
@@ -67,11 +69,12 @@ const Dashboard = () => {
       name: "Total Revenue",
       value: `₹${data.revenue.toLocaleString()}`,
       icon: TrendingUp,
-      change: "+12.5%", // Keep hardcoded for now or calculate if historical data exists
+      change: "+12.5%",
       isPositive: true,
       color: "text-emerald-600",
       bgColor: "bg-emerald-50",
       borderColor: "border-emerald-100",
+      href: "/admin/orders",
     },
     {
       name: "Active Orders",
@@ -82,6 +85,7 @@ const Dashboard = () => {
       color: "text-blue-600",
       bgColor: "bg-blue-50",
       borderColor: "border-blue-100",
+      href: "/admin/orders",
     },
     {
       name: "Total Customers",
@@ -92,6 +96,7 @@ const Dashboard = () => {
       color: "text-purple-600",
       bgColor: "bg-purple-50",
       borderColor: "border-purple-100",
+      href: "/admin/customers",
     },
     {
       name: "Products Sold",
@@ -102,6 +107,7 @@ const Dashboard = () => {
       color: "text-amber-600",
       bgColor: "bg-amber-50",
       borderColor: "border-amber-100",
+      href: "/admin/orders",
     },
     {
       name: "Total Products",
@@ -112,6 +118,7 @@ const Dashboard = () => {
       color: "text-indigo-600",
       bgColor: "bg-indigo-50",
       borderColor: "border-indigo-100",
+      href: "/admin/products",
     },
     {
       name: "Total Categories",
@@ -122,6 +129,7 @@ const Dashboard = () => {
       color: "text-rose-600",
       bgColor: "bg-rose-50",
       borderColor: "border-rose-100",
+      href: "/admin/categories",
     },
     {
       name: "Total Brands",
@@ -132,6 +140,7 @@ const Dashboard = () => {
       color: "text-cyan-600",
       bgColor: "bg-cyan-50",
       borderColor: "border-cyan-100",
+      href: "/admin/brands",
     },
     {
       name: "Total Models",
@@ -142,6 +151,7 @@ const Dashboard = () => {
       color: "text-orange-600",
       bgColor: "bg-orange-50",
       borderColor: "border-orange-100",
+      href: "/admin/models",
     },
   ];
 
@@ -233,19 +243,14 @@ const Dashboard = () => {
         {stats.map((stat) => (
           <div
             key={stat.name}
-            className={`bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all group cursor-default`}>
+            onClick={() => navigate(stat.href)}
+            className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-100 transition-all group cursor-pointer">
             <div className="flex justify-between items-start">
-              <div
-                className={`p-3 rounded-xl ${stat.bgColor} ${stat.color} transition-colors`}>
+              <div className={`p-3 rounded-xl ${stat.bgColor} ${stat.color} transition-colors`}>
                 <stat.icon size={22} />
               </div>
-              <div
-                className={`flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-full ${stat.isPositive ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"}`}>
-                {stat.isPositive ? (
-                  <ArrowUpRight size={12} />
-                ) : (
-                  <ArrowDownRight size={12} />
-                )}
+              <div className={`flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-full ${stat.isPositive ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"}`}>
+                {stat.isPositive ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
                 {stat.change}
               </div>
             </div>
@@ -261,10 +266,7 @@ const Dashboard = () => {
               <span className="text-[10px] text-gray-400 font-medium">
                 vs previous period
               </span>
-              <ExternalLink
-                size={12}
-                className="text-gray-300 group-hover:text-blue-500 transition-colors"
-              />
+              <ExternalLink size={12} className="text-gray-300 group-hover:text-blue-500 transition-colors" />
             </div>
           </div>
         ))}

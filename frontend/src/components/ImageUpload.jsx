@@ -70,9 +70,9 @@ const ImageUpload = ({ value, onChange, placeholder = "Upload Image" }) => {
     };
 
     return (
-        <div className="w-full">
+        <div className="w-full h-full">
             {value ? (
-                <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-gray-200 group">
+                <div className="relative w-full h-full rounded-xl overflow-hidden border border-gray-200 group">
                     <img src={value} alt="Uploaded" className="w-full h-full object-cover" />
                     <button
                         type="button"
@@ -83,7 +83,7 @@ const ImageUpload = ({ value, onChange, placeholder = "Upload Image" }) => {
                 </div>
             ) : (
                 <div
-                    className={`w-full flex flex-col items-center px-4 py-6 bg-white text-blue rounded-xl shadow-lg tracking-wide uppercase cursor-pointer transition-colors border-dashed ${isDragActive ? 'bg-blue-50 border-blue-600 border-2' : 'border-gray-300 border hover:bg-blue-50 hover:text-blue-600'}`}
+                    className={`w-full h-full flex flex-col items-center justify-center px-2 py-2 bg-white text-blue rounded-xl tracking-wide uppercase cursor-pointer transition-colors border-dashed ${isDragActive ? 'bg-blue-50 border-blue-600 border-2' : 'border-gray-300 border hover:bg-blue-50 hover:text-blue-600'}`}
                     onDragEnter={handleDragEnter}
                     onDragLeave={handleDragLeave}
                     onDragOver={handleDragOver}
@@ -91,12 +91,12 @@ const ImageUpload = ({ value, onChange, placeholder = "Upload Image" }) => {
                     onClick={() => inputRef.current?.click()}
                 >
                     {uploading ? (
-                        <Loader className="w-8 h-8 animate-spin text-primary" />
+                        <Loader className="w-6 h-6 animate-spin text-primary" />
                     ) : (
-                        <Upload className={`w-8 h-8 ${isDragActive ? 'text-blue-600' : 'text-primary'}`} />
+                        <Upload className={`w-6 h-6 ${isDragActive ? 'text-blue-600' : 'text-primary'}`} />
                     )}
-                    <span className="mt-2 text-base leading-normal text-gray-500 font-bold text-center">
-                        {uploading ? "Uploading..." : (isDragActive ? "Drop image here" : `${placeholder} or drag and drop`)}
+                    <span className="mt-1 text-[10px] leading-tight text-gray-500 font-bold text-center">
+                        {uploading ? "Uploading..." : (isDragActive ? "Drop here" : placeholder)}
                     </span>
                     <input
                         type="file"

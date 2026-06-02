@@ -40,13 +40,6 @@ const StockManagement = () => {
       setProducts(data.products);
       setPages(data.pages);
       setTotal(data.total);
-
-      // Initialize local stock inputs with current actual stock
-      const initialStock = data.products.reduce(
-        (acc, p) => ({ ...acc, [p._id]: p.countInStock }),
-        {}
-      );
-      setStockLevels(initialStock);
       setLoading(false);
     } catch (error) {
       console.error("Failed to fetch products", error);
@@ -63,6 +56,7 @@ const StockManagement = () => {
     quantity: 0,
     type: "add", // 'add' or 'set'
     reason: "Restock",
+    variantColorName: "", // empty = product-level stock
   });
 
 
@@ -74,6 +68,7 @@ const StockManagement = () => {
         quantity: 0,
         type: "add",
         reason: "Restock",
+        variantColorName: "",
       });
       setSelectedProduct(product);
     } else {
@@ -82,6 +77,7 @@ const StockManagement = () => {
         quantity: 0,
         type: "add",
         reason: "Restock",
+        variantColorName: "",
       });
       setSelectedProduct(null);
     }
@@ -105,6 +101,7 @@ const StockManagement = () => {
         {
           quantity: qty,
           type: formData.type,
+          variantColorName: formData.variantColorName || undefined,
         },
         config
       );
@@ -205,16 +202,36 @@ const StockManagement = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`px-2.5 py-1 rounded-full text-xs font-bold ${product.countInStock < 10
-                          ? "bg-red-100 text-red-700"
-                          : "bg-green-100 text-green-700"
-                          }`}>
-                        {product.countInStock} units
-                      </span>
-                      {product.countInStock < 10 && (
-                        <AlertTriangle size={14} className="text-amber-500" />
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`px-2.5 py-1 rounded-full text-xs font-bold ${product.countInStock < 10
+                            ? "bg-red-100 text-red-700"
+                            : "bg-green-100 text-green-700"
+                            }`}>
+                          {product.countInStock} units
+                        </span>
+                        {product.countInStock < 10 && (
+                          <AlertTriangle size={14} className="text-amber-500" />
+                        )}
+                      </div>
+                      {/* Variant stock summary */}
+                      {product.colorVariants?.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {product.colorVariants.map((v, i) => (
+                            <span
+                              key={i}
+                              className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
+                                (v.countInStock ?? 0) === 0
+                                  ? "bg-red-50 text-red-600 border-red-100"
+                                  : (v.countInStock ?? 0) < 5
+                                  ? "bg-orange-50 text-orange-600 border-orange-100"
+                                  : "bg-gray-50 text-gray-500 border-gray-100"
+                              }`}>
+                              {v.colorName}: {v.countInStock ?? 0}
+                            </span>
+                          ))}
+                        </div>
                       )}
                     </div>
                   </td>
@@ -305,6 +322,27 @@ const StockManagement = () => {
                       Current Stock: {selectedProduct.countInStock} units
                     </p>
                   </div>
+                </div>
+              )}
+
+              {/* Variant selector — only show if product has colorVariants */}
+              {selectedProduct?.colorVariants?.length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-700">
+                    Update Stock For
+                  </label>
+                  <select
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                    value={formData.variantColorName}
+                    onChange={(e) => setFormData({ ...formData, variantColorName: e.target.value })}>
+                    <option value="">— Product-level stock (overall) —</option>
+                    {selectedProduct.colorVariants.map((v, i) => (
+                      <option key={i} value={v.colorName}>
+                        {v.colorName} (current: {v.countInStock ?? 0})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-400">Choose a color variant to update its individual stock, or leave blank to update the product overall stock.</p>
                 </div>
               )}
 

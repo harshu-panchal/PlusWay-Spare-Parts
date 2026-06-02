@@ -340,7 +340,6 @@ export const downloadModelTemplate = async (req, res) => {
       { header: "name *", key: "name", example: "Galaxy S23 Ultra", example2: "iPhone 14 Pro" },
       { header: "brand *", key: "brand", example: "Samsung", example2: "Apple" },
       { header: "released", key: "released", example: "February 2023", example2: "September 2022" },
-      { header: "displaySize", key: "displaySize", example: "6.8 inch", example2: "6.1 inch" },
       { header: "image", key: "image", example: "http://server/uploads/s23ultra.jpg", example2: "" },
     ];
 

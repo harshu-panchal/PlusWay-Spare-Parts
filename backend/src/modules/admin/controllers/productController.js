@@ -8,6 +8,15 @@ import ExcelJS from "exceljs";
 import BulkUploadHistory from "../../../models/BulkUploadHistory.js";
 import path from "path";
 
+// Helper: generate a unique variant SKU
+const genVariantSku = (colorName) => {
+  const colorCode = colorName
+    .replace(/\s+/g, "")
+    .toUpperCase()
+    .slice(0, 3);
+  return `PW-${colorCode}-${Date.now().toString().slice(-5)}${Math.floor(10 + Math.random() * 90)}`;
+};
+
 // @desc    Get all products
 // @route   GET /api/admin/products
 // @access  Private/Admin
@@ -113,18 +122,21 @@ export const createProduct = async (req, res) => {
     name,
     slug: generatedSlug,
     description,
-    price,
-    wholesalePrice,
-    wholesaleMinQty,
-    mrp,
+    // When colorVariants are provided, derive product-level price from first variant for listing display
+    price: price !== undefined ? price : (colorVariants?.length ? (colorVariants[0]?.price ?? 0) : 0),
+    wholesalePrice: wholesalePrice !== undefined ? wholesalePrice : (colorVariants?.length ? (colorVariants[0]?.wholesalePrice ?? 0) : 0),
+    wholesaleMinQty: wholesaleMinQty !== undefined ? wholesaleMinQty : (colorVariants?.length ? (colorVariants[0]?.wholesaleMinQty ?? 10) : 10),
+    mrp: mrp !== undefined ? mrp : (colorVariants?.length ? (colorVariants[0]?.mrp ?? 0) : 0),
     cashback,
     images,
     videoUrl,
     brand,
-    model: model || undefined, // undefined prevents casting error if empty string
+    model: model || undefined,
     category,
     productType,
-    countInStock,
+    // Product-level stock = sum of variant stocks when variants are provided
+    countInStock: countInStock !== undefined ? countInStock
+      : (colorVariants?.length ? colorVariants.reduce((sum, v) => sum + (Number(v.countInStock) || 0), 0) : 0),
     details,
     colors,
     colorVariants,
@@ -133,8 +145,16 @@ export const createProduct = async (req, res) => {
   if (code) {
     productData.code = code;
   } else {
-    // Auto-generate SKU
+    // Auto-generate product-level SKU
     productData.code = `PW-${Date.now().toString().slice(-6)}${Math.floor(100 + Math.random() * 900)}`;
+  }
+
+  // Auto-generate SKU for any color variant that doesn't have one
+  if (Array.isArray(productData.colorVariants)) {
+    productData.colorVariants = productData.colorVariants.map(v => ({
+      ...v,
+      sku: v.sku && v.sku.trim() ? v.sku.trim() : genVariantSku(v.colorName),
+    }));
   }
 
   const product = new Product(productData);
@@ -177,10 +197,27 @@ export const updateProduct = async (req, res) => {
     // If explicitly empty string, maybe unset it? unique sparse index doesn't like "".
     if (req.body.code === "") product.code = undefined;
     product.description = req.body.description || product.description;
-    product.price = req.body.price || product.price;
-    product.wholesalePrice = req.body.wholesalePrice || product.wholesalePrice;
-    product.wholesaleMinQty = req.body.wholesaleMinQty || product.wholesaleMinQty;
-    product.mrp = req.body.mrp || product.mrp;
+
+    const incomingVariants = req.body.colorVariants;
+    const hasVariants = Array.isArray(incomingVariants) && incomingVariants.filter(v => v.colorName?.trim()).length > 0;
+
+    if (hasVariants) {
+      // Derive product-level fields from variants for listing/search display
+      const activeVariants = incomingVariants.filter(v => v.colorName?.trim());
+      const firstVariant = activeVariants[0];
+      product.price = firstVariant?.price ?? product.price;
+      product.mrp = firstVariant?.mrp ?? product.mrp;
+      product.wholesalePrice = firstVariant?.wholesalePrice ?? product.wholesalePrice;
+      product.wholesaleMinQty = firstVariant?.wholesaleMinQty ?? product.wholesaleMinQty;
+      product.countInStock = activeVariants.reduce((sum, v) => sum + (Number(v.countInStock) || 0), 0);
+    } else {
+      product.price = req.body.price !== undefined ? req.body.price : product.price;
+      product.wholesalePrice = req.body.wholesalePrice !== undefined ? req.body.wholesalePrice : product.wholesalePrice;
+      product.wholesaleMinQty = req.body.wholesaleMinQty !== undefined ? req.body.wholesaleMinQty : product.wholesaleMinQty;
+      product.mrp = req.body.mrp !== undefined ? req.body.mrp : product.mrp;
+      product.countInStock = req.body.countInStock !== undefined ? req.body.countInStock : product.countInStock;
+    }
+
     product.cashback = req.body.cashback || product.cashback;
     product.images = req.body.images || product.images;
     product.videoUrl = req.body.videoUrl || product.videoUrl;
@@ -188,10 +225,24 @@ export const updateProduct = async (req, res) => {
     product.model = req.body.model || product.model;
     product.category = req.body.category || product.category;
     product.productType = req.body.productType || product.productType;
-    product.countInStock = req.body.countInStock !== undefined ? req.body.countInStock : product.countInStock;
-    product.details = req.body.details || product.details;
+    product.details = req.body.details
+      ? {
+          ...((product.details || {}).toObject ? product.details.toObject() : product.details || {}),
+          ...req.body.details,
+          warranty: {
+            ...((product.details?.warranty || {})),
+            ...(req.body.details?.warranty || {}),
+          },
+        }
+      : product.details;
+    product.markModified("details");
     product.colors = req.body.colors || product.colors;
-    product.colorVariants = req.body.colorVariants || product.colorVariants;
+    product.colorVariants = req.body.colorVariants !== undefined
+      ? req.body.colorVariants.map(v => ({
+          ...v,
+          sku: v.sku && v.sku.trim() ? v.sku.trim() : genVariantSku(v.colorName),
+        }))
+      : product.colorVariants;
 
     const updatedProduct = await product.save();
     res.json(updatedProduct);
@@ -235,14 +286,30 @@ export const deleteBulkProducts = async (req, res) => {
 // @route   PUT /api/admin/products/:id/stock
 // @access  Private/Admin
 export const updateProductStock = async (req, res) => {
-  const { quantity, type } = req.body;
+  const { quantity, type, variantColorName } = req.body;
   const product = await Product.findById(req.params.id);
 
   if (product) {
-    if (type === "add") {
-      product.countInStock = Math.max(0, (product.countInStock || 0) + Number(quantity));
-    } else if (type === "set") {
-      product.countInStock = Math.max(0, Number(quantity));
+    if (variantColorName) {
+      // Update a specific color variant's stock
+      const variantIdx = product.colorVariants.findIndex(v => v.colorName === variantColorName);
+      if (variantIdx === -1) {
+        return res.status(404).json({ message: `Variant "${variantColorName}" not found` });
+      }
+      const currentStock = product.colorVariants[variantIdx].countInStock || 0;
+      if (type === "add") {
+        product.colorVariants[variantIdx].countInStock = Math.max(0, currentStock + Number(quantity));
+      } else if (type === "set") {
+        product.colorVariants[variantIdx].countInStock = Math.max(0, Number(quantity));
+      }
+      product.markModified("colorVariants");
+    } else {
+      // Update product-level stock
+      if (type === "add") {
+        product.countInStock = Math.max(0, (product.countInStock || 0) + Number(quantity));
+      } else if (type === "set") {
+        product.countInStock = Math.max(0, Number(quantity));
+      }
     }
 
     const updatedProduct = await product.save();
@@ -305,8 +372,11 @@ export const bulkCreateProducts = async (req, res) => {
       const rowNum = i + 2; // Excel row number (1-indexed, +1 for header)
 
       try {
-        // Required field validation
-        const requiredFields = ["name", "brand", "category", "model", "price", "mrp", "wholesalePrice", "wholesaleMinQty", "countInStock"];
+        // Required field validation — pricing/stock only required when no colorVariants provided
+        const hasVariantData = row.colorVariants && String(row.colorVariants).trim().length > 0;
+        const alwaysRequired = ["name", "brand", "category", "model"];
+        const pricingRequired = hasVariantData ? [] : ["price", "mrp", "wholesalePrice", "wholesaleMinQty", "countInStock"];
+        const requiredFields = [...alwaysRequired, ...pricingRequired];
         const missing = requiredFields.filter((f) => row[f] === "" || row[f] === undefined || row[f] === null);
         if (missing.length) {
           results.errors.push({ row: rowNum, name: row.name || "?", error: `Missing required fields: ${missing.join(", ")}` });
@@ -352,16 +422,39 @@ export const bulkCreateProducts = async (req, res) => {
           ? String(row.colors).split(",").map((c) => c.trim()).filter(Boolean)
           : [];
 
-        // Parse colorVariants: Black:url1,url2|White:url3
-        const colorVariants = row.colorVariants
-          ? String(row.colorVariants).split("|").map(variantStr => {
-              const colonIdx = variantStr.indexOf(":");
-              if (colonIdx === -1) return { colorName: variantStr.trim(), images: [] };
-              const colorName = variantStr.substring(0, colonIdx).trim();
-              const images = variantStr.substring(colonIdx + 1).split(",").map(i => i.trim()).filter(Boolean);
-              return { colorName, images };
-            }).filter(Boolean)
-          : [];
+        // Parse colorVariants (rich format):
+        // colorVariants column: each variant separated by ||
+        // Each variant format: colorName;sku;price;mrp;wholesalePrice;wholesaleMinQty;countInStock;img1,img2
+        // Legacy simple format still supported: Black:url1,url2|White:url3
+        const colorVariants = (() => {
+          if (!row.colorVariants) return [];
+          const raw = String(row.colorVariants).trim();
+          // Detect rich format (contains semicolons in first segment)
+          if (raw.includes("||") || (raw.includes(";") && !raw.includes(":"))) {
+            // Rich format: variantA||variantB where each = name;sku;price;mrp;wsPrice;wsMinQty;stock;img1,img2
+            return raw.split("||").map(variantStr => {
+              const parts = variantStr.split(";").map(p => p.trim());
+              return {
+                colorName: parts[0] || "",
+                sku: (parts[1] && parts[1].trim()) ? parts[1].trim() : genVariantSku(parts[0] || "VAR"),
+                price: parts[2] ? Number(parts[2]) : undefined,
+                mrp: parts[3] ? Number(parts[3]) : undefined,
+                wholesalePrice: parts[4] ? Number(parts[4]) : undefined,
+                wholesaleMinQty: parts[5] ? Number(parts[5]) : undefined,
+                countInStock: parts[6] ? Number(parts[6]) : 0,
+                images: parts[7] ? parts[7].split(",").map(u => u.trim()).filter(Boolean) : [],
+              };
+            }).filter(v => v.colorName);
+          }
+          // Legacy format: Black:url1,url2|White:url3
+          return raw.split("|").map(variantStr => {
+            const colonIdx = variantStr.indexOf(":");
+            if (colonIdx === -1) return { colorName: variantStr.trim(), images: [] };
+            const colorName = variantStr.substring(0, colonIdx).trim();
+            const images = variantStr.substring(colonIdx + 1).split(",").map(i => i.trim()).filter(Boolean);
+            return { colorName, sku: genVariantSku(colorName), images };
+          }).filter(Boolean);
+        })();
 
         // Parse specs: "Color:Black|RAM:8GB|Storage:256GB"
         const specs = row.specs
@@ -389,6 +482,8 @@ export const bulkCreateProducts = async (req, res) => {
           slug = `${slug}-${Date.now()}`;
         }
 
+        const firstVariant = colorVariants.length ? colorVariants[0] : null;
+
         const productData = {
           name: productName,
           slug,
@@ -396,12 +491,16 @@ export const bulkCreateProducts = async (req, res) => {
           model: modelId,
           category: categoryId,
           productType: row.productType ? String(row.productType).trim() : undefined,
-          price: Number(row.price),
-          mrp: Number(row.mrp),
-          wholesalePrice: Number(row.wholesalePrice),
-          wholesaleMinQty: Number(row.wholesaleMinQty) || 10,
+          // When variants exist, derive product-level pricing from first variant for listing display
+          price: firstVariant?.price ?? (row.price ? Number(row.price) : 0),
+          mrp: firstVariant?.mrp ?? (row.mrp ? Number(row.mrp) : 0),
+          wholesalePrice: firstVariant?.wholesalePrice ?? (row.wholesalePrice ? Number(row.wholesalePrice) : 0),
+          wholesaleMinQty: firstVariant?.wholesaleMinQty ?? (row.wholesaleMinQty ? Number(row.wholesaleMinQty) : 10),
           cashback: Number(row.cashback) || 0,
-          countInStock: Number(row.countInStock) || 0,
+          // Product-level stock = sum of variant stocks when variants are used
+          countInStock: colorVariants.length
+            ? colorVariants.reduce((sum, v) => sum + (Number(v.countInStock) || 0), 0)
+            : (Number(row.countInStock) || 0),
           description: row.description ? String(row.description).split("\n").map(p => p.trim()).filter(Boolean) : [],
           images,
           videoUrl: row.videoUrl ? String(row.videoUrl).trim() : undefined,
@@ -532,22 +631,13 @@ export const downloadProductTemplate = async (req, res) => {
     // Define columns
     const columns = [
       { header: "name *", key: "name", example: "LCD Screen Samsung S23 Ultra", example2: "Battery iPhone 14 Pro" },
-      { header: "SKU", key: "SKU", example: "SKU-001", example2: "SKU-002" },
       { header: "brand *", key: "brand", example: "Samsung", example2: "Apple" },
       { header: "model *", key: "model", example: "Samsung Galaxy S23 Ultra", example2: "Apple iPhone 14 Pro" },
       { header: "category *", key: "category", example: "LCD Display", example2: "Battery" },
-      { header: "productType", key: "productType", example: "LCD with Touch Screen", example2: "Li-Ion Battery" },
-      { header: "price *", key: "price", example: "4500", example2: "2800" },
-      { header: "mrp *", key: "mrp", example: "5500", example2: "3500" },
-      { header: "wholesalePrice *", key: "wholesalePrice", example: "3800", example2: "2300" },
-      { header: "wholesaleMinQty *", key: "wholesaleMinQty", example: "10", example2: "10" },
-      { header: "cashback", key: "cashback", example: "100", example2: "50" },
-      { header: "countInStock *", key: "countInStock", example: "50", example2: "30" },
+      { header: "colorVariants *", key: "colorVariants", example: "Black;PW-BLA-001;4500;5500;3800;10;50;http://img1.jpg,http://img2.jpg||White;PW-WHI-002;4700;5500;3900;10;20;http://img3.jpg", example2: "Black;;4500;5500;3800;10;50;" },
       { header: "description", key: "description", example: "Paragraph 1\nParagraph 2", example2: "Long lasting battery" },
       { header: "images", key: "images", example: "http://server/uploads/img1.jpg|http://server/uploads/img2.jpg", example2: "" },
       { header: "videoUrl", key: "videoUrl", example: "", example2: "" },
-      { header: "colors", key: "colors", example: "Black,White,Gold", example2: "Black" },
-      { header: "colorVariants", key: "colorVariants", example: "Black:http://img1.jpg|White:http://img2.jpg", example2: "Black" },
       { header: "specs", key: "specs", example: "Color:Black|Compatibility:S23 Ultra|Type:AMOLED", example2: "Capacity:3000mAh|Voltage:3.8V" },
       { header: "inTheBox", key: "inTheBox", example: "LCD Display, Installation Guide", example2: "Battery" },
       { header: "warrantySummary", key: "warrantySummary", example: "10 Days Testing Replacement Warranty", example2: "" },
@@ -622,8 +712,8 @@ export const downloadProductTemplate = async (req, res) => {
     const modelEnd = Math.max(2, models.length + 1);
 
     for (let i = 2; i <= 1000; i++) {
-      // Column C: Brand
-      ws.getCell(`C${i}`).dataValidation = {
+      // Column B: Brand
+      ws.getCell(`B${i}`).dataValidation = {
         type: "list",
         allowBlank: true,
         formulae: [`_Lists!$A$2:$A$${brandEnd}`],
@@ -631,8 +721,8 @@ export const downloadProductTemplate = async (req, res) => {
         errorTitle: "Invalid Brand",
         error: "Please select a Brand from the dropdown list."
       };
-      // Column D: Model
-      ws.getCell(`D${i}`).dataValidation = {
+      // Column C: Model
+      ws.getCell(`C${i}`).dataValidation = {
         type: "list",
         allowBlank: true,
         formulae: [`_Lists!$C$2:$C$${modelEnd}`],
@@ -640,8 +730,8 @@ export const downloadProductTemplate = async (req, res) => {
         errorTitle: "Invalid Model",
         error: "Please select a Model from the dropdown list."
       };
-      // Column E: Category
-      ws.getCell(`E${i}`).dataValidation = {
+      // Column D: Category
+      ws.getCell(`D${i}`).dataValidation = {
         type: "list",
         allowBlank: true,
         formulae: [`_Lists!$B$2:$B$${categoryEnd}`],
@@ -699,7 +789,7 @@ export const exportProductsBackup = async (req, res) => {
       { header: "images", key: "images", width: 30 },
       { header: "videoUrl", key: "videoUrl", width: 20 },
       { header: "colors", key: "colors", width: 20 },
-      { header: "colorVariants", key: "colorVariants", width: 30 },
+      { header: "colorVariants", key: "colorVariants", width: 50 },
       { header: "specs", key: "specs", width: 30 },
       { header: "inTheBox", key: "inTheBox", width: 20 },
       { header: "warrantySummary", key: "warrantySummary", width: 30 },
@@ -737,7 +827,19 @@ export const exportProductsBackup = async (req, res) => {
         images: p.images?.join("|") || "",
         videoUrl: p.videoUrl,
         colors: p.colors?.join(",") || "",
-        colorVariants: p.colorVariants?.map(v => `${v.colorName}:${v.images?.join(",")}`).join("|") || "",
+        colorVariants: p.colorVariants?.map(v => {
+          const parts = [
+            v.colorName,
+            v.sku || "",
+            v.price !== undefined ? v.price : "",
+            v.mrp !== undefined ? v.mrp : "",
+            v.wholesalePrice !== undefined ? v.wholesalePrice : "",
+            v.wholesaleMinQty !== undefined ? v.wholesaleMinQty : "",
+            v.countInStock !== undefined ? v.countInStock : 0,
+            (v.images || []).join(","),
+          ];
+          return parts.join(";");
+        }).join("||") || "",
         specs: p.details?.specs?.map(s => `${s.key}:${s.value}`).join("|") || "",
         inTheBox: p.details?.inTheBox,
         warrantySummary: p.details?.warranty?.summary,
@@ -818,24 +920,67 @@ export const bulkUpdatePrices = async (req, res) => {
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       const rowNum = i + 2;
+      const sku = String(row.SKU || "").trim();
 
-      if (!row.SKU || !row.Price) {
+      if (!sku || !row.Price) {
         results.errors.push({ row: rowNum, error: "Missing SKU or Price" });
         continue;
       }
 
       try {
-        const updateData = { price: Number(row.Price) };
-        if (row.MRP) updateData.mrp = Number(row.MRP);
-        if (row.WholesalePrice) updateData.wholesalePrice = Number(row.WholesalePrice);
-        if (row.WholesaleMinQty) updateData.wholesaleMinQty = Number(row.WholesaleMinQty);
+        // 1. Try product-level code first
+        let product = await Product.findOne({ code: sku });
 
-        const updated = await Product.findOneAndUpdate({ code: String(row.SKU).trim() }, updateData);
-        if (updated) {
-          results.success.push({ row: rowNum, sku: row.SKU });
-        } else {
-          results.errors.push({ row: rowNum, error: `SKU ${row.SKU} not found` });
+        if (product) {
+          // Update product-level pricing
+          const updateData = { price: Number(row.Price) };
+          if (row.MRP !== "" && row.MRP !== undefined) updateData.mrp = Number(row.MRP);
+          if (row.WholesalePrice !== "" && row.WholesalePrice !== undefined) updateData.wholesalePrice = Number(row.WholesalePrice);
+          if (row.WholesaleMinQty !== "" && row.WholesaleMinQty !== undefined) updateData.wholesaleMinQty = Number(row.WholesaleMinQty);
+          await Product.findByIdAndUpdate(product._id, updateData);
+          results.success.push({ row: rowNum, sku, type: "product" });
+          continue;
         }
+
+        // 2. Try variant SKU — find product that has a colorVariant with matching sku
+        product = await Product.findOne({ "colorVariants.sku": sku });
+
+        if (product) {
+          const variantIdx = product.colorVariants.findIndex(v => v.sku === sku);
+          if (variantIdx !== -1) {
+            // Build $set payload using positional $ operator for reliable subdoc update
+            const setFields = {
+              [`colorVariants.${variantIdx}.price`]: Number(row.Price),
+            };
+            if (row.MRP !== "" && row.MRP !== undefined) setFields[`colorVariants.${variantIdx}.mrp`] = Number(row.MRP);
+            if (row.WholesalePrice !== "" && row.WholesalePrice !== undefined) setFields[`colorVariants.${variantIdx}.wholesalePrice`] = Number(row.WholesalePrice);
+            if (row.WholesaleMinQty !== "" && row.WholesaleMinQty !== undefined) setFields[`colorVariants.${variantIdx}.wholesaleMinQty`] = Number(row.WholesaleMinQty);
+
+            // Re-derive product-level price from first variant (variantIdx 0) or the updated one if it's first
+            const isFirstVariant = variantIdx === 0;
+            if (isFirstVariant) {
+              setFields.price = Number(row.Price);
+              if (row.MRP !== "" && row.MRP !== undefined) setFields.mrp = Number(row.MRP);
+              if (row.WholesalePrice !== "" && row.WholesalePrice !== undefined) setFields.wholesalePrice = Number(row.WholesalePrice);
+              if (row.WholesaleMinQty !== "" && row.WholesaleMinQty !== undefined) setFields.wholesaleMinQty = Number(row.WholesaleMinQty);
+            }
+
+            await Product.updateOne({ _id: product._id }, { $set: setFields });
+
+            results.success.push({
+              row: rowNum,
+              sku,
+              type: "variant",
+              colorName: product.colorVariants[variantIdx].colorName,
+              productName: product.name,
+            });
+          }
+          continue;
+        }
+
+        // 3. Nothing found
+        results.errors.push({ row: rowNum, error: `SKU ${sku} not found` });
+
       } catch (err) {
         results.errors.push({ row: rowNum, error: err.message });
       }

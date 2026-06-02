@@ -169,6 +169,66 @@ const ProductDetail = () => {
                 <span className="font-semibold">Colors: </span>
                 {product.colors?.length ? product.colors.join(", ") : "N/A"}
               </div>
+
+              {/* Color Variants with per-variant pricing/stock */}
+              {product.colorVariants?.length > 0 && (
+                <div className="mt-4">
+                  <p className="font-semibold mb-3">Color Variants:</p>
+                  <div className="space-y-3">
+                    {product.colorVariants.map((v, i) => (
+                      <div key={i} className="border border-gray-100 rounded-lg p-3 bg-gray-50">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-bold text-gray-900">{v.colorName}</span>
+                          {v.sku && (
+                            <span className="text-[10px] font-bold text-gray-500 bg-white border border-gray-200 px-2 py-0.5 rounded">
+                              SKU: {v.sku}
+                            </span>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs mb-2">
+                          <div className="bg-white rounded p-2 border border-gray-100">
+                            <p className="text-gray-400 uppercase tracking-wide text-[10px]">Price</p>
+                            <p className="font-bold text-gray-900">
+                              {v.price != null ? `₹${Number(v.price).toLocaleString()}` : <span className="text-gray-400 italic">Inherited</span>}
+                            </p>
+                          </div>
+                          <div className="bg-white rounded p-2 border border-gray-100">
+                            <p className="text-gray-400 uppercase tracking-wide text-[10px]">MRP</p>
+                            <p className="font-bold text-gray-900">
+                              {v.mrp != null ? `₹${Number(v.mrp).toLocaleString()}` : <span className="text-gray-400 italic">Inherited</span>}
+                            </p>
+                          </div>
+                          <div className="bg-white rounded p-2 border border-gray-100">
+                            <p className="text-gray-400 uppercase tracking-wide text-[10px]">Wholesale</p>
+                            <p className="font-bold text-blue-700">
+                              {v.wholesalePrice != null ? `₹${Number(v.wholesalePrice).toLocaleString()}` : <span className="text-gray-400 italic">Inherited</span>}
+                            </p>
+                            {v.wholesaleMinQty != null && (
+                              <p className="text-gray-400 text-[10px]">Min {v.wholesaleMinQty}</p>
+                            )}
+                          </div>
+                          <div className="bg-white rounded p-2 border border-gray-100">
+                            <p className="text-gray-400 uppercase tracking-wide text-[10px]">Stock</p>
+                            <p className={`font-bold ${v.countInStock === 0 ? "text-red-600" : v.countInStock <= 5 ? "text-orange-500" : "text-emerald-600"}`}>
+                              {v.countInStock ?? 0}
+                            </p>
+                          </div>
+                        </div>
+                        {v.images?.length > 0 && (
+                          <div className="flex gap-1.5 flex-wrap">
+                            {v.images.map((img, imgIdx) => (
+                              <div key={imgIdx} className="w-10 h-10 rounded border border-gray-200 bg-white overflow-hidden">
+                                <img src={img} alt={`${v.colorName} ${imgIdx + 1}`} className="w-full h-full object-contain p-0.5" />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div>
                 <span className="font-semibold">Highlights: </span>
                 {product.details?.highlights?.length

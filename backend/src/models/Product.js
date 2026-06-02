@@ -42,22 +42,18 @@ const productSchema = new mongoose.Schema({
   }],
   price: {
     type: Number,
-    required: true,
     default: 0,
   },
   wholesalePrice: {
     type: Number,
-    required: true,
     default: 0,
   },
   wholesaleMinQty: {
     type: Number,
-    required: true,
     default: 10,
   },
   mrp: {
     type: Number,
-    required: true,
     default: 0,
   },
   cashback: {
@@ -99,7 +95,6 @@ const productSchema = new mongoose.Schema({
   },
   countInStock: {
     type: Number,
-    required: true,
     default: 0,
   },
   details: {
@@ -130,6 +125,12 @@ const productSchema = new mongoose.Schema({
   colorVariants: [{
     colorName: { type: String, required: true },
     images: [{ type: String }],
+    sku: { type: String },
+    price: { type: Number },
+    mrp: { type: Number },
+    wholesalePrice: { type: Number },
+    wholesaleMinQty: { type: Number },
+    countInStock: { type: Number, default: 0 },
   }],
 }, {
   timestamps: true,

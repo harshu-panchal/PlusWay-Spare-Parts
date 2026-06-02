@@ -10,7 +10,6 @@ import {
   Filter,
   X,
   Save,
-  Calendar,
   FileSpreadsheet,
 } from "lucide-react";
 import ImageUpload from "../../../components/ImageUpload";
@@ -154,7 +153,6 @@ const ModelManagement = () => {
     { header: "name *", key: "name", example: "Galaxy S23 Ultra", example2: "iPhone 14 Pro" },
     { header: "brand *", key: "brand", example: "Samsung", example2: "Apple" },
     { header: "released", key: "released", example: "February 2023", example2: "September 2022" },
-    { header: "displaySize", key: "displaySize", example: "6.8 inch", example2: "6.1 inch" },
     { header: "image", key: "image", example: "http://server/uploads/s23ultra.jpg", example2: "" },
   ];
 
@@ -313,7 +311,7 @@ const ModelManagement = () => {
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               <div className="space-y-4">
                 <div className="flex justify-center">
-                  <div className="w-32 h-32">
+                  <div className="w-32 h-32 overflow-hidden rounded-xl flex-shrink-0">
                     <ImageUpload
                       value={formData.image}
                       onChange={handleImageUpload}
@@ -361,21 +359,33 @@ const ModelManagement = () => {
                 <label className="text-sm font-bold text-gray-700">
                   Release Date/Year
                 </label>
-                <div className="relative">
-                  <Calendar
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                    size={18}
-                  />
-                  <input
-                    type="text"
-                    className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                    value={formData.released}
-                    onChange={(e) =>
-                      setFormData({ ...formData, released: e.target.value })
+                <input
+                  type="month"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-700"
+                  value={formData.released
+                    ? (() => {
+                        // Convert stored "February 2023" → "2023-02" for the input
+                        const d = new Date(formData.released);
+                        if (!isNaN(d)) {
+                          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+                        }
+                        // Already in YYYY-MM format
+                        return formData.released;
+                      })()
+                    : ""}
+                  onChange={(e) => {
+                    // Convert "2023-02" → "February 2023" for storage
+                    const val = e.target.value; // "2023-02"
+                    if (val) {
+                      const [year, month] = val.split("-");
+                      const display = new Date(Number(year), Number(month) - 1, 1)
+                        .toLocaleString("en-US", { month: "long", year: "numeric" });
+                      setFormData({ ...formData, released: display });
+                    } else {
+                      setFormData({ ...formData, released: "" });
                     }
-                    placeholder="e.g. February 2023"
-                  />
-                </div>
+                  }}
+                />
               </div>
 
               <div className="pt-6 border-t border-gray-100 flex gap-4">

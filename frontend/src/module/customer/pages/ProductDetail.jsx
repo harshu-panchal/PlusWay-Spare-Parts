@@ -50,17 +50,30 @@ const ProductDetail = () => {
     return product.colors || [];
   }, [product]);
 
+  const selectedVariant = React.useMemo(() => {
+    if (!product || !selectedColor) return null;
+    if (product.colorVariants && product.colorVariants.length > 0) {
+      return product.colorVariants.find(v => v.colorName === selectedColor) || null;
+    }
+    return null;
+  }, [product, selectedColor]);
+
+  // Effective pricing — use variant's own values if set, else fall back to product level
+  const effectivePrice = selectedVariant?.price != null ? selectedVariant.price : product?.price;
+  const effectiveMrp = selectedVariant?.mrp != null ? selectedVariant.mrp : product?.mrp;
+  const effectiveWholesalePrice = selectedVariant?.wholesalePrice != null ? selectedVariant.wholesalePrice : product?.wholesalePrice;
+  const effectiveWholesaleMinQty = selectedVariant?.wholesaleMinQty != null ? selectedVariant.wholesaleMinQty : (product?.wholesaleMinQty || 10);
+  const effectiveCountInStock = selectedVariant?.countInStock != null ? selectedVariant.countInStock : product?.countInStock;
+  const effectiveSku = selectedVariant?.sku || product?.code;
+
   const displayImages = React.useMemo(() => {
     if (!product) return [];
     let imgs = product.images || (product.image ? [product.image] : []);
-    if (selectedColor && product.colorVariants && product.colorVariants.length > 0) {
-      const variant = product.colorVariants.find(v => v.colorName === selectedColor);
-      if (variant && variant.images && variant.images.length > 0) {
-        imgs = variant.images;
-      }
+    if (selectedVariant && selectedVariant.images && selectedVariant.images.length > 0) {
+      imgs = selectedVariant.images;
     }
     return imgs.length > 0 ? imgs : ["https://via.placeholder.com/400"];
-  }, [product, selectedColor]);
+  }, [product, selectedVariant]);
 
   useEffect(() => {
     if (displayImages && displayImages.length > 0) {
@@ -182,8 +195,8 @@ const ProductDetail = () => {
   if (!product)
     return <div className="p-20 text-center">Product not found</div>;
 
-  const savings = product.mrp - product.price;
-  const savingsPercent = Math.round((savings / product.mrp) * 100);
+  const savings = effectiveMrp - effectivePrice;
+  const savingsPercent = Math.round((savings / effectiveMrp) * 100);
 
   const getEmbedUrl = (url) => {
     if (!url) return null;
@@ -222,16 +235,25 @@ const ProductDetail = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-[2%] md:px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:items-start">
           {/* Left: Gallery (4 cols) */}
-          <div className="lg:col-span-4 space-y-4">
+          <div className="lg:col-span-4 lg:sticky lg:top-8 space-y-4">
             <div className="bg-white p-4 border border-gray-200 relative group">
-              <div className="aspect-square bg-white">
-                <ImageZoom
-                  src={selectedImage}
-                  alt={product.name}
-                  className="w-full h-full"
-                />
+              <div className="aspect-square bg-white overflow-hidden relative">
+                <div 
+                  className="flex transition-transform duration-500 ease-in-out h-full w-full"
+                  style={{ transform: `translateX(-${displayImages.indexOf(selectedImage) !== -1 ? displayImages.indexOf(selectedImage) * 100 : 0}%)` }}
+                >
+                  {displayImages.map((img, idx) => (
+                    <div key={idx} className="w-full h-full flex-shrink-0">
+                      <ImageZoom
+                        src={img}
+                        alt={`${product.name} - image ${idx + 1}`}
+                        className="w-full h-full"
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
               {savingsPercent > 0 && (
                 <div className="absolute top-4 right-4 bg-orange-600 text-white text-[10px] font-black px-2 py-1 shadow-lg">
@@ -261,7 +283,7 @@ const ProductDetail = () => {
           </div>
 
           {/* Middle: Info & Actions (5 cols) */}
-          <div className="lg:col-span-5 bg-white p-6 border border-gray-200 h-fit">
+          <div className="lg:col-span-5 bg-white p-6 border border-gray-200">
             <h1 className="text-2xl font-black text-secondary leading-tight mb-4">
               {product.name}
             </h1>
@@ -306,19 +328,47 @@ const ProductDetail = () => {
                   </span>
                 </p>
                 <div className="flex gap-3 flex-wrap">
-                  {displayColors.map((color, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setSelectedColor(color)}
-                      className={`px-4 py-2 text-sm font-bold border-2 rounded-lg transition-all ${
-                        selectedColor === color || (!selectedColor && i === 0)
-                          ? "border-primary bg-primary/5 text-primary"
-                          : "border-gray-200 hover:border-gray-300"
-                      }`}>
-                      {color}
-                    </button>
-                  ))}
+                  {displayColors.map((color, i) => {
+                    const variant = product.colorVariants?.find(v => v.colorName === color);
+                    const variantStock = variant?.countInStock;
+                    const isOutOfStock = variantStock != null && variantStock === 0;
+                    const isActive = selectedColor === color || (!selectedColor && i === 0);
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => setSelectedColor(color)}
+                        className={`relative px-4 py-2 text-sm font-bold border-2 rounded-lg transition-all ${
+                          isActive
+                            ? "border-primary bg-primary/5 text-primary"
+                            : isOutOfStock
+                            ? "border-gray-200 text-gray-400 cursor-not-allowed opacity-60"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}>
+                        {color}
+                        {isOutOfStock && (
+                          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full leading-none">
+                            OUT
+                          </span>
+                        )}
+                        {variant && variantStock != null && variantStock > 0 && variantStock <= 5 && (
+                          <span className="absolute -top-2 -right-2 bg-orange-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full leading-none">
+                            {variantStock} left
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
+                {/* Variant-level stock info */}
+                {selectedVariant && selectedVariant.countInStock != null && (
+                  <p className={`mt-2 text-xs font-bold ${selectedVariant.countInStock === 0 ? "text-red-500" : selectedVariant.countInStock <= 5 ? "text-orange-500" : "text-emerald-600"}`}>
+                    {selectedVariant.countInStock === 0
+                      ? "Out of stock for this color"
+                      : selectedVariant.countInStock <= 5
+                      ? `Only ${selectedVariant.countInStock} left in this color`
+                      : `${selectedVariant.countInStock} in stock`}
+                  </p>
+                )}
               </div>
             )}
 
@@ -328,16 +378,16 @@ const ProductDetail = () => {
                 <div className="flex items-baseline gap-2 text-sm text-gray-500">
                   <span>List price:</span>
                   <span className="line-through">
-                    {product.mrp.toLocaleString()}.00 Rs.
+                    {effectiveMrp?.toLocaleString()}.00 Rs.
                   </span>
                 </div>
                 <div className="bg-[#f8f9fa] p-4 border-l-4 border-secondary flex flex-col gap-2 rounded-r-2xl">
                   <div className="flex items-baseline gap-2">
                     <span className="text-4xl font-black text-secondary italic tracking-tighter">
-                      {(quantity >= (product.wholesaleMinQty || 10)
-                        ? product.wholesalePrice
-                        : product.price
-                      ).toLocaleString()}
+                      {(quantity >= effectiveWholesaleMinQty
+                        ? effectiveWholesalePrice
+                        : effectivePrice
+                      )?.toLocaleString()}
                       .00
                     </span>
                     <span className="text-xl font-bold text-secondary tracking-tight">
@@ -348,34 +398,34 @@ const ProductDetail = () => {
                     </span>
                   </div>
 
-                  {product.wholesalePrice > 0 && (
+                  {effectiveWholesalePrice > 0 && (
                     <div
-                      className={`mt-2 p-3 rounded-xl border transition-all ${quantity >= (product.wholesaleMinQty || 10) ? "bg-blue-50 border-blue-200 shadow-sm" : "bg-white border-gray-100"}`}>
+                      className={`mt-2 p-3 rounded-xl border transition-all ${quantity >= effectiveWholesaleMinQty ? "bg-blue-50 border-blue-200 shadow-sm" : "bg-white border-gray-100"}`}>
                       <div className="flex items-center justify-between">
                         <div className="flex flex-col">
                           <span
-                            className={`text-[10px] font-black uppercase tracking-widest ${quantity >= (product.wholesaleMinQty || 10) ? "text-blue-600" : "text-gray-400"}`}>
+                            className={`text-[10px] font-black uppercase tracking-widest ${quantity >= effectiveWholesaleMinQty ? "text-blue-600" : "text-gray-400"}`}>
                             Wholesale Pricing
                           </span>
                           <span className="text-sm font-black text-secondary">
-                            ₹{product.wholesalePrice.toLocaleString()}{" "}
+                            ₹{effectiveWholesalePrice?.toLocaleString()}{" "}
                             <span className="text-[10px] font-bold text-gray-400">
-                              for {product.wholesaleMinQty || 10}+ pieces
+                              for {effectiveWholesaleMinQty}+ pieces
                             </span>
                           </span>
                         </div>
-                        {quantity >= (product.wholesaleMinQty || 10) ? (
+                        {quantity >= effectiveWholesaleMinQty ? (
                           <span className="bg-blue-600 text-white text-[8px] font-black px-2 py-1 rounded-full uppercase">
                             Applied
                           </span>
                         ) : (
                           <span
                             className="text-[10px] font-bold text-blue-600 cursor-help"
-                            title={`Buy ${product.wholesaleMinQty || 10} or more to get this price`}>
+                            title={`Buy ${effectiveWholesaleMinQty} or more to get this price`}>
                             Save ₹
                             {(
-                              product.price - product.wholesalePrice
-                            ).toLocaleString()}{" "}
+                              effectivePrice - effectiveWholesalePrice
+                            )?.toLocaleString()}{" "}
                             per unit!
                           </span>
                         )}
@@ -389,11 +439,11 @@ const ProductDetail = () => {
                 <span>
                   You save:{" "}
                   {(
-                    product.mrp -
-                    (quantity >= (product.wholesaleMinQty || 10)
-                      ? product.wholesalePrice
-                      : product.price)
-                  ).toLocaleString()}
+                    effectiveMrp -
+                    (quantity >= effectiveWholesaleMinQty
+                      ? effectiveWholesalePrice
+                      : effectivePrice)
+                  )?.toLocaleString()}
                   .00 Rs.
                 </span>
                 <span className="text-[10px] uppercase tracking-widest opacity-70">
@@ -404,8 +454,8 @@ const ProductDetail = () => {
 
             <div className="flex items-center gap-4 mb-4 text-sm text-secondary font-black">
               <span>CODE:</span>
-              <span className="bg-gray-50 px-2 py-1 text-[11px] font-bold border border-gray-100">
-                {product.code}
+              <span key={effectiveSku} className="bg-gray-50 px-2 py-1 text-[11px] font-bold border border-gray-100 font-mono animate-in fade-in duration-300">
+                {effectiveSku}
               </span>
             </div>
 
@@ -417,10 +467,10 @@ const ProductDetail = () => {
                 <p className="text-2xl font-black text-secondary tracking-tighter">
                   ₹
                   {(
-                    (quantity >= (product.wholesaleMinQty || 10)
-                      ? product.wholesalePrice
-                      : product.price) * quantity
-                  ).toLocaleString()}
+                    (quantity >= effectiveWholesaleMinQty
+                      ? effectiveWholesalePrice
+                      : effectivePrice) * quantity
+                  )?.toLocaleString()}
                 </p>
               </div>
               <div className="text-right">
@@ -442,13 +492,13 @@ const ProductDetail = () => {
                   onChange={(e) =>
                     setQuantity(
                       Math.min(
-                        product.countInStock,
+                        effectiveCountInStock,
                         Math.max(1, e.target.value),
                       ),
                     )
                   }
                   className="w-16 h-10 border border-gray-300 text-center font-bold outline-none"
-                  max={product.countInStock}
+                  max={effectiveCountInStock}
                   min={1}
                 />
               </div>
@@ -461,14 +511,20 @@ const ProductDetail = () => {
                         ...product,
                         image: selectedImage,
                         color: selectedColor,
+                        price: effectivePrice,
+                        mrp: effectiveMrp,
+                        wholesalePrice: effectiveWholesalePrice,
+                        wholesaleMinQty: effectiveWholesaleMinQty,
+                        countInStock: effectiveCountInStock,
+                        code: effectiveSku,
                       },
                       Number(quantity),
                     );
                     navigate("/checkout");
                   }}
-                  disabled={product.countInStock === 0}
-                  className={`flex-1 border-2 border-primary font-black py-3 px-4 transition-colors uppercase italic tracking-tighter text-sm ${product.countInStock === 0 ? "bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed" : "bg-white text-primary hover:bg-orange-50"}`}>
-                  {product.countInStock === 0 ? "Out of Stock" : "Buy Now"}
+                  disabled={effectiveCountInStock === 0}
+                  className={`flex-1 border-2 border-primary font-black py-3 px-4 transition-colors uppercase italic tracking-tighter text-sm ${effectiveCountInStock === 0 ? "bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed" : "bg-white text-primary hover:bg-orange-50"}`}>
+                  {effectiveCountInStock === 0 ? "Out of Stock" : "Buy Now"}
                 </button>
                 <button
                   onClick={() => {
@@ -477,38 +533,28 @@ const ProductDetail = () => {
                         ...product,
                         image: selectedImage,
                         color: selectedColor,
+                        price: effectivePrice,
+                        mrp: effectiveMrp,
+                        wholesalePrice: effectiveWholesalePrice,
+                        wholesaleMinQty: effectiveWholesaleMinQty,
+                        countInStock: effectiveCountInStock,
+                        code: effectiveSku,
                       },
                       Number(quantity),
                     );
                   }}
-                  disabled={product.countInStock === 0}
-                  className={`flex-1 font-black py-3 px-4 transition-colors uppercase italic tracking-tighter text-sm ${product.countInStock === 0 ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-primary text-white hover:bg-orange-600"}`}>
+                  disabled={effectiveCountInStock === 0}
+                  className={`flex-1 font-black py-3 px-4 transition-colors uppercase italic tracking-tighter text-sm ${effectiveCountInStock === 0 ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-primary text-white hover:bg-orange-600"}`}>
                   Add to Cart
                 </button>
               </div>
             </div>
 
-            {/* Video Section */}
-            {product.videoUrl && (
-              <div className="mt-8 bg-gray-50 border border-gray-200 p-8 flex flex-col items-center">
-                <div className="relative w-full max-w-2xl aspect-video bg-black shadow-2xl">
-                  <iframe
-                    src={getEmbedUrl(product.videoUrl)}
-                    className="w-full h-full"
-                    title="Product Video"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen></iframe>
-                </div>
-                <p className="mt-4 text-xs font-black text-gray-400 uppercase italic">
-                  Product Video Demonstration
-                </p>
-              </div>
-            )}
+            {/* Video Section — moved to standalone card below */}
           </div>
 
           {/* Right: Side Panel (3 cols) */}
-          <div className="lg:col-span-3 space-y-6">
+          <div className="lg:col-span-3 lg:sticky lg:top-8 space-y-6">
             <div className="bg-white p-4 border border-gray-200 text-right space-y-4">
               <div>
                 <h4 className="font-black text-secondary text-sm">
@@ -579,6 +625,30 @@ const ProductDetail = () => {
             </div>
           </div>
         </div>
+
+        {/* Video Card — full width, between product grid and tabs */}
+        {product.videoUrl && (
+          <div className="mt-8 bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+              <Play size={16} className="text-primary" />
+              <h3 className="text-sm font-black text-secondary uppercase italic tracking-tighter">
+                Product Video
+              </h3>
+            </div>
+            <div className="p-6 flex justify-center bg-gray-50">
+              <div className="w-full max-w-3xl aspect-video bg-black rounded-lg overflow-hidden shadow-lg">
+                <iframe
+                  src={getEmbedUrl(product.videoUrl)}
+                  className="w-full h-full"
+                  title="Product Video"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Tabs & Content */}
         <div id="reviews-section" className="mt-12 bg-white border border-gray-200">
@@ -655,7 +725,7 @@ const ProductDetail = () => {
                       </thead>
                       <tbody>
                         <tr className="border-b border-gray-100">
-                          <td className="p-3 text-secondary font-black">
+                          <td className="p-3 text-secondary font-normal">
                             {product.details.inTheBox}
                           </td>
                         </tr>
@@ -683,7 +753,7 @@ const ProductDetail = () => {
                             <td className="p-3 w-1/3 text-gray-500 font-bold border-r border-gray-100">
                               {spec.key}
                             </td>
-                            <td className="p-3 text-secondary font-black">
+                            <td className="p-3 text-secondary font-normal">
                               {spec.value}
                             </td>
                           </tr>
@@ -714,7 +784,7 @@ const ProductDetail = () => {
                           <td className="p-3 w-1/4 text-gray-500 font-bold border-r border-gray-100">
                             Covered in Warranty
                           </td>
-                          <td className="p-3 text-secondary font-black">
+                          <td className="p-3 text-secondary font-normal">
                             {product.details.warranty.coveredInWarranty}
                           </td>
                         </tr>
@@ -724,7 +794,7 @@ const ProductDetail = () => {
                           <td className="p-3 w-1/4 text-gray-500 font-bold border-r border-gray-100">
                             Warranty Summary
                           </td>
-                          <td className="p-3 text-secondary font-black">
+                          <td className="p-3 text-secondary font-normal">
                             {product.details.warranty.summary}
                           </td>
                         </tr>
@@ -734,7 +804,7 @@ const ProductDetail = () => {
                           <td className="p-3 w-1/4 text-gray-500 font-bold border-r border-gray-100">
                             Warranty Service Type
                           </td>
-                          <td className="p-3 text-secondary font-black">
+                          <td className="p-3 text-secondary font-normal">
                             {product.details.warranty.serviceType}
                           </td>
                         </tr>
@@ -744,7 +814,7 @@ const ProductDetail = () => {
                           <td className="p-3 w-1/4 text-gray-500 font-bold border-r border-gray-100">
                             Warranty T&C
                           </td>
-                          <td className="p-3 text-secondary font-black">
+                          <td className="p-3 text-secondary font-normal">
                             {product.details.warranty.tnc}
                           </td>
                         </tr>
@@ -754,7 +824,7 @@ const ProductDetail = () => {
                           <td className="p-3 w-1/4 text-gray-500 font-bold border-r border-gray-100">
                             Country of Origin
                           </td>
-                          <td className="p-3 text-secondary font-black">
+                          <td className="p-3 text-secondary font-normal">
                             {product.details.countryOfOrigin}
                           </td>
                         </tr>
@@ -764,7 +834,7 @@ const ProductDetail = () => {
                           <td className="p-3 w-1/4 text-gray-500 font-bold border-r border-gray-100">
                             Packer
                           </td>
-                          <td className="p-3 text-secondary font-black">
+                          <td className="p-3 text-secondary font-normal">
                             {product.details.packer}
                           </td>
                         </tr>
@@ -775,7 +845,7 @@ const ProductDetail = () => {
                           <td className="p-3 w-1/4 text-gray-500 font-bold border-r border-gray-100">
                             Warranty Period
                           </td>
-                          <td className="p-3 text-secondary font-black">
+                          <td className="p-3 text-secondary font-normal">
                             {product.details.warranty.period}
                           </td>
                         </tr>
@@ -785,7 +855,7 @@ const ProductDetail = () => {
                           <td className="p-3 w-1/4 text-gray-500 font-bold border-r border-gray-100">
                             Warranty Policy
                           </td>
-                          <td className="p-3 text-secondary font-black">
+                          <td className="p-3 text-secondary font-normal">
                             {product.details.warranty.policy}
                           </td>
                         </tr>

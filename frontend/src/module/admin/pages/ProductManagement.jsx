@@ -142,7 +142,16 @@ const ProductManagement = () => {
         brand: product.brand?._id || product.brand || "",
         model: product.model?._id || product.model || "",
         description: Array.isArray(product.description) && product.description.length > 0 ? product.description : [product.description || ""],
-        colorVariants: product.colorVariants || [],
+        colorVariants: (product.colorVariants || []).map(v => ({
+          colorName: v.colorName || "",
+          sku: v.sku || "",
+          price: v.price !== undefined ? v.price : "",
+          mrp: v.mrp !== undefined ? v.mrp : "",
+          wholesalePrice: v.wholesalePrice !== undefined ? v.wholesalePrice : "",
+          wholesaleMinQty: v.wholesaleMinQty !== undefined ? v.wholesaleMinQty : "",
+          countInStock: v.countInStock !== undefined ? v.countInStock : 0,
+          images: v.images || [],
+        })),
         colors: product.colors?.map((c) => ({ name: c })) || [],
         videoUrl: product.videoUrl || "",
         details: {
@@ -158,6 +167,8 @@ const ProductManagement = () => {
             product.details?.highlights?.map((h) => ({ type: h })) || [],
           descriptionPoints:
             product.details?.descriptionPoints?.map((p) => ({ text: p })) || [],
+          countryOfOrigin: product.details?.countryOfOrigin || "",
+          packer: product.details?.packer || "",
         },
         countInStock: product.countInStock || 0,
         wholesalePrice: product.wholesalePrice || 0,
@@ -304,7 +315,16 @@ const ProductManagement = () => {
   const handleAddColorVariant = () => {
     setFormData({
       ...formData,
-      colorVariants: [...(formData.colorVariants || []), { colorName: "", images: [] }],
+      colorVariants: [...(formData.colorVariants || []), {
+        colorName: "",
+        sku: "",
+        price: "",
+        mrp: "",
+        wholesalePrice: "",
+        wholesaleMinQty: "",
+        countInStock: 0,
+        images: [],
+      }],
     });
   };
 
@@ -317,6 +337,12 @@ const ProductManagement = () => {
   const handleColorVariantChange = (index, value) => {
     const newVariants = [...(formData.colorVariants || [])];
     newVariants[index].colorName = value;
+    setFormData({ ...formData, colorVariants: newVariants });
+  };
+
+  const handleColorVariantFieldChange = (index, field, value) => {
+    const newVariants = [...(formData.colorVariants || [])];
+    newVariants[index][field] = value;
     setFormData({ ...formData, colorVariants: newVariants });
   };
 
@@ -361,17 +387,52 @@ const ProductManagement = () => {
         },
       };
 
+      const hasVariants = (formData.colorVariants || []).filter(c => c.colorName.trim() !== "").length > 0;
+
+      // Validate: if no variants, price/mrp/stock/wholesale are required
+      if (!hasVariants) {
+        if (!formData.price || !formData.mrp || !formData.wholesalePrice) {
+          alert("Please fill in Selling Price, MRP, and Wholesale Price.");
+          return;
+        }
+      }
+
       // Ensure price/mrp are numbers
       const payload = {
         ...formData,
-        price: Number(formData.price),
-        wholesalePrice: Number(formData.wholesalePrice),
-        wholesaleMinQty: Number(formData.wholesaleMinQty),
-        mrp: Number(formData.mrp),
-        countInStock: Number(formData.countInStock),
+        // When variants exist, derive product-level price from first variant (for search/listing display)
+        price: hasVariants
+          ? Number(formData.colorVariants.find(v => v.colorName.trim())?.price ?? 0)
+          : Number(formData.price),
+        wholesalePrice: hasVariants
+          ? Number(formData.colorVariants.find(v => v.colorName.trim())?.wholesalePrice ?? 0)
+          : Number(formData.wholesalePrice),
+        wholesaleMinQty: hasVariants
+          ? Number(formData.colorVariants.find(v => v.colorName.trim())?.wholesaleMinQty ?? 10)
+          : Number(formData.wholesaleMinQty),
+        mrp: hasVariants
+          ? Number(formData.colorVariants.find(v => v.colorName.trim())?.mrp ?? 0)
+          : Number(formData.mrp),
+        // Product-level stock = sum of all variant stocks when variants exist
+        countInStock: hasVariants
+          ? formData.colorVariants
+              .filter(v => v.colorName.trim())
+              .reduce((sum, v) => sum + (Number(v.countInStock) || 0), 0)
+          : Number(formData.countInStock),
         description: formData.description.filter(p => p.trim() !== ""),
         colors: formData.colors?.map((c) => c.name).filter((c) => c) || [],
-        colorVariants: formData.colorVariants?.filter(c => c.colorName.trim() !== "") || [],
+        colorVariants: (formData.colorVariants || [])
+          .filter(c => c.colorName.trim() !== "")
+          .map(v => ({
+            colorName: v.colorName,
+            sku: v.sku || undefined,
+            price: v.price !== "" && v.price !== undefined ? Number(v.price) : undefined,
+            mrp: v.mrp !== "" && v.mrp !== undefined ? Number(v.mrp) : undefined,
+            wholesalePrice: v.wholesalePrice !== "" && v.wholesalePrice !== undefined ? Number(v.wholesalePrice) : undefined,
+            wholesaleMinQty: v.wholesaleMinQty !== "" && v.wholesaleMinQty !== undefined ? Number(v.wholesaleMinQty) : undefined,
+            countInStock: v.countInStock !== "" && v.countInStock !== undefined ? Number(v.countInStock) : 0,
+            images: v.images || [],
+          })),
         details: {
           ...formData.details,
           highlights:
@@ -494,21 +555,13 @@ const ProductManagement = () => {
 
   const productTemplateColumns = [
     { header: "name *", key: "name", example: "LCD Screen Samsung S23 Ultra", example2: "Battery iPhone 14 Pro" },
-    { header: "SKU", key: "SKU", example: "SKU-001", example2: "SKU-002" },
     { header: "brand *", key: "brand", example: "Samsung", example2: "Apple" },
     { header: "model *", key: "model", example: "Samsung Galaxy S23 Ultra", example2: "Apple iPhone 14 Pro" },
     { header: "category *", key: "category", example: "LCD Display", example2: "Battery" },
-    { header: "productType", key: "productType", example: "LCD with Touch Screen", example2: "Li-Ion Battery" },
-    { header: "price *", key: "price", example: "4500", example2: "2800" },
-    { header: "mrp *", key: "mrp", example: "5500", example2: "3500" },
-    { header: "wholesalePrice *", key: "wholesalePrice", example: "3800", example2: "2300" },
-    { header: "wholesaleMinQty *", key: "wholesaleMinQty", example: "10", example2: "10" },
-    { header: "cashback", key: "cashback", example: "100", example2: "50" },
-    { header: "countInStock *", key: "countInStock", example: "50", example2: "30" },
+    { header: "colorVariants *", key: "colorVariants", example: "Black;PW-BLA-001;4500;5500;3800;10;50;http://img1.jpg,http://img2.jpg||White;PW-WHI-002;4700;5500;3900;10;20;http://img3.jpg", example2: "Black;;4500;5500;3800;10;50;" },
     { header: "description", key: "description", example: "High quality original LCD display", example2: "Long lasting battery" },
     { header: "images", key: "images", example: "http://server/uploads/img1.jpg|http://server/uploads/img2.jpg", example2: "" },
     { header: "videoUrl", key: "videoUrl", example: "", example2: "" },
-    { header: "colors", key: "colors", example: "Black,White,Gold", example2: "Black" },
     { header: "specs", key: "specs", example: "Color:Black|Compatibility:S23 Ultra|Type:AMOLED", example2: "Capacity:3000mAh|Voltage:3.8V" },
     { header: "inTheBox", key: "inTheBox", example: "LCD Display, Installation Guide", example2: "Battery" },
     { header: "warrantySummary", key: "warrantySummary", example: "10 Days Testing Replacement Warranty", example2: "" },
@@ -837,51 +890,136 @@ const ProductManagement = () => {
                     + Add Color Variant
                   </button>
                 </div>
-                <div className="space-y-4">
+                <p className="text-xs text-gray-400">Each variant can have its own price, stock, SKU and images. Leave pricing blank to inherit product-level pricing.</p>
+                <div className="space-y-5">
                   {formData.colorVariants?.map((variant, index) => (
-                    <div key={index} className="p-4 border border-gray-200 rounded-xl bg-gray-50/50 space-y-3">
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          placeholder="Color Name (e.g. Midnight Black)"
-                          className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold"
-                          value={variant.colorName}
-                          onChange={(e) =>
-                            handleColorVariantChange(index, e.target.value)
-                          }
-                        />
+                    <div key={index} className="p-4 border border-blue-100 rounded-xl bg-blue-50/30 space-y-4">
+                      {/* Row 1: Color name + SKU + remove */}
+                      <div className="flex gap-2 items-center">
+                        <div className="flex-1 space-y-1">
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Color Name *</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Midnight Black"
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold focus:outline-none focus:border-blue-400"
+                            value={variant.colorName}
+                            onChange={(e) => handleColorVariantChange(index, e.target.value)}
+                          />
+                        </div>
+                        <div className="flex-1 space-y-1">
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">SKU</label>
+                          <input
+                            type="text"
+                            placeholder="Auto-generated on save"
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-400 font-mono"
+                            value={variant.sku || ""}
+                            onChange={(e) => handleColorVariantFieldChange(index, "sku", e.target.value)}
+                          />
+                        </div>
                         <button
                           type="button"
                           onClick={() => handleRemoveColorVariant(index)}
-                          className="text-red-500 hover:bg-red-50 p-2 rounded transition-colors">
+                          className="text-red-500 hover:bg-red-50 p-2 rounded transition-colors mt-5">
                           <Trash2 size={16} />
                         </button>
                       </div>
-                      
-                      {/* Variant Images */}
-                      <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
-                        {variant.images?.map((img, imgIndex) => (
-                          <div key={imgIndex} className="relative group aspect-square">
-                            <div className="w-full h-full rounded-lg overflow-hidden border border-gray-200 bg-white">
-                              <img
-                                src={img}
-                                alt={`${variant.colorName} ${imgIndex}`}
-                                className="w-full h-full object-contain"
-                              />
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveColorVariantImage(index, imgIndex)}
-                              className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
-                              <X size={12} />
-                            </button>
+
+                      {/* Row 2: Price, MRP, Stock */}
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Price (₹)</label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">₹</span>
+                            <input
+                              type="number"
+                              placeholder="Inherit"
+                              className="w-full pl-7 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold focus:outline-none focus:border-blue-400"
+                              value={variant.price ?? ""}
+                              onChange={(e) => handleColorVariantFieldChange(index, "price", e.target.value)}
+                            />
                           </div>
-                        ))}
-                        <div className="aspect-square">
-                          <MultiImageUpload
-                            onUpload={(urls) => handleColorVariantImages(index, urls)}
-                            placeholder="Images"
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">MRP (₹)</label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">₹</span>
+                            <input
+                              type="number"
+                              placeholder="Inherit"
+                              className="w-full pl-7 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-400"
+                              value={variant.mrp ?? ""}
+                              onChange={(e) => handleColorVariantFieldChange(index, "mrp", e.target.value)}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Stock</label>
+                          <input
+                            type="number"
+                            min="0"
+                            placeholder="0"
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold focus:outline-none focus:border-blue-400"
+                            value={variant.countInStock ?? 0}
+                            onChange={(e) => handleColorVariantFieldChange(index, "countInStock", e.target.value)}
                           />
+                        </div>
+                      </div>
+
+                      {/* Row 3: Wholesale Price, Wholesale Min Qty */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Wholesale Price (₹)</label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">₹</span>
+                            <input
+                              type="number"
+                              placeholder="Inherit"
+                              className="w-full pl-7 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold text-blue-600 focus:outline-none focus:border-blue-400"
+                              value={variant.wholesalePrice ?? ""}
+                              onChange={(e) => handleColorVariantFieldChange(index, "wholesalePrice", e.target.value)}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Wholesale Min Qty</label>
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="Inherit"
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold focus:outline-none focus:border-blue-400"
+                            value={variant.wholesaleMinQty ?? ""}
+                            onChange={(e) => handleColorVariantFieldChange(index, "wholesaleMinQty", e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Row 4: Variant Images */}
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Variant Images</label>
+                        <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
+                          {variant.images?.map((img, imgIndex) => (
+                            <div key={imgIndex} className="relative group aspect-square">
+                              <div className="w-full h-full rounded-lg overflow-hidden border border-gray-200 bg-white">
+                                <img
+                                  src={img}
+                                  alt={`${variant.colorName} ${imgIndex}`}
+                                  className="w-full h-full object-contain"
+                                />
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveColorVariantImage(index, imgIndex)}
+                                className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
+                                <X size={12} />
+                              </button>
+                            </div>
+                          ))}
+                          <div className="aspect-square">
+                            <MultiImageUpload
+                              onUpload={(urls) => handleColorVariantImages(index, urls)}
+                              placeholder="Images"
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -909,21 +1047,24 @@ const ProductManagement = () => {
                       placeholder="e.g. LCD Screen for Samsung S23 Ultra"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
-                      SKU
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-                      value={formData.code || ""}
-                      onChange={(e) =>
-                        setFormData({ ...formData, code: e.target.value })
-                      }
-                      placeholder={editingProduct ? "e.g. PW-123456" : "Auto-generated on save"}
-                      disabled={!editingProduct}
-                    />
-                  </div>
+                  {/* SKU — only shown when no color variants (variants carry their own SKU) */}
+                  {(formData.colorVariants?.length ?? 0) === 0 && (
+                    <div className="space-y-2">
+                      <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                        SKU
+                      </label>
+                      <input
+                        type="text"
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                        value={formData.code || ""}
+                        onChange={(e) =>
+                          setFormData({ ...formData, code: e.target.value })
+                        }
+                        placeholder={editingProduct ? "e.g. PW-123456" : "Auto-generated on save"}
+                        disabled={!editingProduct}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -992,114 +1133,100 @@ const ProductManagement = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
-                      Selling Price (₹)
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">
-                        ₹
-                      </span>
-                      <input
-                        type="number"
-                        required
-                        className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold"
-                        value={formData.price}
-                        onChange={(e) =>
-                          setFormData({ ...formData, price: e.target.value })
-                        }
-                      />
+                {/* ── Pricing / Stock / SKU — only shown when NO color variants ── */}
+                {(formData.colorVariants?.length ?? 0) === 0 ? (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                          Selling Price (₹) *
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">₹</span>
+                          <input
+                            type="number"
+                            required
+                            className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold"
+                            value={formData.price}
+                            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                          MRP (₹) *
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">₹</span>
+                          <input
+                            type="number"
+                            required
+                            className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold text-gray-500"
+                            value={formData.mrp}
+                            onChange={(e) => setFormData({ ...formData, mrp: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                          Stock Count *
+                        </label>
+                        <input
+                          type="number"
+                          required
+                          min="0"
+                          placeholder="0"
+                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold"
+                          value={formData.countInStock}
+                          onChange={(e) => setFormData({ ...formData, countInStock: e.target.value })}
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
-                      MRP (₹)
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">
-                        ₹
-                      </span>
-                      <input
-                        type="number"
-                        required
-                        className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold text-gray-500"
-                        value={formData.mrp}
-                        onChange={(e) =>
-                          setFormData({ ...formData, mrp: e.target.value })
-                        }
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
-                      Stock Count
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        required
-                        min="0"
-                        placeholder="0"
-                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold"
-                        value={formData.countInStock}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            countInStock: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
-                      Wholesale Price (₹)
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">
-                        ₹
-                      </span>
-                      <input
-                        type="number"
-                        required
-                        className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold text-blue-600"
-                        value={formData.wholesalePrice}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            wholesalePrice: e.target.value,
-                          })
-                        }
-                        placeholder="Price for bulk orders"
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                          Wholesale Price (₹) *
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">₹</span>
+                          <input
+                            type="number"
+                            required
+                            className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold text-blue-600"
+                            value={formData.wholesalePrice}
+                            onChange={(e) => setFormData({ ...formData, wholesalePrice: e.target.value })}
+                            placeholder="Price for bulk orders"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                          Wholesale Min Quantity *
+                        </label>
+                        <input
+                          type="number"
+                          required
+                          min="1"
+                          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold"
+                          value={formData.wholesaleMinQty}
+                          onChange={(e) => setFormData({ ...formData, wholesaleMinQty: e.target.value })}
+                          placeholder="Min qty for wholesale price"
+                        />
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                    <span className="text-blue-500 mt-0.5">
+                      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                    </span>
+                    <div>
+                      <p className="text-sm font-bold text-blue-800">Pricing & stock managed per color variant</p>
+                      <p className="text-xs text-blue-600 mt-0.5">Each color variant above carries its own price, MRP, wholesale price, stock count, and SKU. Product-level fields are not needed.</p>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
-                      Wholesale Min Quantity
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        required
-                        min="1"
-                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-bold"
-                        value={formData.wholesaleMinQty}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            wholesaleMinQty: e.target.value,
-                          })
-                        }
-                        placeholder="Min qty for wholesale price"
-                      />
-                    </div>
-                  </div>
-                </div>
+                )}
 
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
