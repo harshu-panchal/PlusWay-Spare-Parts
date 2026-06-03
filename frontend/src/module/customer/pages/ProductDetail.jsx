@@ -10,6 +10,7 @@ import {
 import { useCart } from "../context/CartContext";
 import {
   ChevronRight,
+  ChevronLeft,
   Star,
   ShoppingCart,
   Zap,
@@ -27,6 +28,7 @@ import {
 } from "lucide-react";
 import LazyImage from "../../../components/LazyImage";
 import ImageZoom from "../components/ImageZoom";
+import ImageLightbox from "../components/ImageLightbox";
 import ProductCard from "../components/ProductCard";
 
 const ProductDetail = () => {
@@ -41,6 +43,7 @@ const ProductDetail = () => {
   const [activeTab, setActiveTab] = useState("Description");
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const displayColors = React.useMemo(() => {
     if (!product) return [];
@@ -239,7 +242,10 @@ const ProductDetail = () => {
           {/* Left: Gallery (4 cols) */}
           <div className="lg:col-span-4 lg:sticky lg:top-8 space-y-4">
             <div className="bg-white p-4 border border-gray-200 relative group">
-              <div className="aspect-square bg-white overflow-hidden relative">
+              <div
+                onClick={() => setLightboxOpen(true)}
+                className="aspect-square bg-white overflow-hidden relative cursor-zoom-in"
+                title="Click to view larger">
                 <div 
                   className="flex transition-transform duration-500 ease-in-out h-full w-full"
                   style={{ transform: `translateX(-${displayImages.indexOf(selectedImage) !== -1 ? displayImages.indexOf(selectedImage) * 100 : 0}%)` }}
@@ -255,6 +261,36 @@ const ProductDetail = () => {
                   ))}
                 </div>
               </div>
+
+              {displayImages.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    aria-label="Previous image"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const curIdx = displayImages.indexOf(selectedImage);
+                      const prevIdx = (curIdx - 1 + displayImages.length) % displayImages.length;
+                      setSelectedImage(displayImages[prevIdx]);
+                    }}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center bg-white/90 hover:bg-white text-secondary rounded-full shadow-md border border-gray-200 opacity-0 group-hover:opacity-100 transition-all hover:scale-105 z-10">
+                    <ChevronLeft size={20} />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Next image"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const curIdx = displayImages.indexOf(selectedImage);
+                      const nextIdx = (curIdx + 1) % displayImages.length;
+                      setSelectedImage(displayImages[nextIdx]);
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center bg-white/90 hover:bg-white text-secondary rounded-full shadow-md border border-gray-200 opacity-0 group-hover:opacity-100 transition-all hover:scale-105 z-10">
+                    <ChevronRight size={20} />
+                  </button>
+                </>
+              )}
+
               {savingsPercent > 0 && (
                 <div className="absolute top-4 right-4 bg-orange-600 text-white text-[10px] font-black px-2 py-1 shadow-lg">
                   SAVE {savingsPercent}%
@@ -711,7 +747,7 @@ const ProductDetail = () => {
                     </div>
                   )}
 
-                <div className="grid md:grid-cols-2 gap-8">
+                <div className="space-y-6">
                   {product.details?.inTheBox && (
                     <table className="w-full border-collapse border border-gray-200 text-sm">
                       <thead>
@@ -1032,6 +1068,14 @@ const ProductDetail = () => {
           </div>
         )}
       </div>
+
+      <ImageLightbox
+        isOpen={lightboxOpen}
+        images={displayImages}
+        initialIndex={Math.max(0, displayImages.indexOf(selectedImage))}
+        onClose={() => setLightboxOpen(false)}
+        alt={product?.name || ""}
+      />
     </div>
   );
 };

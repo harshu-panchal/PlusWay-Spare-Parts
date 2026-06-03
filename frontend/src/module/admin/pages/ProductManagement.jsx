@@ -553,12 +553,23 @@ const ProductManagement = () => {
     }
   };
 
+  // Bulk-upload template columns.
+  // For products WITHOUT color variants: fill SKU, price, mrp, wholesalePrice, wholesaleMinQty,
+  // countInStock and leave colorVariants empty.
+  // For products WITH color variants: fill colorVariants (carries its own SKU/price/stock) and
+  // leave the top-level SKU/price/stock columns empty.
   const productTemplateColumns = [
     { header: "name *", key: "name", example: "LCD Screen Samsung S23 Ultra", example2: "Battery iPhone 14 Pro" },
     { header: "brand *", key: "brand", example: "Samsung", example2: "Apple" },
     { header: "model *", key: "model", example: "Samsung Galaxy S23 Ultra", example2: "Apple iPhone 14 Pro" },
     { header: "category *", key: "category", example: "LCD Display", example2: "Battery" },
-    { header: "colorVariants *", key: "colorVariants", example: "Black;PW-BLA-001;4500;5500;3800;10;50;http://img1.jpg,http://img2.jpg||White;PW-WHI-002;4700;5500;3900;10;20;http://img3.jpg", example2: "Black;;4500;5500;3800;10;50;" },
+    { header: "SKU", key: "SKU", example: "", example2: "PW-BAT-IP14P-001" },
+    { header: "price", key: "price", example: "", example2: 2500 },
+    { header: "mrp", key: "mrp", example: "", example2: 3000 },
+    { header: "wholesalePrice", key: "wholesalePrice", example: "", example2: 2100 },
+    { header: "wholesaleMinQty", key: "wholesaleMinQty", example: "", example2: 10 },
+    { header: "countInStock", key: "countInStock", example: "", example2: 50 },
+    { header: "colorVariants", key: "colorVariants", example: "Black;PW-BLA-001;4500;5500;3800;10;50;http://img1.jpg,http://img2.jpg||White;PW-WHI-002;4700;5500;3900;10;20;http://img3.jpg", example2: "" },
     { header: "description", key: "description", example: "High quality original LCD display", example2: "Long lasting battery" },
     { header: "images", key: "images", example: "http://server/uploads/img1.jpg|http://server/uploads/img2.jpg", example2: "" },
     { header: "videoUrl", key: "videoUrl", example: "", example2: "" },
