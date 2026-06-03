@@ -12,7 +12,7 @@ const bulkUploadHistorySchema = new mongoose.Schema(
     },
     uploadType: {
       type: String,
-      enum: ["Products", "Models"],
+      enum: ["Products", "Models", "ProductsUpdate"],
       required: true,
     },
     totalRows: {

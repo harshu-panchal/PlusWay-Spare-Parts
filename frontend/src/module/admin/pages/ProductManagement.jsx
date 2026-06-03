@@ -42,6 +42,7 @@ const ProductManagement = () => {
 
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [isBulkPriceModalOpen, setIsBulkPriceModalOpen] = useState(false);
+  const [isBulkUpdateModalOpen, setIsBulkUpdateModalOpen] = useState(false);
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
@@ -638,6 +639,13 @@ const ProductManagement = () => {
             title="Bulk Price Update">
             <Upload size={14} className="text-purple-600" />
             <span className="hidden lg:inline">Prices</span>
+          </button>
+          <button
+            onClick={() => setIsBulkUpdateModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all text-xs font-bold shadow-sm"
+            title="Bulk Update Products by SKU (any field)">
+            <Edit size={14} className="text-amber-600" />
+            <span className="hidden lg:inline">Update</span>
           </button>
           <button
             onClick={() => setIsBulkModalOpen(true)}
@@ -1691,6 +1699,50 @@ const ProductManagement = () => {
         templateFileName="plusway_bulk_price_update.xlsx"
         title="Bulk Update Prices"
         description="Update prices for multiple products using their SKUs"
+      />
+
+      {/* Bulk Update Products (any field) Modal — SKU-keyed, supports color variants */}
+      <BulkUploadModal
+        isOpen={isBulkUpdateModalOpen}
+        onClose={() => setIsBulkUpdateModalOpen(false)}
+        onSuccess={() => { fetchData(); setIsBulkUpdateModalOpen(false); }}
+        uploadEndpoint={API_ENDPOINTS.ADMIN_PRODUCTS_BULK_UPDATE}
+        templateEndpoint={API_ENDPOINTS.ADMIN_PRODUCTS_BULK_UPDATE_TEMPLATE}
+        templateColumns={[
+          { header: "SKU *", key: "SKU", example: "PW-BLA-001", example2: "PW-BAT-IP14P-001" },
+          { header: "colorName", key: "colorName", example: "Black", example2: "" },
+          { header: "price", key: "price", example: 4500, example2: 2500 },
+          { header: "mrp", key: "mrp", example: 5500, example2: 3000 },
+          { header: "wholesalePrice", key: "wholesalePrice", example: 3800, example2: 2100 },
+          { header: "wholesaleMinQty", key: "wholesaleMinQty", example: 10, example2: 10 },
+          { header: "countInStock", key: "countInStock", example: 50, example2: 50 },
+          { header: "images", key: "images", example: "http://server/uploads/img1.jpg|http://server/uploads/img2.jpg", example2: "" },
+          { header: "name", key: "name", example: "", example2: "Battery iPhone 14 Pro" },
+          { header: "description", key: "description", example: "", example2: "Long lasting battery" },
+          { header: "cashback", key: "cashback", example: "", example2: 50 },
+          { header: "brand", key: "brand", example: "", example2: "Apple" },
+          { header: "model", key: "model", example: "", example2: "Apple iPhone 14 Pro" },
+          { header: "category", key: "category", example: "", example2: "Battery" },
+          { header: "productType", key: "productType", example: "", example2: "Battery" },
+          { header: "videoUrl", key: "videoUrl", example: "", example2: "" },
+          { header: "specs", key: "specs", example: "", example2: "Capacity:3000mAh|Voltage:3.8V" },
+          { header: "inTheBox", key: "inTheBox", example: "", example2: "Battery" },
+          { header: "warrantyPeriod", key: "warrantyPeriod", example: "", example2: "30 Days" },
+          { header: "warrantyPolicy", key: "warrantyPolicy", example: "", example2: "Replacement" },
+          { header: "warrantySummary", key: "warrantySummary", example: "", example2: "10 Days Testing Replacement Warranty" },
+          { header: "coveredInWarranty", key: "coveredInWarranty", example: "", example2: "Yes, Replacement Only" },
+          { header: "warrantyServiceType", key: "warrantyServiceType", example: "", example2: "Send to seller by courier" },
+          { header: "warrantyTnC", key: "warrantyTnC", example: "", example2: "Warranty Terms" },
+          { header: "highlights", key: "highlights", example: "", example2: "Long Life|Safe Chemistry" },
+          { header: "descriptionPoints", key: "descriptionPoints", example: "", example2: "Safe and reliable" },
+          { header: "countryOfOrigin", key: "countryOfOrigin", example: "", example2: "India" },
+          { header: "packer", key: "packer", example: "", example2: "Elcotek India Pvt Ltd, New Delhi" },
+          { header: "colors", key: "colors", example: "", example2: "Black,White" },
+        ]}
+        templateSheetName="Bulk Update Products"
+        templateFileName="plusway_bulk_update_products.xlsx"
+        title="Bulk Update Products"
+        description="Update any product information by SKU. Color variants supported via their own SKU."
       />
     </div>
   );

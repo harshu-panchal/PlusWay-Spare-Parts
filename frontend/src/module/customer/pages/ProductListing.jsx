@@ -12,14 +12,17 @@ const ProductListing = () => {
     const location = useLocation();
     const queryParams = new URLSearchParams(location.search);
     const modelId = queryParams.get('model');
-    const typeId = queryParams.get('type');
+    // Accept both ?category= (used by header / category links) and ?type= (legacy)
+    const categoryId = queryParams.get('category') || queryParams.get('type');
     const keyword = queryParams.get('keyword');
 
     const [models, setModels] = useState([]);
     const [brands, setBrands] = useState([]);
+    const [categories, setCategories] = useState([]);
 
-    // Derived state for the selected model
+    // Derived state for the selected model / category
     const selectedModel = models.find(m => m._id === modelId);
+    const selectedCategory = categories.find(c => c._id === categoryId);
 
     const [products, setProducts] = useState([]);
     const [page, setPage] = useState(1);
@@ -35,7 +38,7 @@ const ProductListing = () => {
                 setLoading(true);
                 let url = `${API_BASE_URL}/api/customer/products?pageNumber=${page}&`;
                 if (modelId) url += `model=${modelId}&`;
-                if (typeId) url += `category=${typeId}&`;
+                if (categoryId) url += `category=${categoryId}&`;
                 if (keyword) url += `keyword=${keyword}&`;
                 url += `sort=${sortBy}&`;
 
@@ -53,12 +56,12 @@ const ProductListing = () => {
         };
 
         fetchProducts();
-    }, [modelId, typeId, keyword, location.search, page, sortBy]);
+    }, [modelId, categoryId, keyword, location.search, page, sortBy]);
 
     // Reset page when filters change
     useEffect(() => {
         setPage(1);
-    }, [modelId, typeId, keyword, location.search, sortBy]);
+    }, [modelId, categoryId, keyword, location.search, sortBy]);
 
     // Mock data for display titles (optional, could fetch real objects)
     const modelName = "Selected Model";
@@ -66,17 +69,22 @@ const ProductListing = () => {
 
     const [loadingModels, setLoadingModels] = useState(true);
 
-    // Fetch models and brands for filters
+    // Fetch models, brands & categories for filters
     useEffect(() => {
         const fetchFilters = async () => {
             try {
                 setLoadingModels(true);
-                const [modelRes, brandRes] = await Promise.all([
+                const [modelRes, brandRes, categoryRes] = await Promise.all([
                     axios.get(`${API_ENDPOINTS.MODELS}?all=true`),
-                    axios.get(`${API_ENDPOINTS.BRANDS}?all=true`)
+                    axios.get(`${API_ENDPOINTS.BRANDS}?all=true`),
+                    axios.get(`${API_ENDPOINTS.CUSTOMER_CATEGORIES}?all=true`),
                 ]);
                 setModels(modelRes.data.models || modelRes.data || []);
                 setBrands(brandRes.data.brands || brandRes.data || []);
+                setCategories(
+                    categoryRes.data.categories ||
+                        (Array.isArray(categoryRes.data) ? categoryRes.data : []),
+                );
                 setLoadingModels(false);
             } catch (error) {
                 console.error("Error fetching filters", error);
@@ -99,7 +107,13 @@ const ProductListing = () => {
                 <div className="flex items-center gap-2 text-xs text-gray-500 mb-6 overflow-x-auto whitespace-nowrap pb-2">
                     <Link to="/" className="hover:text-primary">Home</Link>
                     <ChevronRight size={12} />
-                    <span className="uppercase">{modelId ? models.find(m => m._id === modelId)?.name || "All Models" : "Products"}</span>
+                    <span className="uppercase">
+                        {modelId
+                            ? (selectedModel?.name || "All Models")
+                            : selectedCategory
+                                ? selectedCategory.name
+                                : "Products"}
+                    </span>
                 </div>
 
                 <div className="flex flex-col lg:flex-row gap-8">
@@ -171,6 +185,10 @@ const ProductListing = () => {
                                 <div className="flex items-center gap-2 border-l-4 border-primary pl-3">
                                     <h2 className="text-lg font-black text-secondary uppercase italic tracking-tighter">SPARE PARTS</h2>
                                 </div>
+                            ) : selectedCategory ? (
+                                <h1 className="text-lg font-black text-secondary uppercase italic tracking-tighter">
+                                    {selectedCategory.name} <span className="text-primary tracking-normal not-italic lowercase font-medium ml-2">({total} items)</span>
+                                </h1>
                             ) : (
                                 <h1 className="text-lg font-black text-secondary uppercase italic tracking-tighter">
                                     Products <span className="text-primary tracking-normal not-italic lowercase font-medium ml-2">({total} items)</span>

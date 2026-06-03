@@ -1040,3 +1040,671 @@ export const bulkUpdatePrices = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// BULK UPDATE PRODUCTS BY SKU
+//
+// SKU-keyed bulk update flow. One Excel sheet, one row per SKU. Backend
+// auto-detects whether each SKU is a product-level (Product.code) or a
+// color-variant (Product.colorVariants[].sku) SKU and updates the right thing.
+//
+// Design choices (see plan):
+//  - SKU column is the lookup key, never written.
+//  - Empty cell = no change. Literal token "__CLEAR__" clears an optional string field.
+//  - Brand / Model / Category are name-keyed dropdowns; backend resolves to ObjectId.
+//  - Variant rows that supply product-level columns get a per-row warning; those
+//    columns are ignored.
+//  - Ambiguous variant SKUs (matching > 1 product) fail that row.
+//  - Images: pipe-separated URLs replace the existing array.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Variant-applicable column keys (also fine on a product-level row with no variants).
+const VARIANT_COLUMN_KEYS = new Set([
+  "colorName",
+  "price",
+  "mrp",
+  "wholesalePrice",
+  "wholesaleMinQty",
+  "countInStock",
+  "images",
+]);
+
+// Product-level only column keys (apply to top-level Product fields).
+const PRODUCT_LEVEL_COLUMN_KEYS = new Set([
+  "name",
+  "description",
+  "cashback",
+  "brand",
+  "model",
+  "category",
+  "productType",
+  "videoUrl",
+  "specs",
+  "inTheBox",
+  "warrantyPeriod",
+  "warrantyPolicy",
+  "warrantySummary",
+  "coveredInWarranty",
+  "warrantyServiceType",
+  "warrantyTnC",
+  "highlights",
+  "descriptionPoints",
+  "countryOfOrigin",
+  "packer",
+  "colors",
+]);
+
+// Treat blank cell values as "no change".
+const isBlank = (v) => v === "" || v === undefined || v === null;
+// "__CLEAR__" explicitly clears an optional string field.
+const isClearToken = (v) =>
+  typeof v === "string" && v.trim().toUpperCase() === "__CLEAR__";
+
+// @desc    Download Excel template for bulk product update (SKU-keyed)
+// @route   GET /api/admin/products/bulk-update-template
+// @access  Private/Admin
+export const downloadBulkUpdateTemplate = async (req, res) => {
+  try {
+    const [brands, categories, models, sampleProductWithVariants, sampleProductSimple] = await Promise.all([
+      Brand.find({}, "name").sort({ name: 1 }),
+      Category.find({}, "name").sort({ name: 1 }),
+      Model.find({}, "name").sort({ name: 1 }),
+      // Live example: a product that has at least one color variant with an SKU
+      Product.findOne({ "colorVariants.0.sku": { $exists: true, $ne: "" } }, "name code colorVariants brand model category").populate("brand model category", "name"),
+      // Live example: a product without color variants but with a code
+      Product.findOne({ code: { $exists: true, $ne: "" }, $or: [{ colorVariants: { $exists: false } }, { colorVariants: { $size: 0 } }] }, "name code price mrp wholesalePrice wholesaleMinQty countInStock brand model category").populate("brand model category", "name"),
+    ]);
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = "PlusWay Admin";
+    workbook.lastModifiedBy = "PlusWay Admin";
+    workbook.created = new Date();
+    workbook.modified = new Date();
+
+    // 1. Data sheet (must be first so it is parsed as the default sheet)
+    const ws = workbook.addWorksheet("Bulk Update Products");
+
+    // 2. Hidden Lists sheet powering the dropdowns
+    const listsSheet = workbook.addWorksheet("_Lists");
+    listsSheet.state = "veryHidden";
+    listsSheet.getCell("A1").value = "Brands";
+    listsSheet.getCell("B1").value = "Categories";
+    listsSheet.getCell("C1").value = "Models";
+    brands.forEach((b, i) => { listsSheet.getCell(`A${i + 2}`).value = b.name; });
+    categories.forEach((c, i) => { listsSheet.getCell(`B${i + 2}`).value = c.name; });
+    models.forEach((m, i) => { listsSheet.getCell(`C${i + 2}`).value = m.name; });
+
+    // SKU + variant-applicable columns first so variant-heavy uploads don't scroll.
+    // Indices used below for dataValidation must stay in sync with this array.
+    const columns = [
+      { header: "SKU *", key: "SKU", width: 24 },
+      { header: "colorName", key: "colorName", width: 18 },
+      { header: "price", key: "price", width: 12 },
+      { header: "mrp", key: "mrp", width: 12 },
+      { header: "wholesalePrice", key: "wholesalePrice", width: 16 },
+      { header: "wholesaleMinQty", key: "wholesaleMinQty", width: 16 },
+      { header: "countInStock", key: "countInStock", width: 14 },
+      { header: "images", key: "images", width: 60 },
+      { header: "name", key: "name", width: 36 },
+      { header: "description", key: "description", width: 50 },
+      { header: "cashback", key: "cashback", width: 12 },
+      { header: "brand", key: "brand", width: 18 },
+      { header: "model", key: "model", width: 26 },
+      { header: "category", key: "category", width: 18 },
+      { header: "productType", key: "productType", width: 22 },
+      { header: "videoUrl", key: "videoUrl", width: 40 },
+      { header: "specs", key: "specs", width: 50 },
+      { header: "inTheBox", key: "inTheBox", width: 30 },
+      { header: "warrantyPeriod", key: "warrantyPeriod", width: 18 },
+      { header: "warrantyPolicy", key: "warrantyPolicy", width: 22 },
+      { header: "warrantySummary", key: "warrantySummary", width: 30 },
+      { header: "coveredInWarranty", key: "coveredInWarranty", width: 28 },
+      { header: "warrantyServiceType", key: "warrantyServiceType", width: 26 },
+      { header: "warrantyTnC", key: "warrantyTnC", width: 22 },
+      { header: "highlights", key: "highlights", width: 40 },
+      { header: "descriptionPoints", key: "descriptionPoints", width: 40 },
+      { header: "countryOfOrigin", key: "countryOfOrigin", width: 18 },
+      { header: "packer", key: "packer", width: 30 },
+      { header: "colors", key: "colors", width: 22 },
+    ];
+
+    ws.columns = columns.map((c) => ({ header: c.header, key: c.key, width: c.width }));
+
+    // Header styling — match downloadProductTemplate.
+    const headerRow = ws.getRow(1);
+    headerRow.height = 28;
+    headerRow.eachCell((cell) => {
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF4F46E5" } };
+      cell.font = { name: "Segoe UI", size: 11, bold: true, color: { argb: "FFFFFFFF" } };
+      cell.alignment = { vertical: "middle", horizontal: "center" };
+    });
+
+    // Find column indices we need for data validation. 1-indexed.
+    const findCol = (key) => columns.findIndex((c) => c.key === key) + 1;
+    const colLetter = (n) => {
+      let s = "";
+      while (n > 0) {
+        const m = (n - 1) % 26;
+        s = String.fromCharCode(65 + m) + s;
+        n = Math.floor((n - 1) / 26);
+      }
+      return s;
+    };
+    const brandColLetter = colLetter(findCol("brand"));
+    const modelColLetter = colLetter(findCol("model"));
+    const categoryColLetter = colLetter(findCol("category"));
+
+    // Example rows pulled live from the DB so admins see real SKUs to template against.
+    const variantExampleRow = {};
+    const productExampleRow = {};
+
+    if (sampleProductWithVariants && sampleProductWithVariants.colorVariants?.length) {
+      const v = sampleProductWithVariants.colorVariants[0];
+      variantExampleRow.SKU = v.sku || "";
+      variantExampleRow.colorName = v.colorName || "";
+      if (v.price !== undefined) variantExampleRow.price = v.price;
+      if (v.mrp !== undefined) variantExampleRow.mrp = v.mrp;
+      if (v.wholesalePrice !== undefined) variantExampleRow.wholesalePrice = v.wholesalePrice;
+      if (v.wholesaleMinQty !== undefined) variantExampleRow.wholesaleMinQty = v.wholesaleMinQty;
+      if (v.countInStock !== undefined) variantExampleRow.countInStock = v.countInStock;
+      if (v.images?.length) variantExampleRow.images = v.images.join("|");
+    } else {
+      variantExampleRow.SKU = "PW-BLA-001";
+      variantExampleRow.colorName = "Black";
+      variantExampleRow.price = 4500;
+      variantExampleRow.mrp = 5500;
+      variantExampleRow.wholesalePrice = 3800;
+      variantExampleRow.wholesaleMinQty = 10;
+      variantExampleRow.countInStock = 50;
+      variantExampleRow.images = "http://server/uploads/img1.jpg|http://server/uploads/img2.jpg";
+    }
+
+    if (sampleProductSimple) {
+      productExampleRow.SKU = sampleProductSimple.code || "";
+      productExampleRow.name = sampleProductSimple.name || "";
+      productExampleRow.price = sampleProductSimple.price ?? "";
+      productExampleRow.mrp = sampleProductSimple.mrp ?? "";
+      productExampleRow.wholesalePrice = sampleProductSimple.wholesalePrice ?? "";
+      productExampleRow.wholesaleMinQty = sampleProductSimple.wholesaleMinQty ?? "";
+      productExampleRow.countInStock = sampleProductSimple.countInStock ?? "";
+      productExampleRow.brand = sampleProductSimple.brand?.name || (brands[0]?.name ?? "");
+      productExampleRow.model = sampleProductSimple.model?.name || (models[0]?.name ?? "");
+      productExampleRow.category = sampleProductSimple.category?.name || (categories[0]?.name ?? "");
+    } else {
+      productExampleRow.SKU = "PW-BAT-IP14P-001";
+      productExampleRow.name = "Battery iPhone 14 Pro";
+      productExampleRow.price = 2500;
+      productExampleRow.mrp = 3000;
+      productExampleRow.wholesalePrice = 2100;
+      productExampleRow.wholesaleMinQty = 10;
+      productExampleRow.countInStock = 50;
+      productExampleRow.brand = brands[0]?.name || "Apple";
+      productExampleRow.model = models[0]?.name || "Apple iPhone 14 Pro";
+      productExampleRow.category = categories[0]?.name || "Battery";
+    }
+
+    const buildRowArray = (rowObj) => columns.map((c) => (rowObj[c.key] !== undefined ? rowObj[c.key] : ""));
+
+    const row2 = ws.addRow(buildRowArray(variantExampleRow));
+    const row3 = ws.addRow(buildRowArray(productExampleRow));
+    [row2, row3].forEach((r) => {
+      r.height = 20;
+      r.eachCell((cell) => {
+        cell.font = { name: "Segoe UI", size: 10, italic: true, color: { argb: "FF64748B" } };
+        cell.alignment = { vertical: "middle" };
+      });
+    });
+
+    // Data validations on brand / model / category columns.
+    const brandEnd = Math.max(2, brands.length + 1);
+    const categoryEnd = Math.max(2, categories.length + 1);
+    const modelEnd = Math.max(2, models.length + 1);
+
+    for (let i = 2; i <= 1000; i++) {
+      ws.getCell(`${brandColLetter}${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: [`_Lists!$A$2:$A$${brandEnd}`],
+        showErrorMessage: true,
+        errorTitle: "Invalid Brand",
+        error: "Please select a Brand from the dropdown list (or leave blank to keep current).",
+      };
+      ws.getCell(`${modelColLetter}${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: [`_Lists!$C$2:$C$${modelEnd}`],
+        showErrorMessage: true,
+        errorTitle: "Invalid Model",
+        error: "Please select a Model from the dropdown list (or leave blank to keep current).",
+      };
+      ws.getCell(`${categoryColLetter}${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: [`_Lists!$B$2:$B$${categoryEnd}`],
+        showErrorMessage: true,
+        errorTitle: "Invalid Category",
+        error: "Please select a Category from the dropdown list (or leave blank to keep current).",
+      };
+    }
+
+    // Instructions sheet.
+    const instr = workbook.addWorksheet("Instructions");
+    instr.columns = [{ width: 38 }, { width: 70 }];
+    const instructionRows = [
+      ["INSTRUCTIONS — BULK UPDATE PRODUCTS BY SKU", ""],
+      ["", ""],
+      ["1. SKU column (column A)", "This is the LOOKUP KEY. It is never modified. Required on every row."],
+      ["", "Use a product-level SKU (Product.code) to update a top-level product."],
+      ["", "Use a color-variant SKU to update a single color variant of a product."],
+      ["", ""],
+      ["2. Empty cell behavior", "An empty cell means \"do not change\" that field. The product/variant keeps its current value."],
+      ["3. Clear a string field", "Type the literal token __CLEAR__ in a cell to reset an optional string field to empty."],
+      ["", ""],
+      ["4. Example rows (row 2 & 3)", "Row 2 = a real color-VARIANT example (SKU + variant fields filled). Row 3 = a real product-LEVEL example. Overwrite or delete before uploading."],
+      ["", ""],
+      ["VARIANT ROWS", "When the SKU matches a color variant, only these columns are honored:"],
+      ["", "colorName, price, mrp, wholesalePrice, wholesaleMinQty, countInStock, images"],
+      ["", "Other columns (brand, model, category, name, specs, warranty*, etc.) are IGNORED with a per-row warning in the upload summary."],
+      ["", ""],
+      ["PRODUCT-LEVEL ROWS", "When the SKU matches Product.code, every column is editable except SKU (immutable) and slug (auto-managed)."],
+      ["", ""],
+      ["brand / model / category", "Pick from the dropdown. Must match an existing entry. Case-insensitive. To add a new one, create it via Admin → Brands / Models / Categories first."],
+      ["images", "Pipe-separated full URLs replace the existing image list:  url1|url2|url3"],
+      ["specs", "Pipe-separated key:value pairs replace the existing specs list:  Color:Black|RAM:8GB|Storage:256GB"],
+      ["highlights / descriptionPoints", "Pipe-separated bullets:  Fast Charging|5G Ready"],
+      ["colors", "Comma-separated:  Black,White,Gold"],
+      ["description", "Use \\n inside the cell for paragraph breaks (Alt+Enter in Excel)."],
+      ["", ""],
+      ["Things you CANNOT change here", "SKU itself, slug, reviews, rating, numReviews. Use the per-product edit page for those."],
+      ["Ambiguous variant SKU", "If the same variant SKU exists on more than one product, that row fails with an error. Fix the duplicate via the product edit page."],
+      ["Top-level price on a multi-variant product", "Allowed, but the value is normally derived from the first variant; it may be overwritten the next time variants change."],
+      ["Max file size", "10 MB"],
+    ];
+    instructionRows.forEach((r) => instr.addRow(r));
+    instr.getRow(1).font = { bold: true, size: 13, color: { argb: "FF4F46E5" } };
+    [3, 7, 8, 10, 12, 16, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28].forEach((rowNum) => {
+      const cell = instr.getRow(rowNum).getCell(1);
+      if (cell) cell.font = { bold: true };
+    });
+
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", "attachment; filename=plusway_bulk_update_products.xlsx");
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error("Error generating bulk-update template:", error);
+    res.status(500).json({ message: "Failed to generate template", error: error.message });
+  }
+};
+
+// @desc    Bulk update products / color variants by SKU
+// @route   POST /api/admin/products/bulk-update
+// @access  Private/Admin
+export const bulkUpdateProductsBySku = async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: "No Excel file provided" });
+  }
+
+  const results = { success: [], errors: [] };
+
+  try {
+    const workbook = XLSX.readFile(req.file.path);
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const rawRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+    // Normalize keys (strip trailing " *" from required headers).
+    const rows = rawRows.map((row) => {
+      const cleanRow = {};
+      for (const key in row) {
+        const cleanKey = key.replace(/\s*\*\s*$/, "").trim();
+        cleanRow[cleanKey] = row[key];
+      }
+      return cleanRow;
+    });
+
+    if (!rows.length) {
+      try { fs.unlinkSync(req.file.path); } catch (_) {}
+      return res.status(400).json({ message: "Excel file is empty or has no data rows" });
+    }
+
+    // Pre-fetch maps for name → ObjectId resolution.
+    const [allBrands, allCategories, allModels] = await Promise.all([
+      Brand.find({}, "name _id"),
+      Category.find({}, "name _id"),
+      Model.find({}, "name _id"),
+    ]);
+    const brandMap = {};
+    allBrands.forEach((b) => { brandMap[b.name.toLowerCase().trim()] = b._id; });
+    const categoryMap = {};
+    allCategories.forEach((c) => { categoryMap[c.name.toLowerCase().trim()] = c._id; });
+    const modelMap = {};
+    allModels.forEach((m) => { modelMap[m.name.toLowerCase().trim()] = m._id; });
+
+    // Per-row parsing helpers (mirror the create flow).
+    const parsePipeList = (v) =>
+      String(v).split("|").map((s) => s.trim()).filter(Boolean);
+    const parseCommaList = (v) =>
+      String(v).split(",").map((s) => s.trim()).filter(Boolean);
+    const parseSpecs = (v) =>
+      String(v)
+        .split("|")
+        .map((s) => {
+          const colonIdx = s.indexOf(":");
+          if (colonIdx === -1) return null;
+          return { key: s.substring(0, colonIdx).trim(), value: s.substring(colonIdx + 1).trim() };
+        })
+        .filter(Boolean);
+    const parseDescription = (v) =>
+      String(v).split("\n").map((p) => p.trim()).filter(Boolean);
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const rowNum = i + 2;
+      const sku = String(row.SKU || "").trim();
+
+      if (!sku) {
+        results.errors.push({ row: rowNum, name: "?", error: "Missing SKU" });
+        continue;
+      }
+
+      try {
+        // 1) Try product-level: Product.code.
+        const productByCode = await Product.findOne({ code: sku });
+        if (productByCode) {
+          const $set = {};
+          const rowWarnings = [];
+
+          // Helper to set an optional string field with __CLEAR__ support.
+          const setStringField = (field, value) => {
+            if (isBlank(value)) return; // unchanged
+            if (isClearToken(value)) { $set[field] = ""; return; }
+            $set[field] = String(value).trim();
+          };
+
+          // Helper for numeric fields. Blank = unchanged. __CLEAR__ not meaningful here.
+          const setNumericField = (field, value) => {
+            if (isBlank(value)) return;
+            const n = Number(value);
+            if (Number.isNaN(n)) {
+              throw new Error(`Field "${field}" must be a number (got "${value}")`);
+            }
+            $set[field] = n;
+          };
+
+          if (!isBlank(row.name)) {
+            const trimmed = String(row.name).trim();
+            if (!trimmed) throw new Error("name cannot be empty");
+            $set.name = trimmed;
+          }
+
+          if (!isBlank(row.description)) {
+            $set.description = isClearToken(row.description) ? [] : parseDescription(row.description);
+          }
+
+          setNumericField("price", row.price);
+          setNumericField("mrp", row.mrp);
+          setNumericField("wholesalePrice", row.wholesalePrice);
+          setNumericField("wholesaleMinQty", row.wholesaleMinQty);
+          setNumericField("cashback", row.cashback);
+          setNumericField("countInStock", row.countInStock);
+
+          // Brand / Model / Category resolution.
+          if (!isBlank(row.brand)) {
+            const id = brandMap[String(row.brand).toLowerCase().trim()];
+            if (!id) throw new Error(`Brand "${row.brand}" not found`);
+            $set.brand = id;
+          }
+          if (!isBlank(row.model)) {
+            const id = modelMap[String(row.model).toLowerCase().trim()];
+            if (!id) throw new Error(`Model "${row.model}" not found`);
+            $set.model = id;
+          }
+          if (!isBlank(row.category)) {
+            const id = categoryMap[String(row.category).toLowerCase().trim()];
+            if (!id) throw new Error(`Category "${row.category}" not found`);
+            $set.category = id;
+          }
+
+          setStringField("productType", row.productType);
+          setStringField("videoUrl", row.videoUrl);
+
+          if (!isBlank(row.images)) {
+            $set.images = isClearToken(row.images) ? [] : parsePipeList(row.images);
+          }
+
+          if (!isBlank(row.colors)) {
+            $set.colors = isClearToken(row.colors) ? [] : parseCommaList(row.colors);
+          }
+
+          // Nested details fields use dotted-path $set so we don't clobber sibling fields.
+          if (!isBlank(row.specs)) {
+            $set["details.specs"] = isClearToken(row.specs) ? [] : parseSpecs(row.specs);
+          }
+          if (!isBlank(row.inTheBox)) {
+            $set["details.inTheBox"] = isClearToken(row.inTheBox) ? "" : String(row.inTheBox).trim();
+          }
+          if (!isBlank(row.warrantyPeriod)) {
+            $set["details.warranty.period"] = isClearToken(row.warrantyPeriod) ? "" : String(row.warrantyPeriod).trim();
+          }
+          if (!isBlank(row.warrantyPolicy)) {
+            $set["details.warranty.policy"] = isClearToken(row.warrantyPolicy) ? "" : String(row.warrantyPolicy).trim();
+          }
+          if (!isBlank(row.warrantySummary)) {
+            $set["details.warranty.summary"] = isClearToken(row.warrantySummary) ? "" : String(row.warrantySummary).trim();
+          }
+          if (!isBlank(row.coveredInWarranty)) {
+            $set["details.warranty.coveredInWarranty"] = isClearToken(row.coveredInWarranty) ? "" : String(row.coveredInWarranty).trim();
+          }
+          if (!isBlank(row.warrantyServiceType)) {
+            $set["details.warranty.serviceType"] = isClearToken(row.warrantyServiceType) ? "" : String(row.warrantyServiceType).trim();
+          }
+          if (!isBlank(row.warrantyTnC)) {
+            $set["details.warranty.tnc"] = isClearToken(row.warrantyTnC) ? "" : String(row.warrantyTnC).trim();
+          }
+          if (!isBlank(row.highlights)) {
+            $set["details.highlights"] = isClearToken(row.highlights) ? [] : parsePipeList(row.highlights);
+          }
+          if (!isBlank(row.descriptionPoints)) {
+            $set["details.descriptionPoints"] = isClearToken(row.descriptionPoints) ? [] : parsePipeList(row.descriptionPoints);
+          }
+          if (!isBlank(row.countryOfOrigin)) {
+            $set["details.countryOfOrigin"] = isClearToken(row.countryOfOrigin) ? "" : String(row.countryOfOrigin).trim();
+          }
+          if (!isBlank(row.packer)) {
+            $set["details.packer"] = isClearToken(row.packer) ? "" : String(row.packer).trim();
+          }
+
+          // colorName on a product-level row is meaningless — warn rather than error.
+          if (!isBlank(row.colorName)) {
+            rowWarnings.push(`colorName ignored — provide a variant SKU to update a variant's color name`);
+          }
+
+          // Warn admins who set top-level pricing on a multi-variant product, since
+          // those fields are normally derived from the first variant and may be
+          // overwritten the next time variants change.
+          if (
+            productByCode.colorVariants?.length > 0 &&
+            ["price", "mrp", "wholesalePrice", "wholesaleMinQty", "countInStock"].some((k) => !isBlank(row[k]))
+          ) {
+            rowWarnings.push(
+              `Top-level price/stock fields set on a product that has color variants — they may be overridden when variants are next updated.`,
+            );
+          }
+
+          if (Object.keys($set).length === 0) {
+            results.success.push({
+              row: rowNum,
+              sku,
+              type: "product",
+              name: productByCode.name,
+              warnings: ["No editable fields filled — row had no effect."],
+            });
+            continue;
+          }
+
+          await Product.findByIdAndUpdate(productByCode._id, { $set });
+          results.success.push({
+            row: rowNum,
+            sku,
+            type: "product",
+            name: productByCode.name,
+            warnings: rowWarnings,
+          });
+          continue;
+        }
+
+        // 2) Try variant-level: colorVariants.sku. Use find() to detect ambiguity.
+        const variantMatches = await Product.find(
+          { "colorVariants.sku": sku },
+          "_id name colorVariants price mrp wholesalePrice wholesaleMinQty countInStock",
+        );
+
+        if (variantMatches.length === 0) {
+          results.errors.push({ row: rowNum, name: "?", error: `SKU ${sku} not found` });
+          continue;
+        }
+        if (variantMatches.length > 1) {
+          results.errors.push({
+            row: rowNum,
+            name: "?",
+            error: `Variant SKU ${sku} is ambiguous (matches ${variantMatches.length} products)`,
+          });
+          continue;
+        }
+
+        const parent = variantMatches[0];
+        const variantIdx = parent.colorVariants.findIndex((v) => v.sku === sku);
+        if (variantIdx === -1) {
+          // Shouldn't happen, but guard anyway.
+          results.errors.push({ row: rowNum, name: parent.name, error: `Variant SKU ${sku} not found on parent` });
+          continue;
+        }
+
+        const $set = {};
+        const rowWarnings = [];
+        const base = `colorVariants.${variantIdx}`;
+
+        // colorName is required by schema — refuse to blank it.
+        if (!isBlank(row.colorName)) {
+          if (isClearToken(row.colorName)) {
+            throw new Error("colorName is required and cannot be cleared");
+          }
+          const trimmed = String(row.colorName).trim();
+          if (!trimmed) throw new Error("colorName cannot be empty");
+          $set[`${base}.colorName`] = trimmed;
+        }
+
+        const setVariantNumeric = (key) => {
+          if (isBlank(row[key])) return;
+          const n = Number(row[key]);
+          if (Number.isNaN(n)) {
+            throw new Error(`Field "${key}" must be a number (got "${row[key]}")`);
+          }
+          $set[`${base}.${key}`] = n;
+        };
+        setVariantNumeric("price");
+        setVariantNumeric("mrp");
+        setVariantNumeric("wholesalePrice");
+        setVariantNumeric("wholesaleMinQty");
+        setVariantNumeric("countInStock");
+
+        if (!isBlank(row.images)) {
+          $set[`${base}.images`] = isClearToken(row.images) ? [] : parsePipeList(row.images);
+        }
+
+        // Mirror to top-level when updating the first variant (matches existing bulkUpdatePrices).
+        if (variantIdx === 0) {
+          ["price", "mrp", "wholesalePrice", "wholesaleMinQty"].forEach((k) => {
+            const dotted = `${base}.${k}`;
+            if (dotted in $set) $set[k] = $set[dotted];
+          });
+        }
+
+        // Re-sum parent countInStock if this variant's countInStock changed.
+        if (`${base}.countInStock` in $set) {
+          const newStock = $set[`${base}.countInStock`];
+          let parentStock = 0;
+          parent.colorVariants.forEach((v, idx) => {
+            parentStock += idx === variantIdx ? newStock : Number(v.countInStock || 0);
+          });
+          $set.countInStock = parentStock;
+        }
+
+        // Collect warnings for product-level columns supplied on a variant row.
+        for (const colKey of Object.keys(row)) {
+          if (colKey === "SKU") continue;
+          if (PRODUCT_LEVEL_COLUMN_KEYS.has(colKey) && !isBlank(row[colKey])) {
+            rowWarnings.push(`${colKey}: ignored on variant row`);
+          }
+        }
+
+        const onlyMutatedFields = Object.keys($set).filter((k) => k.startsWith(base));
+        if (onlyMutatedFields.length === 0) {
+          results.success.push({
+            row: rowNum,
+            sku,
+            type: "variant",
+            name: parent.name,
+            colorName: parent.colorVariants[variantIdx].colorName,
+            warnings: ["No variant fields filled — row had no effect.", ...rowWarnings],
+          });
+          continue;
+        }
+
+        await Product.updateOne({ _id: parent._id }, { $set });
+        results.success.push({
+          row: rowNum,
+          sku,
+          type: "variant",
+          name: parent.name,
+          colorName: parent.colorVariants[variantIdx].colorName,
+          warnings: rowWarnings,
+        });
+      } catch (rowError) {
+        results.errors.push({ row: rowNum, name: "?", error: rowError.message });
+      }
+    }
+
+    // Save the upload file & record history (only if at least one row was processed).
+    let savedFileName = req.file.filename;
+    let savedFilePath = req.file.path;
+
+    if (rows.length > 0) {
+      try {
+        const ext = path.extname(req.file.originalname) || ".xlsx";
+        savedFileName = `${req.file.filename}${ext}`;
+        savedFilePath = `${req.file.path}${ext}`;
+        fs.renameSync(req.file.path, savedFilePath);
+
+        await BulkUploadHistory.create({
+          fileName: req.file.originalname,
+          filePath: savedFileName,
+          uploadType: "ProductsUpdate",
+          totalRows: rows.length,
+          successCount: results.success.length,
+          errorCount: results.errors.length,
+          uploadedBy: req.user._id,
+        });
+      } catch (historyErr) {
+        // History logging is best-effort; don't fail the response.
+        console.error("BulkUploadHistory write failed:", historyErr);
+      }
+    } else {
+      try { fs.unlinkSync(req.file.path); } catch (_) {}
+    }
+
+    const statusCode = results.success.length > 0 ? 200 : 400;
+    res.status(statusCode).json({
+      message: `Update complete. ${results.success.length} updated, ${results.errors.length} failed.`,
+      total: rows.length,
+      successCount: results.success.length,
+      errorCount: results.errors.length,
+      results,
+    });
+  } catch (error) {
+    try { fs.unlinkSync(req.file.path); } catch (_) {}
+    console.error("Bulk update by SKU failed:", error);
+    res.status(500).json({ message: "Bulk update failed", error: error.message });
+  }
+};
+

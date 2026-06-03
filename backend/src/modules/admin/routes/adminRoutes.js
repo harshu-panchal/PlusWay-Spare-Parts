@@ -40,6 +40,8 @@ import {
   exportProductsBackup,
   bulkUpdatePrices,
   downloadPriceUpdateTemplate,
+  bulkUpdateProductsBySku,
+  downloadBulkUpdateTemplate,
 } from "../controllers/productController.js";
 import {
   getCategories,
@@ -124,6 +126,8 @@ router.delete("/products/bulk", protect, admin, deleteBulkProducts);
 router.get("/products/export", protect, admin, exportProductsBackup);
 router.post("/products/bulk-update-price", protect, admin, excelUpload.single("file"), bulkUpdatePrices);
 router.get("/products/bulk-price-template", protect, admin, downloadPriceUpdateTemplate);
+router.post("/products/bulk-update", protect, admin, excelUpload.single("file"), bulkUpdateProductsBySku);
+router.get("/products/bulk-update-template", protect, admin, downloadBulkUpdateTemplate);
 router
   .route("/products")
   .get(protect, admin, getProducts)

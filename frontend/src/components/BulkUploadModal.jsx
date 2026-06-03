@@ -13,6 +13,7 @@ import {
   ChevronDown,
   ChevronUp,
   AlertCircle,
+  AlertTriangle,
 } from "lucide-react";
 
 /**
@@ -23,6 +24,12 @@ import {
  *  onClose           () => void
  *  onSuccess         () => void   — called after a successful upload to refresh the list
  *  uploadEndpoint    string       — API URL for POST (multipart/form-data, field: "file")
+ *  templateEndpoint  string?      — Optional explicit GET URL for the backend-generated
+ *                                   template. If provided, it is used as-is. Otherwise
+ *                                   we fall back to uploadEndpoint.replace("/bulk-upload","/bulk-template").
+ *                                   Required for flows that need server-side features
+ *                                   like Excel data-validation dropdowns (client-side fallback
+ *                                   cannot generate them).
  *  templateColumns   Array<{ header, key, example, example2 }>
  *  templateSheetName string       — e.g. "Products"
  *  templateFileName  string       — e.g. "plusway_products_bulk_template.xlsx"
@@ -34,6 +41,7 @@ const BulkUploadModal = ({
   onClose,
   onSuccess,
   uploadEndpoint,
+  templateEndpoint,
   templateColumns,
   templateSheetName,
   templateFileName,
@@ -45,6 +53,7 @@ const BulkUploadModal = ({
   const [results, setResults] = useState(null);
   const [showErrors, setShowErrors] = useState(true);
   const [showSuccesses, setShowSuccesses] = useState(true);
+  const [showWarnings, setShowWarnings] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -77,8 +86,9 @@ const BulkUploadModal = ({
         responseType: "blob",
       };
 
-      const templateEndpoint = uploadEndpoint.replace("/bulk-upload", "/bulk-template");
-      const { data } = await axios.get(templateEndpoint, config);
+      const resolvedTemplateEndpoint =
+        templateEndpoint || uploadEndpoint.replace("/bulk-upload", "/bulk-template");
+      const { data } = await axios.get(resolvedTemplateEndpoint, config);
 
       const blob = new Blob([data], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -220,6 +230,17 @@ const BulkUploadModal = ({
   const successCount = results?.successCount ?? 0;
   const errorCount = results?.errorCount ?? 0;
   const totalCount = results?.total ?? 0;
+
+  // Pull per-row warnings out of the success list (additive — older endpoints
+  // simply don't return a `warnings` array on success rows, so this list is empty
+  // and the UI section is hidden).
+  const rowsWithWarnings = (results?.results?.success || []).filter(
+    (s) => Array.isArray(s.warnings) && s.warnings.length > 0,
+  );
+  const warningCount = rowsWithWarnings.reduce(
+    (acc, s) => acc + s.warnings.length,
+    0,
+  );
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4 animate-in fade-in duration-300">
@@ -406,7 +427,17 @@ const BulkUploadModal = ({
                         <div key={i} className="flex items-center gap-3 px-5 py-2.5 text-sm bg-white">
                           <span className="text-gray-400 text-xs w-16 shrink-0">Row {s.row}</span>
                           <CheckCircle size={14} className="text-emerald-500 shrink-0" />
-                          <span className="text-gray-700 font-medium truncate">{s.name}</span>
+                          <span className="text-gray-700 font-medium truncate">
+                            {s.name}
+                            {s.colorName ? (
+                              <span className="text-gray-400 font-normal"> — {s.colorName}</span>
+                            ) : null}
+                          </span>
+                          {s.type ? (
+                            <span className="ml-auto text-[10px] uppercase tracking-wider font-bold text-emerald-600/70 shrink-0">
+                              {s.type}
+                            </span>
+                          ) : null}
                         </div>
                       ))}
                     </div>
@@ -436,6 +467,42 @@ const BulkUploadModal = ({
                             <span className="font-bold text-gray-800 text-sm truncate">{e.name}</span>
                           </div>
                           <p className="text-red-600 text-xs mt-1.5 ml-[4.5rem] leading-relaxed">{e.error}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Warnings (per-row, attached to successful rows) */}
+              {rowsWithWarnings.length > 0 && (
+                <div className="border border-amber-200 rounded-xl overflow-hidden">
+                  <button
+                    onClick={() => setShowWarnings(!showWarnings)}
+                    className="w-full px-5 py-3 bg-amber-50 flex items-center justify-between text-sm font-bold text-amber-700 hover:bg-amber-100 transition-colors">
+                    <span className="flex items-center gap-2">
+                      <AlertTriangle size={16} />
+                      Warnings ({warningCount} across {rowsWithWarnings.length} row{rowsWithWarnings.length === 1 ? "" : "s"})
+                    </span>
+                    {showWarnings ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </button>
+                  {showWarnings && (
+                    <div className="max-h-56 overflow-y-auto divide-y divide-amber-50">
+                      {rowsWithWarnings.map((s, i) => (
+                        <div key={i} className="px-5 py-3 bg-white">
+                          <div className="flex items-center gap-3">
+                            <span className="text-gray-400 text-xs w-16 shrink-0">Row {s.row}</span>
+                            <AlertTriangle size={14} className="text-amber-500 shrink-0" />
+                            <span className="font-bold text-gray-800 text-sm truncate">
+                              {s.name}
+                              {s.colorName ? ` — ${s.colorName}` : ""}
+                            </span>
+                          </div>
+                          <ul className="text-amber-700 text-xs mt-1.5 ml-[4.5rem] leading-relaxed list-disc list-inside space-y-0.5">
+                            {s.warnings.map((w, wi) => (
+                              <li key={wi}>{w}</li>
+                            ))}
+                          </ul>
                         </div>
                       ))}
                     </div>
