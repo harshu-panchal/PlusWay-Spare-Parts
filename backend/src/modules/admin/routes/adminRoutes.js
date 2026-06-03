@@ -53,6 +53,7 @@ import {
   createModel,
   updateModel,
   deleteModel,
+  deleteBulkModels,
   bulkCreateModels,
   downloadModelTemplate,
 } from "../controllers/modelController.js";
@@ -172,9 +173,10 @@ router
   .delete(protect, admin, deleteCategory);
 
 // Model routes
-// IMPORTANT: bulk-upload and bulk-template must come BEFORE /:id to avoid route collision
+// IMPORTANT: bulk-upload, bulk-template, and bulk delete must come BEFORE /:id to avoid route collision
 router.post("/models/bulk-upload", protect, admin, excelUpload.single("file"), bulkCreateModels);
 router.get("/models/bulk-template", protect, admin, downloadModelTemplate);
+router.delete("/models/bulk", protect, admin, deleteBulkModels);
 router
   .route("/models")
   .get(protect, admin, getModels)

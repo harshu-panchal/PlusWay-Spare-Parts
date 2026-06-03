@@ -168,6 +168,46 @@ export const deleteModel = async (req, res) => {
   }
 };
 
+// @desc    Bulk delete models
+// @route   DELETE /api/admin/models/bulk
+// @access  Private/Admin
+export const deleteBulkModels = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: "No model IDs provided" });
+    }
+
+    // Load models first so we can clean up Brand.models references
+    const models = await Model.find({ _id: { $in: ids } }, "_id brand");
+
+    // Group model IDs by brand for efficient $pullAll updates
+    const brandToModelIds = new Map();
+    models.forEach((m) => {
+      const brandId = m.brand?.toString();
+      if (!brandId) return;
+      if (!brandToModelIds.has(brandId)) brandToModelIds.set(brandId, []);
+      brandToModelIds.get(brandId).push(m._id);
+    });
+
+    // Remove model references from each affected brand
+    await Promise.all(
+      Array.from(brandToModelIds.entries()).map(([brandId, modelIds]) =>
+        Brand.findByIdAndUpdate(brandId, { $pullAll: { models: modelIds } }),
+      ),
+    );
+
+    const result = await Model.deleteMany({ _id: { $in: ids } });
+
+    res.json({
+      message: `${result.deletedCount} model(s) removed`,
+      deletedCount: result.deletedCount,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Bulk create models from Excel
 // @route   POST /api/admin/models/bulk-upload
 // @access  Private/Admin

@@ -30,6 +30,7 @@ const ModelManagement = () => {
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [selectedModels, setSelectedModels] = useState([]);
 
   const initialFormState = {
     name: "",
@@ -81,6 +82,7 @@ const ModelManagement = () => {
 
   useEffect(() => {
     fetchData();
+    setSelectedModels([]);
   }, [page, searchTerm, selectedBrand]);
 
   const handleOpenModal = (model = null) => {
@@ -146,6 +148,47 @@ const ModelManagement = () => {
     } catch (error) {
       console.error(error);
       alert("Failed to delete model");
+    }
+  };
+
+  const handleSelectModel = (id) => {
+    setSelectedModels((prev) =>
+      prev.includes(id) ? prev.filter((mid) => mid !== id) : [...prev, id],
+    );
+  };
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedModels(models.map((m) => m._id));
+    } else {
+      setSelectedModels([]);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedModels.length === 0) return;
+    if (
+      !window.confirm(
+        `Are you sure you want to delete ${selectedModels.length} model(s)? This cannot be undone.`,
+      )
+    )
+      return;
+
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}`,
+        },
+        data: { ids: selectedModels },
+      };
+      await axios.delete(API_ENDPOINTS.ADMIN_MODELS_BULK_DELETE, config);
+      setSelectedModels([]);
+      fetchData();
+    } catch (error) {
+      console.error(error);
+      alert(
+        error.response?.data?.message || "Failed to bulk delete models",
+      );
     }
   };
 
@@ -215,11 +258,44 @@ const ModelManagement = () => {
         </div>
       </div>
 
+      {selectedModels.length > 0 && (
+        <div className="flex items-center justify-between gap-3 bg-red-50 border border-red-100 rounded-lg px-4 py-2.5">
+          <span className="text-sm font-medium text-red-700">
+            {selectedModels.length} model{selectedModels.length > 1 ? "s" : ""} selected
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSelectedModels([])}
+              className="px-3 py-1.5 text-xs font-bold text-gray-600 hover:bg-white rounded-lg transition-colors">
+              Clear
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 transition-colors">
+              <Trash2 size={14} />
+              Delete Selected ({selectedModels.length})
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
+                <th className="px-4 py-4 w-10">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+                    onChange={handleSelectAll}
+                    checked={
+                      models.length > 0 &&
+                      selectedModels.length === models.length
+                    }
+                    aria-label="Select all models on this page"
+                  />
+                </th>
                 <th className="px-6 py-4 text-sm font-semibold text-gray-600">
                   Model Name
                 </th>
@@ -238,7 +314,16 @@ const ModelManagement = () => {
               {models.map((model) => (
                 <tr
                   key={model._id}
-                  className="hover:bg-gray-50 transition-colors">
+                  className={`hover:bg-gray-50 transition-colors ${selectedModels.includes(model._id) ? "bg-blue-50/40" : ""}`}>
+                  <td className="px-4 py-4">
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+                      checked={selectedModels.includes(model._id)}
+                      onChange={() => handleSelectModel(model._id)}
+                      aria-label={`Select model ${model.name}`}
+                    />
+                  </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-blue-50 text-blue-600 rounded-lg overflow-hidden w-12 h-12 flex items-center justify-center">
