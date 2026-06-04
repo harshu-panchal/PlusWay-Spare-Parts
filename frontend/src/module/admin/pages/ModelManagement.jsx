@@ -195,7 +195,7 @@ const ModelManagement = () => {
   const modelTemplateColumns = [
     { header: "name *", key: "name", example: "Galaxy S23 Ultra", example2: "iPhone 14 Pro" },
     { header: "brand *", key: "brand", example: "Samsung", example2: "Apple" },
-    { header: "released", key: "released", example: "February 2023", example2: "September 2022" },
+    { header: "released", key: "released", example: "15/02/2023", example2: "28/09/2022" },
     { header: "image", key: "image", example: "http://server/uploads/s23ultra.jpg", example2: "" },
   ];
 

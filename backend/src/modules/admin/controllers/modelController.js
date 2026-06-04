@@ -220,7 +220,9 @@ export const bulkCreateModels = async (req, res) => {
 
   try {
     // Parse Excel file
-    const workbook = XLSX.readFile(req.file.path);
+    // cellDates: true makes SheetJS return JS Date objects for date-typed cells,
+    // instead of raw serial numbers — much easier to normalize the `released` column.
+    const workbook = XLSX.readFile(req.file.path, { cellDates: true });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const rawRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
@@ -234,6 +236,39 @@ export const bulkCreateModels = async (req, res) => {
       }
       return cleanRow;
     });
+
+    // Normalize the `released` field. Excel may hand us back any of:
+    //  - a JS Date object (because cellDates: true above), or
+    //  - a numeric Excel serial number (safety net), or
+    //  - a string the admin typed.
+    // We always emit "dd/mm/yyyy" for date-shaped values, and pass freeform
+    // text (e.g. "February 2023") through unchanged for backward compatibility.
+    const pad2 = (n) => String(n).padStart(2, "0");
+    const fmtDDMMYYYY = (d) =>
+      `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()}`;
+    const normalizeReleasedDate = (v) => {
+      if (v === undefined || v === null || v === "") return undefined;
+      if (v instanceof Date && !Number.isNaN(v.getTime())) return fmtDDMMYYYY(v);
+      if (typeof v === "number" && Number.isFinite(v)) {
+        // Excel serial date: days since 1900-01-01 (with the 1900 leap-year bug).
+        // 25569 = days from 1900-01-01 to 1970-01-01.
+        const ms = Math.round((v - 25569) * 86400 * 1000);
+        const d = new Date(ms);
+        if (!Number.isNaN(d.getTime())) return fmtDDMMYYYY(d);
+      }
+      if (typeof v === "string") {
+        const s = v.trim();
+        // Accept d/m/yy(yy), d-m-yy(yy), d.m.yy(yy) and normalize to dd/mm/yyyy.
+        const m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+        if (m) {
+          let [, d, mo, y] = m;
+          if (y.length === 2) y = (Number(y) >= 70 ? "19" : "20") + y;
+          return `${pad2(d)}/${pad2(mo)}/${y}`;
+        }
+        return s; // freeform like "February 2023" — keep as-is.
+      }
+      return String(v).trim();
+    };
 
     if (!rows.length) {
       try { fs.unlinkSync(req.file.path); } catch (_) {}
@@ -287,7 +322,7 @@ export const bulkCreateModels = async (req, res) => {
         const model = new Model({
           name: finalName,
           brand: brandDoc._id,
-          released: row.released ? String(row.released).trim() : undefined,
+          released: normalizeReleasedDate(row.released),
           displaySize: row.displaySize ? String(row.displaySize).trim() : undefined,
           image: row.image ? String(row.image).trim() : undefined,
         });
@@ -376,10 +411,12 @@ export const downloadModelTemplate = async (req, res) => {
     });
 
     // Define columns
+    // NOTE: the `released` column key MUST stay "released" so the backend parser
+    // finds it. The displayed header may include format hints if we ever want.
     const columns = [
       { header: "name *", key: "name", example: "Galaxy S23 Ultra", example2: "iPhone 14 Pro" },
       { header: "brand *", key: "brand", example: "Samsung", example2: "Apple" },
-      { header: "released", key: "released", example: "February 2023", example2: "September 2022" },
+      { header: "released", key: "released", example: "15/02/2023", example2: "28/09/2022" },
       { header: "image", key: "image", example: "http://server/uploads/s23ultra.jpg", example2: "" },
     ];
 
@@ -388,6 +425,17 @@ export const downloadModelTemplate = async (req, res) => {
       key: c.key,
       width: 28,
     }));
+
+    // Force the `released` column to TEXT format so Excel doesn't auto-convert
+    // "15/02/2023" into a date serial / locale-dependent re-format on the
+    // admin's machine. Find its 1-based column index dynamically so a future
+    // re-ordering of `columns` still works.
+    const releasedColIdx = columns.findIndex((c) => c.key === "released") + 1;
+    if (releasedColIdx > 0) {
+      const releasedCol = ws.getColumn(releasedColIdx);
+      releasedCol.numFmt = "@"; // text
+      releasedCol.alignment = { vertical: "middle", horizontal: "left" };
+    }
 
     // Header styling
     const headerRow = ws.getRow(1);
@@ -442,6 +490,11 @@ export const downloadModelTemplate = async (req, res) => {
     // Data validation for brand (col B)
     const brandEnd = Math.max(2, brands.length + 1);
 
+    // Column letter for `released` (1-indexed → A,B,C,...). Calc once.
+    const releasedColLetter = releasedColIdx > 0
+      ? String.fromCharCode(64 + releasedColIdx) // safe for cols 1..26
+      : null;
+
     for (let i = 2; i <= 1000; i++) {
       ws.getCell(`B${i}`).dataValidation = {
         type: "list",
@@ -451,6 +504,22 @@ export const downloadModelTemplate = async (req, res) => {
         errorTitle: "Invalid Brand",
         error: "Please select a Brand from the dropdown list."
       };
+
+      // Released cells: show an in-cell prompt clarifying the expected format.
+      // We don't restrict input (admins may also type "February 2023") — the
+      // prompt just shows when the cell is selected.
+      if (releasedColLetter) {
+        ws.getCell(`${releasedColLetter}${i}`).dataValidation = {
+          type: "textLength",
+          operator: "greaterThanOrEqual",
+          formulae: [0],
+          allowBlank: true,
+          showInputMessage: true,
+          promptTitle: "Release date",
+          prompt:
+            "Use dd/mm/yyyy (e.g. 15/02/2023). Freeform text like \"February 2023\" is also accepted.",
+        };
+      }
     }
 
     res.setHeader(

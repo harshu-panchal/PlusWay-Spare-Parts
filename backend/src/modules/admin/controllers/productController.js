@@ -1206,7 +1206,7 @@ export const downloadBulkUpdateTemplate = async (req, res) => {
       if (v.wholesalePrice !== undefined) variantExampleRow.wholesalePrice = v.wholesalePrice;
       if (v.wholesaleMinQty !== undefined) variantExampleRow.wholesaleMinQty = v.wholesaleMinQty;
       if (v.countInStock !== undefined) variantExampleRow.countInStock = v.countInStock;
-      if (v.images?.length) variantExampleRow.images = v.images.join("|");
+      if (v.images?.length) variantExampleRow.images = v.images.join(",");
     } else {
       variantExampleRow.SKU = "PW-BLA-001";
       variantExampleRow.colorName = "Black";
@@ -1215,7 +1215,7 @@ export const downloadBulkUpdateTemplate = async (req, res) => {
       variantExampleRow.wholesalePrice = 3800;
       variantExampleRow.wholesaleMinQty = 10;
       variantExampleRow.countInStock = 50;
-      variantExampleRow.images = "http://server/uploads/img1.jpg|http://server/uploads/img2.jpg";
+      variantExampleRow.images = "http://server/uploads/img1.jpg,http://server/uploads/img2.jpg";
     }
 
     if (sampleProductSimple) {
@@ -1308,7 +1308,7 @@ export const downloadBulkUpdateTemplate = async (req, res) => {
       ["PRODUCT-LEVEL ROWS", "When the SKU matches Product.code, every column is editable except SKU (immutable) and slug (auto-managed)."],
       ["", ""],
       ["brand / model / category", "Pick from the dropdown. Must match an existing entry. Case-insensitive. To add a new one, create it via Admin → Brands / Models / Categories first."],
-      ["images", "Pipe-separated full URLs replace the existing image list:  url1|url2|url3"],
+      ["images", "Comma- or pipe-separated full URLs replace the existing image list:  url1,url2,url3  (pipes also work: url1|url2|url3)"],
       ["specs", "Pipe-separated key:value pairs replace the existing specs list:  Color:Black|RAM:8GB|Storage:256GB"],
       ["highlights / descriptionPoints", "Pipe-separated bullets:  Fast Charging|5G Ready"],
       ["colors", "Comma-separated:  Black,White,Gold"],
@@ -1385,6 +1385,11 @@ export const bulkUpdateProductsBySku = async (req, res) => {
       String(v).split("|").map((s) => s.trim()).filter(Boolean);
     const parseCommaList = (v) =>
       String(v).split(",").map((s) => s.trim()).filter(Boolean);
+    // Image lists accept BOTH "," and "|" as delimiters — neither character
+    // is legal in a URL, so the split is unambiguous and admins can use
+    // whichever feels natural.
+    const parseImageList = (v) =>
+      String(v).split(/[|,]/).map((s) => s.trim()).filter(Boolean);
     const parseSpecs = (v) =>
       String(v)
         .split("|")
@@ -1469,7 +1474,7 @@ export const bulkUpdateProductsBySku = async (req, res) => {
           setStringField("videoUrl", row.videoUrl);
 
           if (!isBlank(row.images)) {
-            $set.images = isClearToken(row.images) ? [] : parsePipeList(row.images);
+            $set.images = isClearToken(row.images) ? [] : parseImageList(row.images);
           }
 
           if (!isBlank(row.colors)) {
@@ -1609,7 +1614,7 @@ export const bulkUpdateProductsBySku = async (req, res) => {
         setVariantNumeric("countInStock");
 
         if (!isBlank(row.images)) {
-          $set[`${base}.images`] = isClearToken(row.images) ? [] : parsePipeList(row.images);
+          $set[`${base}.images`] = isClearToken(row.images) ? [] : parseImageList(row.images);
         }
 
         // Mirror to top-level when updating the first variant (matches existing bulkUpdatePrices).

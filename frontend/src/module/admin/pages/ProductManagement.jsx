@@ -1716,7 +1716,7 @@ const ProductManagement = () => {
           { header: "wholesalePrice", key: "wholesalePrice", example: 3800, example2: 2100 },
           { header: "wholesaleMinQty", key: "wholesaleMinQty", example: 10, example2: 10 },
           { header: "countInStock", key: "countInStock", example: 50, example2: 50 },
-          { header: "images", key: "images", example: "http://server/uploads/img1.jpg|http://server/uploads/img2.jpg", example2: "" },
+          { header: "images", key: "images", example: "http://server/uploads/img1.jpg,http://server/uploads/img2.jpg", example2: "" },
           { header: "name", key: "name", example: "", example2: "Battery iPhone 14 Pro" },
           { header: "description", key: "description", example: "", example2: "Long lasting battery" },
           { header: "cashback", key: "cashback", example: "", example2: 50 },
