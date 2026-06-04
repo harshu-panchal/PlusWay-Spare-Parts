@@ -16,6 +16,10 @@ import ImageUpload from "../../../components/ImageUpload";
 import BulkUploadModal from "../../../components/BulkUploadModal";
 import { API_ENDPOINTS } from "../../../config/api";
 import Pagination from "../../../components/Pagination";
+import {
+  formatReleasedDate,
+  releasedToYearMonth,
+} from "../../../utils/formatReleasedDate";
 
 const ModelManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -349,7 +353,7 @@ const ModelManagement = () => {
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
                     {model.released
-                      ? `Released: ${model.released}`
+                      ? `Released: ${formatReleasedDate(model.released)}`
                       : "No details available"}
                   </td>
                   <td className="px-6 py-4 text-right">
@@ -447,19 +451,10 @@ const ModelManagement = () => {
                 <input
                   type="month"
                   className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-700"
-                  value={formData.released
-                    ? (() => {
-                        // Convert stored "February 2023" → "2023-02" for the input
-                        const d = new Date(formData.released);
-                        if (!isNaN(d)) {
-                          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-                        }
-                        // Already in YYYY-MM format
-                        return formData.released;
-                      })()
-                    : ""}
+                  value={releasedToYearMonth(formData.released)}
                   onChange={(e) => {
-                    // Convert "2023-02" → "February 2023" for storage
+                    // Convert "2023-02" → "February 2023" for storage so the
+                    // table cell and customer pages render consistently.
                     const val = e.target.value; // "2023-02"
                     if (val) {
                       const [year, month] = val.split("-");

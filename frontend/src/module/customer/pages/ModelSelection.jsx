@@ -6,6 +6,7 @@ import { ChevronRight, Search, Smartphone } from 'lucide-react';
 import axios from 'axios';
 import { API_ENDPOINTS } from '../../../config/api';
 import LazyImage from '../../../components/LazyImage';
+import { releasedToYearMonth } from '../../../utils/formatReleasedDate';
 
 const ModelSelection = () => {
     const { brandId } = useParams();
@@ -48,8 +49,12 @@ const ModelSelection = () => {
             if (sortOrder === "alphabetical") {
                 return a.name.localeCompare(b.name);
             } else if (sortOrder === "newest" || sortOrder === "oldest") {
-                const dateA = a.released ? new Date(a.released).getTime() : 0;
-                const dateB = b.released ? new Date(b.released).getTime() : 0;
+                // Route every released-string shape (dd/mm/yyyy, "February 2023",
+                // ISO, …) through releasedToYearMonth → reliable Date.parse.
+                const ymA = releasedToYearMonth(a.released);
+                const ymB = releasedToYearMonth(b.released);
+                const dateA = ymA ? Date.parse(ymA) : 0;
+                const dateB = ymB ? Date.parse(ymB) : 0;
                 const valA = isNaN(dateA) ? 0 : dateA;
                 const valB = isNaN(dateB) ? 0 : dateB;
                 

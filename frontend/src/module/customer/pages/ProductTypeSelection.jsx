@@ -11,6 +11,7 @@ import ProductCard from '../components/ProductCard';
 
 import axios from 'axios';
 import { API_ENDPOINTS, API_BASE_URL } from '../../../config/api';
+import { formatReleasedDate } from '../../../utils/formatReleasedDate';
 
 const ProductTypeSelection = () => {
     const { modelId } = useParams();
@@ -80,7 +81,7 @@ const ProductTypeSelection = () => {
                             {modelInfo.name} <span className="text-primary">Spare Parts</span>
                         </h1>
                         <div className="flex flex-col gap-1 text-sm text-gray-500 font-bold">
-                            <p>Released: <span className="text-secondary">{modelInfo.released}</span></p>
+                            <p>Released: <span className="text-secondary">{formatReleasedDate(modelInfo.released)}</span></p>
                             <p>Display Size: <span className="text-secondary">{modelInfo.displaySize}</span></p>
                         </div>
                     </div>

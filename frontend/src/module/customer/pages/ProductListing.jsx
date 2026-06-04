@@ -7,6 +7,7 @@ import { useCart } from '../context/CartContext';
 import Pagination from '../../../components/Pagination';
 import ProductCard from '../components/ProductCard';
 import LazyImage from "../../../components/LazyImage";
+import { formatReleasedDate } from "../../../utils/formatReleasedDate";
 
 const ProductListing = () => {
     const location = useLocation();
@@ -167,7 +168,7 @@ const ProductListing = () => {
                                     <div className="space-y-1 pt-2">
                                         {selectedModel.released && (
                                             <p className="text-xs text-gray-500 font-bold">
-                                                Released: <span className="text-secondary">{selectedModel.released}</span>
+                                                Released: <span className="text-secondary">{formatReleasedDate(selectedModel.released)}</span>
                                             </p>
                                         )}
                                         {selectedModel.displaySize && (
