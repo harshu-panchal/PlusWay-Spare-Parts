@@ -1,0 +1,95 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Line-ending normalization
+#
+# Goal: stop `git pull` on the Linux VPS from showing every file as "modified"
+# because Windows commits with CRLF and Linux checks out with LF.
+#
+# `text=auto eol=lf` means: Git treats any text file as text, normalizes it to
+# LF in the repository, and checks it out as LF everywhere (including Windows).
+# Editors handle LF on Windows fine; only platform-specific shells care.
+# ─────────────────────────────────────────────────────────────────────────────
+
+* text=auto eol=lf
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Platform-specific shells / scripts must keep their native line endings
+# ─────────────────────────────────────────────────────────────────────────────
+
+*.sh   text eol=lf
+*.bash text eol=lf
+
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+*.ps1  text eol=crlf
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Source / config — keep as text (will inherit eol=lf from the catch-all above)
+# Listed explicitly so Git never mis-detects them as binary.
+# ─────────────────────────────────────────────────────────────────────────────
+
+*.js        text
+*.jsx       text
+*.ts        text
+*.tsx       text
+*.mjs       text
+*.cjs       text
+*.json      text
+*.md        text
+*.html      text
+*.css       text
+*.scss      text
+*.svg       text
+*.yml       text
+*.yaml      text
+*.env       text
+*.example   text
+.gitignore  text
+.gitattributes text
+.editorconfig  text
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Binary assets — never touch line endings, never try to diff
+# ─────────────────────────────────────────────────────────────────────────────
+
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.ico   binary
+*.bmp   binary
+*.tif   binary
+*.tiff  binary
+
+*.mp4   binary
+*.webm  binary
+*.mov   binary
+
+*.pdf   binary
+*.zip   binary
+*.gz    binary
+*.tgz   binary
+*.7z    binary
+*.rar   binary
+
+*.xlsx  binary
+*.xls   binary
+*.docx  binary
+*.doc   binary
+*.pptx  binary
+*.ppt   binary
+
+*.ttf   binary
+*.otf   binary
+*.woff  binary
+*.woff2 binary
+*.eot   binary
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Quality-of-life: don't show lock files in `git diff` output
+# (still tracked & versioned — just hidden from default diffs)
+# ─────────────────────────────────────────────────────────────────────────────
+
+package-lock.json -diff
+yarn.lock         -diff
+pnpm-lock.yaml    -diff
