@@ -19,13 +19,36 @@ const fromYearMonth = (year, monthIdx) => {
   return `${MONTH_NAMES[monthIdx]} ${year}`;
 };
 
+// Pulls year + monthIdx off a Date in a timezone-safe way.
+//
+// Tricky case: ISO strings stored as midnight UTC (e.g. "2020-08-01T00:00:00.000Z")
+// are interpreted by `new Date()` as a single absolute instant, but `getMonth()`
+// uses the LOCAL timezone. In any TZ west of UTC that instant maps to the
+// previous day, which can roll the month back ("Aug 1 UTC" → "July 31 local").
+//
+// Heuristic: if the UTC clock components are exactly 00:00:00.000, treat the
+// Date as an absolute-UTC instant and read its UTC fields. Otherwise treat it
+// as a local-time instant (e.g. `new Date("August 30 2020")`) and read its
+// local fields, which gives the user-intended month.
+const extractYearMonth = (d) => {
+  const isUtcMidnight =
+    d.getUTCHours() === 0 &&
+    d.getUTCMinutes() === 0 &&
+    d.getUTCSeconds() === 0 &&
+    d.getUTCMilliseconds() === 0;
+  return isUtcMidnight
+    ? { year: d.getUTCFullYear(), monthIdx: d.getUTCMonth() }
+    : { year: d.getFullYear(), monthIdx: d.getMonth() };
+};
+
 export const formatReleasedDate = (value) => {
   if (value === undefined || value === null) return "";
   if (typeof value !== "string") {
     // Date instance or anything castable.
     const d = new Date(value);
     if (!Number.isNaN(d.getTime())) {
-      return fromYearMonth(d.getFullYear(), d.getMonth()) || "";
+      const { year, monthIdx } = extractYearMonth(d);
+      return fromYearMonth(year, monthIdx) || "";
     }
     return String(value);
   }
@@ -63,10 +86,11 @@ export const formatReleasedDate = (value) => {
     if (monIdx !== -1) return fromYearMonth(Number(m[2]), monIdx) || s;
   }
 
-  // 5) Last resort — let the JS Date parser try.
+  // 5) Last resort — let the JS Date parser try, then read fields TZ-safely.
   const d = new Date(s);
   if (!Number.isNaN(d.getTime())) {
-    return fromYearMonth(d.getFullYear(), d.getMonth()) || s;
+    const { year, monthIdx } = extractYearMonth(d);
+    return fromYearMonth(year, monthIdx) || s;
   }
 
   return s; // Unrecognized freeform — leave alone.
@@ -105,8 +129,9 @@ export const releasedToYearMonth = (value) => {
   } else {
     const d = new Date(s);
     if (!Number.isNaN(d.getTime())) {
-      year = d.getFullYear();
-      monthIdx = d.getMonth();
+      const ym = extractYearMonth(d);
+      year = ym.year;
+      monthIdx = ym.monthIdx;
     }
   }
 

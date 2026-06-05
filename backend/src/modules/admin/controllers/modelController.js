@@ -243,18 +243,26 @@ export const bulkCreateModels = async (req, res) => {
     //  - a string the admin typed.
     // We always emit "dd/mm/yyyy" for date-shaped values, and pass freeform
     // text (e.g. "February 2023") through unchanged for backward compatibility.
+    //
+    // IMPORTANT TIMEZONE NOTE: SheetJS (and our Excel-serial conversion below)
+    // produce Date objects whose CLOCK COMPONENTS match the Excel cell when
+    // read in UTC (e.g. "30/08/2020" in Excel → `new Date(Date.UTC(2020, 7, 30))`).
+    // If we read those with `getDate()` / `getMonth()` on a server in a TZ
+    // behind UTC, we get the previous local day — which can roll the day onto
+    // the previous month for start-of-month dates. Always use the *UTC* getters
+    // for Excel-derived dates so the stored value matches what the admin typed.
     const pad2 = (n) => String(n).padStart(2, "0");
-    const fmtDDMMYYYY = (d) =>
-      `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()}`;
+    const fmtExcelDateDDMMYYYY = (d) =>
+      `${pad2(d.getUTCDate())}/${pad2(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`;
     const normalizeReleasedDate = (v) => {
       if (v === undefined || v === null || v === "") return undefined;
-      if (v instanceof Date && !Number.isNaN(v.getTime())) return fmtDDMMYYYY(v);
+      if (v instanceof Date && !Number.isNaN(v.getTime())) return fmtExcelDateDDMMYYYY(v);
       if (typeof v === "number" && Number.isFinite(v)) {
         // Excel serial date: days since 1900-01-01 (with the 1900 leap-year bug).
         // 25569 = days from 1900-01-01 to 1970-01-01.
         const ms = Math.round((v - 25569) * 86400 * 1000);
         const d = new Date(ms);
-        if (!Number.isNaN(d.getTime())) return fmtDDMMYYYY(d);
+        if (!Number.isNaN(d.getTime())) return fmtExcelDateDDMMYYYY(d);
       }
       if (typeof v === "string") {
         const s = v.trim();
