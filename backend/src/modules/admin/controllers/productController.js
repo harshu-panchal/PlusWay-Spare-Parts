@@ -1029,6 +1029,12 @@ const EXPORT_BACKUP_COLUMNS = [
   { header: "model *", key: "model", width: 26 },
   { header: "category *", key: "category", width: 18 },
   { header: "SKU", key: "SKU", width: 22 },
+  // Read-only convenience column listing each color variant's SKU paired
+  // with its color name, e.g. "Black: PW-BLA-001 | White: PW-WHI-002".
+  // The full variant payload still lives in the `colorVariants` cell for
+  // round-trip restore; this column exists purely for human readability and
+  // is ignored by the bulk-upload parser.
+  { header: "variantSKUs", key: "variantSKUs", width: 44 },
   { header: "price", key: "price", width: 12 },
   { header: "mrp", key: "mrp", width: 12 },
   { header: "wholesalePrice", key: "wholesalePrice", width: 16 },
@@ -1119,6 +1125,14 @@ export const exportProductsBackup = async (req, res) => {
         model: p.model?.name || "",
         category: p.category?.name || "",
         SKU: p.code || "",
+        variantSKUs: hasVariants
+          ? p.colorVariants
+              .map(
+                (v) =>
+                  `${(v.colorName || "-").trim()}: ${(v.sku || "-").trim()}`,
+              )
+              .join(" | ")
+          : "",
         price: hasVariants ? "" : (p.price ?? ""),
         mrp: hasVariants ? "" : (p.mrp ?? ""),
         wholesalePrice: hasVariants ? "" : (p.wholesalePrice ?? ""),
@@ -1173,6 +1187,7 @@ export const exportProductsBackup = async (req, res) => {
       ["", ""],
       ["1. Columns 1–4 (name, brand, model, category)", "Required on every row. Brand / model / category cells already have dropdowns matching the live admin lists."],
       ["2. SKU", "Each product's existing code is preserved. If a SKU cell is left blank during upload, a new code (PW-XXXXXX) is auto-generated."],
+      ["2a. variantSKUs (read-only)", "Shows each color variant's SKU paired with its color name (e.g. \"Black: PW-BLA-001 | White: PW-WHI-002\"). For at-a-glance scanning only — the bulk-upload parser ignores this column. The actual variant data still lives in the colorVariants cell."],
       ["3. Top-level price / mrp / wholesalePrice / wholesaleMinQty / countInStock", "Filled ONLY when the product has no color variants. For products with variants these stay blank — the parser derives them from the first variant."],
       ["", ""],
       ["colorVariants cell", "Each variant is a ';'-joined record:  colorName;sku;price;mrp;wholesalePrice;wholesaleMinQty;countInStock;img1,img2"],
@@ -1193,7 +1208,7 @@ export const exportProductsBackup = async (req, res) => {
     ];
     instructionRows.forEach((r) => instr.addRow(r));
     instr.getRow(1).font = { bold: true, size: 13, color: { argb: "FF4F46E5" } };
-    [3, 4, 6, 7, 8, 10, 11, 14, 15, 16, 17, 18, 20, 21, 22, 23, 24].forEach((rowNum) => {
+    [3, 4, 6, 7, 8, 9, 11, 12, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25].forEach((rowNum) => {
       const cell = instr.getRow(rowNum).getCell(1);
       if (cell) cell.font = { bold: true };
     });
