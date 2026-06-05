@@ -25,6 +25,7 @@ import Home from "./module/customer/pages/Home";
 const BrandSelection = lazy(() => import("./module/customer/pages/BrandSelection"));
 const ModelSelection = lazy(() => import("./module/customer/pages/ModelSelection"));
 const ProductTypeSelection = lazy(() => import("./module/customer/pages/ProductTypeSelection"));
+const CategoryRedirect = lazy(() => import("./module/customer/pages/CategoryRedirect"));
 const ProductListing = lazy(() => import("./module/customer/pages/ProductListing"));
 const ProductDetail = lazy(() => import("./module/customer/pages/ProductDetail"));
 const OrderDetails = lazy(() => import("./module/customer/pages/OrderDetails"));
@@ -113,7 +114,10 @@ const App = () => {
             <Route path="/" element={<Layout />}>
               <Route index element={<Home />} />
               <Route path="brand-selection" element={<BrandSelection />} />
-              <Route path="category/:slug" element={<BrandSelection />} />
+              {/* Legacy /category/:slug — used by banners & external links.
+                  Resolves the slug → category._id and redirects to the
+                  canonical /products?category=<id> route. */}
+              <Route path="category/:slug" element={<CategoryRedirect />} />
               <Route path="brand/:brandId/models" element={<ModelSelection />} />
               <Route path="model/:modelId/products" element={<ProductTypeSelection />} />
               <Route path="products" element={<ProductListing />} />

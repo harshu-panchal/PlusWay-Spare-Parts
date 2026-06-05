@@ -25,7 +25,7 @@ const STATIC_TEXTS = [
 const CategoryCard = ({ category }) => {
   return (
     <Link
-      to={`/category/${category.slug}`}
+      to={`/products?category=${category._id}`}
       className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:border-primary transition-all group flex flex-col items-center">
       <div className="w-24 h-24 sm:w-28 sm:h-28 mb-3 overflow-hidden relative flex-shrink-0">
         <LazyImage

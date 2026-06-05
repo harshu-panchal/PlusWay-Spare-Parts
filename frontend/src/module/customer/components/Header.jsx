@@ -6,7 +6,16 @@ import {
   Menu,
   Phone,
   ChevronDown,
+  ChevronRight,
   Send,
+  X,
+  Tag,
+  Package,
+  LogOut,
+  LogIn,
+  UserPlus,
+  RefreshCw,
+  HelpCircle,
 } from "lucide-react";
 import LanguageSelector from "../../../components/LanguageSelector";
 import { Link, useNavigate } from "react-router-dom";
@@ -21,6 +30,7 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [categories, setCategories] = useState([]);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
   const userInfo = JSON.parse(localStorage.getItem("userInfo"));
@@ -39,15 +49,36 @@ const Header = () => {
     fetchCategories();
   }, []);
 
+  // Body scroll-lock + ESC-to-close while the mobile drawer is open.
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") setIsMobileMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isMobileMenuOpen]);
+
+  const closeMobileMenu = () => setIsMobileMenuOpen(false);
+
   const handleLogout = () => {
     localStorage.removeItem("userInfo");
     localStorage.removeItem("token");
+    closeMobileMenu();
     navigate("/login");
   };
 
   const handleSearch = (e) => {
     if (e.key === "Enter" || e.type === "click") {
-      navigate(`/products?keyword=${searchQuery}`);
+      const trimmed = searchQuery.trim();
+      if (!trimmed) return;
+      closeMobileMenu();
+      navigate(`/products?keyword=${encodeURIComponent(trimmed)}`);
     }
   };
 
@@ -249,11 +280,216 @@ const Header = () => {
             </div>
           </Link>
 
-          <button className="md:hidden text-secondary">
+          <button
+            type="button"
+            onClick={() => setIsMobileMenuOpen(true)}
+            aria-label="Open menu"
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="mobile-nav-drawer"
+            className="md:hidden text-secondary p-1 -mr-1 rounded hover:bg-gray-100 transition-colors">
             <Menu size={28} />
           </button>
         </div>
       </div>
+
+      {/* ──────────────────── Mobile Drawer ──────────────────── */}
+      {/* Backdrop */}
+      <div
+        onClick={closeMobileMenu}
+        className={`md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-60 transition-opacity duration-300 ${
+          isMobileMenuOpen
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
+        }`}
+        aria-hidden="true"
+      />
+      {/* Drawer panel — slides in from the right */}
+      <aside
+        id="mobile-nav-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Main menu"
+        className={`md:hidden fixed top-0 right-0 h-dvh w-[88%] max-w-88 bg-white shadow-2xl z-70 flex flex-col transition-transform duration-300 ease-out ${
+          isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        {/* Drawer header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-secondary text-white">
+          <Link
+            to="/"
+            onClick={closeMobileMenu}
+            className="flex items-center bg-primary px-3 py-1 rounded text-white font-black italic tracking-tighter text-lg">
+            PLUSWAY
+          </Link>
+          <button
+            type="button"
+            onClick={closeMobileMenu}
+            aria-label="Close menu"
+            className="p-2 -mr-2 rounded hover:bg-white/10 transition-colors">
+            <X size={24} />
+          </button>
+        </div>
+
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto overscroll-contain">
+          {/* Account block */}
+          <div className="px-4 py-4 bg-gray-50 border-b border-gray-100">
+            {userInfo ? (
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary text-white font-black flex items-center justify-center text-sm uppercase shrink-0">
+                  {userInfo.name?.[0] || "U"}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] uppercase font-black text-gray-500 leading-none">
+                    Signed in as
+                  </p>
+                  <p className="text-sm font-bold text-secondary truncate mt-0.5">
+                    {userInfo.name}
+                  </p>
+                </div>
+                <Link
+                  to="/profile"
+                  onClick={closeMobileMenu}
+                  className="text-[11px] font-black uppercase tracking-widest text-primary hover:underline shrink-0">
+                  View
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => { closeMobileMenu(); navigate("/login"); }}
+                  className="flex items-center justify-center gap-1.5 bg-primary text-white font-black py-2.5 rounded text-[11px] uppercase tracking-widest hover:bg-orange-600 transition-colors">
+                  <LogIn size={14} /> Sign In
+                </button>
+                <button
+                  onClick={() => { closeMobileMenu(); navigate("/signup"); }}
+                  className="flex items-center justify-center gap-1.5 bg-white border border-gray-300 text-secondary font-black py-2.5 rounded text-[11px] uppercase tracking-widest hover:bg-gray-100 transition-colors">
+                  <UserPlus size={14} /> Register
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Search */}
+          <div className="px-4 py-4 border-b border-gray-100">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search Plusway.com"
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded focus:outline-none focus:border-primary transition-all text-sm font-medium bg-white"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleSearch}
+              />
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+            </div>
+          </div>
+
+          {/* Primary nav */}
+          <nav className="py-2">
+            <p className="px-4 pt-2 pb-1 text-[10px] uppercase font-black tracking-widest text-gray-400">
+              Shop
+            </p>
+            <Link
+              to="/brand-selection"
+              onClick={closeMobileMenu}
+              className="flex items-center justify-between px-4 py-3 text-sm font-bold text-secondary hover:bg-gray-50 transition-colors border-b border-gray-50">
+              <span className="flex items-center gap-3">
+                <Tag size={16} className="text-primary" /> Brands
+              </span>
+              <ChevronRight size={16} className="text-gray-300" />
+            </Link>
+
+            <p className="px-4 pt-4 pb-1 text-[10px] uppercase font-black tracking-widest text-gray-400">
+              Categories
+            </p>
+            {Array.isArray(categories) && categories.length > 0 ? (
+              categories.map((category) => (
+                <Link
+                  key={category._id}
+                  to={`/products?category=${category._id}`}
+                  onClick={closeMobileMenu}
+                  className="flex items-center justify-between px-4 py-3 text-sm font-bold text-secondary hover:bg-gray-50 transition-colors border-b border-gray-50">
+                  <span className="flex items-center gap-3 min-w-0">
+                    <Package size={16} className="text-primary shrink-0" />
+                    <span className="truncate">{category.name}</span>
+                  </span>
+                  <ChevronRight size={16} className="text-gray-300 shrink-0" />
+                </Link>
+              ))
+            ) : (
+              <p className="px-4 py-3 text-xs text-gray-400 italic">
+                Loading categories…
+              </p>
+            )}
+
+            <p className="px-4 pt-4 pb-1 text-[10px] uppercase font-black tracking-widest text-gray-400">
+              My account
+            </p>
+            <Link
+              to="/profile"
+              onClick={closeMobileMenu}
+              className="flex items-center justify-between px-4 py-3 text-sm font-bold text-secondary hover:bg-gray-50 transition-colors border-b border-gray-50">
+              <span className="flex items-center gap-3">
+                <Package size={16} className="text-primary" /> Orders
+              </span>
+              <ChevronRight size={16} className="text-gray-300" />
+            </Link>
+            <Link
+              to="/replacement-requests"
+              onClick={closeMobileMenu}
+              className="flex items-center justify-between px-4 py-3 text-sm font-bold text-secondary hover:bg-gray-50 transition-colors border-b border-gray-50">
+              <span className="flex items-center gap-3">
+                <RefreshCw size={16} className="text-primary" /> Replacement Requests
+              </span>
+              <ChevronRight size={16} className="text-gray-300" />
+            </Link>
+            <Link
+              to="/support"
+              onClick={closeMobileMenu}
+              className="flex items-center justify-between px-4 py-3 text-sm font-bold text-secondary hover:bg-gray-50 transition-colors border-b border-gray-50">
+              <span className="flex items-center gap-3">
+                <HelpCircle size={16} className="text-primary" /> Plusway Support
+              </span>
+              <ChevronRight size={16} className="text-gray-300" />
+            </Link>
+          </nav>
+
+          {/* Language */}
+          <div className="px-4 py-4 border-t border-gray-100">
+            <p className="text-[10px] uppercase font-black tracking-widest text-gray-400 mb-2">
+              Language
+            </p>
+            <LanguageSelector variant="compact" showFlag={true} showNative={true} />
+          </div>
+
+          {/* Contact */}
+          <div className="px-4 py-4 border-t border-gray-100 bg-gray-50">
+            <p className="text-[10px] uppercase font-black tracking-widest text-gray-400 mb-2">
+              Support
+            </p>
+            <a
+              href="tel:+919599197756"
+              className="flex items-center gap-2 text-sm font-bold text-secondary hover:text-primary transition-colors">
+              <Phone size={14} className="text-primary" /> +91 9599197756
+            </a>
+          </div>
+        </div>
+
+        {/* Drawer footer — logout pinned at the bottom when signed in */}
+        {userInfo && (
+          <div className="border-t border-gray-100 p-3 bg-white">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center gap-2 bg-red-500 text-white font-black py-2.5 rounded text-[11px] uppercase tracking-widest hover:bg-red-600 transition-colors">
+              <LogOut size={14} /> Logout
+            </button>
+          </div>
+        )}
+      </aside>
 
       {/* Navigation Drawer Trigger Style */}
       <div className="bg-secondary text-white hidden md:block border-b border-white/10">

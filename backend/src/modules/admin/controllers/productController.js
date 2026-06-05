@@ -17,6 +17,12 @@ const genVariantSku = (colorName) => {
   return `PW-${colorCode}-${Date.now().toString().slice(-5)}${Math.floor(10 + Math.random() * 90)}`;
 };
 
+// Helper: escape regex special chars so user-supplied strings (e.g. product
+// names containing ".", "(", ")", "+") can be safely embedded in $regex
+// queries without throwing or over-matching.
+const escapeRegex = (s) =>
+  String(s ?? "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 // @desc    Get all products
 // @route   GET /api/admin/products
 // @access  Private/Admin
@@ -113,7 +119,9 @@ export const createProduct = async (req, res) => {
       .replace(/[^a-z0-9]/g, "-")
       .replace(/-+/g, "-");
 
-  const productExists = await Product.findOne({ name: { $regex: new RegExp(`^${name}$`, "i") } });
+  const productExists = await Product.findOne({
+    name: { $regex: new RegExp(`^${escapeRegex(name)}$`, "i") },
+  });
   if (productExists) {
     return res.status(400).json({ message: "Product with this name already exists" });
   }
@@ -175,22 +183,44 @@ export const updateProduct = async (req, res) => {
   const product = await Product.findById(req.params.id);
 
   if (product) {
-    if (req.body.name) {
-      product.name = req.body.name;
+    // Capture the previous name BEFORE applying req.body.name so we can tell
+    // whether the admin actually renamed the product. The duplicate-name
+    // check below only fires on a real rename — otherwise editing any other
+    // field on a product whose name happens to clash with another DB record
+    // (e.g. legacy duplicates) would be impossible.
+    const previousName = product.name;
+    const incomingName =
+      typeof req.body.name === "string" ? req.body.name.trim() : undefined;
+    const nameChanged =
+      incomingName !== undefined &&
+      incomingName.length > 0 &&
+      incomingName.toLowerCase() !== String(previousName || "").toLowerCase();
+
+    if (incomingName) {
+      product.name = incomingName;
       if (!req.body.slug && !product.slug) {
-        product.slug = req.body.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+        product.slug = incomingName
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, "-")
+          .replace(/-+/g, "-");
       }
     }
     product.slug = req.body.slug || product.slug;
 
-    // Check for duplicate name
-    const productExists = await Product.findOne({
-      _id: { $ne: req.params.id },
-      name: { $regex: new RegExp(`^${product.name}$`, "i") }
-    });
+    // Only enforce name uniqueness when the name is actually being changed.
+    // Compare against product._id (canonical ObjectId) instead of the raw
+    // req.params.id string for a defensive equality check.
+    if (nameChanged) {
+      const productExists = await Product.findOne({
+        _id: { $ne: product._id },
+        name: { $regex: new RegExp(`^${escapeRegex(product.name)}$`, "i") },
+      });
 
-    if (productExists) {
-      return res.status(400).json({ message: "Product with this name already exists" });
+      if (productExists) {
+        return res
+          .status(400)
+          .json({ message: "Product with this name already exists" });
+      }
     }
 
     if (req.body.code) product.code = req.body.code;
@@ -406,7 +436,9 @@ export const bulkCreateProducts = async (req, res) => {
 
         // Check product name uniqueness
         const productName = String(row.name).trim();
-        const nameExists = await Product.findOne({ name: { $regex: new RegExp(`^${productName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i") } });
+        const nameExists = await Product.findOne({
+          name: { $regex: new RegExp(`^${escapeRegex(productName)}$`, "i") },
+        });
         if (nameExists) {
           results.errors.push({ row: rowNum, name: productName, error: `Product "${productName}" already exists` });
           continue;
@@ -939,6 +971,18 @@ const _joinArr = (arr, sep) =>
     : "";
 const _joinDescription = (desc) =>
   Array.isArray(desc) ? desc.join("\n") : desc || "";
+
+// Format any Date / ISO-string / number into dd/mm/yyyy using local time
+// (matches what the admin sees elsewhere in the admin UI timestamps).
+const _formatDDMMYYYY = (d) => {
+  if (!d) return "";
+  const date = d instanceof Date ? d : new Date(d);
+  if (Number.isNaN(date.getTime())) return "";
+  const dd = String(date.getDate()).padStart(2, "0");
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const yyyy = date.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+};
 const _buildRowArrayFor = (columns, rowObj) =>
   columns.map((c) =>
     rowObj[c.key] !== undefined && rowObj[c.key] !== null ? rowObj[c.key] : "",
@@ -1010,6 +1054,9 @@ const EXPORT_BACKUP_COLUMNS = [
   { header: "colors", key: "colors", width: 22 },
   { header: "warrantyPeriod", key: "warrantyPeriod", width: 18 },
   { header: "warrantyPolicy", key: "warrantyPolicy", width: 22 },
+  // Read-only metadata — surfaced in the export for audit/sort visibility.
+  // Ignored by the bulk-upload parser on round-trip.
+  { header: "uploadedDate", key: "uploadedDate", width: 14 },
 ];
 
 // @desc    Export all products as a FULL BACKUP file in the SAME format as
@@ -1027,11 +1074,15 @@ export const exportProductsBackup = async (req, res) => {
       Brand.find({}, "name").sort({ name: 1 }),
       Category.find({}, "name").sort({ name: 1 }),
       Model.find({}, "name").sort({ name: 1 }),
+      // Newest first by upload date so the most recent products are at the
+      // top of the export. _id is a deterministic tiebreaker for products
+      // that were created in the same millisecond (rare, but possible during
+      // bulk uploads).
       Product.find({})
         .populate("brand", "name")
         .populate("category", "name")
         .populate("model", "name")
-        .sort({ name: 1 }),
+        .sort({ createdAt: -1, _id: -1 }),
     ]);
 
     const workbook = new ExcelJS.Workbook();
@@ -1092,6 +1143,7 @@ export const exportProductsBackup = async (req, res) => {
         colors: _joinArr(p.colors, ","),
         warrantyPeriod: p.details?.warranty?.period || "",
         warrantyPolicy: p.details?.warranty?.policy || "",
+        uploadedDate: _formatDDMMYYYY(p.createdAt),
       };
       const pRow = ws.addRow(_buildRowArrayFor(EXPORT_BACKUP_COLUMNS, rowObj));
       pRow.alignment = { vertical: "top", wrapText: false };
@@ -1136,11 +1188,12 @@ export const exportProductsBackup = async (req, res) => {
       ["IMPORTANT — Restore vs Update", "This file is for RESTORE (re-uploading after a wipe). Each row CREATES a new product. If a product with the same name already exists, that row FAILS with \"already exists\". To edit existing products instead, use Admin → Products → Update (Bulk Update Products)."],
       ["Brands / Models / Categories must exist first", "Create them via Admin → Brands / Models / Categories before restoring. The upload parser resolves names → IDs."],
       ["Extra columns", "productType, cashback, colors, warrantyPeriod, warrantyPolicy are exported for full fidelity. The upload parser also reads them."],
+      ["uploadedDate (last column)", "Read-only audit field showing when each product was created (dd/mm/yyyy, server local time). Rows are sorted by this column with the newest at the top. The bulk-upload parser ignores this column on round-trip."],
       ["Max upload size", "10 MB"],
     ];
     instructionRows.forEach((r) => instr.addRow(r));
     instr.getRow(1).font = { bold: true, size: 13, color: { argb: "FF4F46E5" } };
-    [3, 4, 6, 7, 8, 10, 11, 14, 15, 16, 17, 18, 20, 21, 22, 23].forEach((rowNum) => {
+    [3, 4, 6, 7, 8, 10, 11, 14, 15, 16, 17, 18, 20, 21, 22, 23, 24].forEach((rowNum) => {
       const cell = instr.getRow(rowNum).getCell(1);
       if (cell) cell.font = { bold: true };
     });
