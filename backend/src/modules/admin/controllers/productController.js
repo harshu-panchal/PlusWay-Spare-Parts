@@ -799,108 +799,358 @@ export const downloadProductTemplate = async (req, res) => {
   }
 };
 
-// @desc    Export Backup Excel of all products
+// Shared column schema used by BOTH `downloadBulkUpdateTemplate` AND
+// `exportProductsBackup`. Keeping it in one place guarantees the two files
+// have IDENTICAL layouts, so an export can be round-tripped through the
+// bulk-update endpoint without manual reformatting.
+//
+// IMPORTANT: SKU MUST stay at index 0 — bulkUpdateProductsBySku uses it as
+// the lookup key. Column order is also the order the admin sees in Excel,
+// so variant-applicable columns are grouped at the front.
+const BULK_PRODUCT_COLUMNS = [
+  { header: "SKU *", key: "SKU", width: 24 },
+  { header: "colorName", key: "colorName", width: 18 },
+  { header: "price", key: "price", width: 12 },
+  { header: "mrp", key: "mrp", width: 12 },
+  { header: "wholesalePrice", key: "wholesalePrice", width: 16 },
+  { header: "wholesaleMinQty", key: "wholesaleMinQty", width: 16 },
+  { header: "countInStock", key: "countInStock", width: 14 },
+  { header: "images", key: "images", width: 60 },
+  { header: "name", key: "name", width: 36 },
+  { header: "description", key: "description", width: 50 },
+  { header: "cashback", key: "cashback", width: 12 },
+  { header: "brand", key: "brand", width: 18 },
+  { header: "model", key: "model", width: 26 },
+  { header: "category", key: "category", width: 18 },
+  { header: "productType", key: "productType", width: 22 },
+  { header: "videoUrl", key: "videoUrl", width: 40 },
+  { header: "specs", key: "specs", width: 50 },
+  { header: "inTheBox", key: "inTheBox", width: 30 },
+  { header: "warrantyPeriod", key: "warrantyPeriod", width: 18 },
+  { header: "warrantyPolicy", key: "warrantyPolicy", width: 22 },
+  { header: "warrantySummary", key: "warrantySummary", width: 30 },
+  { header: "coveredInWarranty", key: "coveredInWarranty", width: 28 },
+  { header: "warrantyServiceType", key: "warrantyServiceType", width: 26 },
+  { header: "warrantyTnC", key: "warrantyTnC", width: 22 },
+  { header: "highlights", key: "highlights", width: 40 },
+  { header: "descriptionPoints", key: "descriptionPoints", width: 40 },
+  { header: "countryOfOrigin", key: "countryOfOrigin", width: 18 },
+  { header: "packer", key: "packer", width: 30 },
+  { header: "colors", key: "colors", width: 22 },
+];
+
+const _colLetter = (n) => {
+  let s = "";
+  while (n > 0) {
+    const m = (n - 1) % 26;
+    s = String.fromCharCode(65 + m) + s;
+    n = Math.floor((n - 1) / 26);
+  }
+  return s;
+};
+
+// Step 1 of any bulk-product workbook: define columns from the supplied
+// schema, style the header row, build the hidden `_Lists` sheet that powers
+// the brand / category / model dropdowns. Call this BEFORE adding any data
+// rows. `columns` is an array of { header, key, width }.
+const setupExcelSheetHeader = ({ workbook, ws, columns, brands, categories, models }) => {
+  ws.columns = columns.map((c) => ({ header: c.header, key: c.key, width: c.width }));
+
+  // Header styling (indigo background, white bold text).
+  const headerRow = ws.getRow(1);
+  headerRow.height = 28;
+  headerRow.eachCell((cell) => {
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF4F46E5" } };
+    cell.font = { name: "Segoe UI", size: 11, bold: true, color: { argb: "FFFFFFFF" } };
+    cell.alignment = { vertical: "middle", horizontal: "center" };
+  });
+  ws.views = [{ state: "frozen", ySplit: 1 }];
+
+  // Hidden lists sheet powering the dropdowns.
+  let listsSheet = workbook.getWorksheet("_Lists");
+  if (!listsSheet) {
+    listsSheet = workbook.addWorksheet("_Lists");
+    listsSheet.state = "veryHidden";
+    listsSheet.getCell("A1").value = "Brands";
+    listsSheet.getCell("B1").value = "Categories";
+    listsSheet.getCell("C1").value = "Models";
+    brands.forEach((b, i) => { listsSheet.getCell(`A${i + 2}`).value = b.name; });
+    categories.forEach((c, i) => { listsSheet.getCell(`B${i + 2}`).value = c.name; });
+    models.forEach((m, i) => { listsSheet.getCell(`C${i + 2}`).value = m.name; });
+  }
+};
+
+// Step 2 of any bulk-product workbook: apply brand / model / category
+// dropdowns to rows 2..validationRows. MUST be called AFTER all data rows
+// have been added — `ws.getCell()` auto-materializes rows up to the index
+// referenced, so calling this first would push real data below the dropdown
+// "ghost rows" and make the file appear empty when opened. The brand /
+// model / category cells the validation targets are derived from the
+// supplied `columns` schema so this helper works with any column layout.
+const applyExcelSheetDropdowns = ({ ws, columns, brands, categories, models, validationRows }) => {
+  const findCol = (key) => columns.findIndex((c) => c.key === key) + 1;
+  const brandColLetter = _colLetter(findCol("brand"));
+  const modelColLetter = _colLetter(findCol("model"));
+  const categoryColLetter = _colLetter(findCol("category"));
+
+  const brandEnd = Math.max(2, brands.length + 1);
+  const categoryEnd = Math.max(2, categories.length + 1);
+  const modelEnd = Math.max(2, models.length + 1);
+
+  for (let i = 2; i <= validationRows; i++) {
+    ws.getCell(`${brandColLetter}${i}`).dataValidation = {
+      type: "list",
+      allowBlank: true,
+      formulae: [`_Lists!$A$2:$A$${brandEnd}`],
+      showErrorMessage: true,
+      errorTitle: "Invalid Brand",
+      error: "Please select a Brand from the dropdown list (or leave blank to keep current).",
+    };
+    ws.getCell(`${modelColLetter}${i}`).dataValidation = {
+      type: "list",
+      allowBlank: true,
+      formulae: [`_Lists!$C$2:$C$${modelEnd}`],
+      showErrorMessage: true,
+      errorTitle: "Invalid Model",
+      error: "Please select a Model from the dropdown list (or leave blank to keep current).",
+    };
+    ws.getCell(`${categoryColLetter}${i}`).dataValidation = {
+      type: "list",
+      allowBlank: true,
+      formulae: [`_Lists!$B$2:$B$${categoryEnd}`],
+      showErrorMessage: true,
+      errorTitle: "Invalid Category",
+      error: "Please select a Category from the dropdown list (or leave blank to keep current).",
+    };
+  }
+};
+
+// Helpers for flattening Product fields into the shared cell format used by
+// both the export and the bulk-update parser.
+const _joinSpecs = (specs) =>
+  Array.isArray(specs) && specs.length
+    ? specs.map((s) => `${s?.key ?? ""}:${s?.value ?? ""}`).join("|")
+    : "";
+const _joinArr = (arr, sep) =>
+  Array.isArray(arr) && arr.length
+    ? arr
+        .filter((x) => x !== undefined && x !== null && x !== "")
+        .join(sep)
+    : "";
+const _joinDescription = (desc) =>
+  Array.isArray(desc) ? desc.join("\n") : desc || "";
+const _buildRowArrayFor = (columns, rowObj) =>
+  columns.map((c) =>
+    rowObj[c.key] !== undefined && rowObj[c.key] !== null ? rowObj[c.key] : "",
+  );
+
+// Serialize a product's colorVariants array into the rich bulk-upload cell
+// format consumed by `bulkCreateProducts`:
+//   colorName;sku;price;mrp;wholesalePrice;wholesaleMinQty;countInStock;img1,img2
+// Multiple variants are joined by "||". A trailing "||" is intentionally
+// appended so the parser's rich-format detection
+//   (raw.includes("||") || (raw.includes(";") && !raw.includes(":")))
+// always picks the rich branch — without it a single-variant row whose only
+// image URL contains "://" would be misread as the legacy "name:images"
+// format and stripped of price/stock/sku data on restore.
+const _serializeVariantsForCreate = (variants) => {
+  if (!Array.isArray(variants) || variants.length === 0) return "";
+  const parts = variants.map((v) => {
+    const fields = [
+      v.colorName || "",
+      v.sku || "",
+      v.price !== undefined && v.price !== null ? v.price : "",
+      v.mrp !== undefined && v.mrp !== null ? v.mrp : "",
+      v.wholesalePrice !== undefined && v.wholesalePrice !== null ? v.wholesalePrice : "",
+      v.wholesaleMinQty !== undefined && v.wholesaleMinQty !== null ? v.wholesaleMinQty : "",
+      v.countInStock !== undefined && v.countInStock !== null ? v.countInStock : 0,
+      (v.images || []).join(","),
+    ];
+    return fields.join(";");
+  });
+  return parts.join("||") + "||";
+};
+
+// Column schema for the products BACKUP EXPORT — mirrors the bulk-CREATE
+// template (`downloadProductTemplate`) so an exported file can be
+// re-uploaded via Admin → Products → Bulk to fully reconstruct the catalog
+// after a wipe. The first 24 columns match the upload template EXACTLY
+// (same order, same headers including the trailing " *" markers). Five
+// extras the upload parser also reads are appended after so the backup
+// captures every persisted field — extra columns are silently ignored by
+// the parser, so they don't break legacy templates either.
+const EXPORT_BACKUP_COLUMNS = [
+  { header: "name *", key: "name", width: 36 },
+  { header: "brand *", key: "brand", width: 18 },
+  { header: "model *", key: "model", width: 26 },
+  { header: "category *", key: "category", width: 18 },
+  { header: "SKU", key: "SKU", width: 22 },
+  { header: "price", key: "price", width: 12 },
+  { header: "mrp", key: "mrp", width: 12 },
+  { header: "wholesalePrice", key: "wholesalePrice", width: 16 },
+  { header: "wholesaleMinQty", key: "wholesaleMinQty", width: 16 },
+  { header: "countInStock", key: "countInStock", width: 14 },
+  { header: "colorVariants", key: "colorVariants", width: 80 },
+  { header: "description", key: "description", width: 50 },
+  { header: "images", key: "images", width: 60 },
+  { header: "videoUrl", key: "videoUrl", width: 40 },
+  { header: "specs", key: "specs", width: 50 },
+  { header: "inTheBox", key: "inTheBox", width: 30 },
+  { header: "warrantySummary", key: "warrantySummary", width: 30 },
+  { header: "coveredInWarranty", key: "coveredInWarranty", width: 28 },
+  { header: "warrantyServiceType", key: "warrantyServiceType", width: 26 },
+  { header: "warrantyTnC", key: "warrantyTnC", width: 22 },
+  { header: "countryOfOrigin", key: "countryOfOrigin", width: 18 },
+  { header: "packer", key: "packer", width: 30 },
+  { header: "highlights", key: "highlights", width: 40 },
+  { header: "descriptionPoints", key: "descriptionPoints", width: 40 },
+  // Extras the bulk-create parser also reads (kept for true round-trip fidelity).
+  { header: "productType", key: "productType", width: 22 },
+  { header: "cashback", key: "cashback", width: 12 },
+  { header: "colors", key: "colors", width: 22 },
+  { header: "warrantyPeriod", key: "warrantyPeriod", width: 18 },
+  { header: "warrantyPolicy", key: "warrantyPolicy", width: 22 },
+];
+
+// @desc    Export all products as a FULL BACKUP file in the SAME format as
+//          the bulk-CREATE template (`downloadProductTemplate`). The file
+//          can be re-uploaded via Admin → Products → Bulk (Upload) to fully
+//          reconstruct the catalog after a wipe. One row per product; color
+//          variants are packed into the `colorVariants` cell in the rich
+//          `name;sku;price;mrp;wsPrice;wsMinQty;stock;img1,img2||...` format
+//          consumed by `bulkCreateProducts`.
 // @route   GET /api/admin/products/export
 // @access  Private/Admin
 export const exportProductsBackup = async (req, res) => {
   try {
-    const products = await Product.find({})
-      .populate("brand", "name")
-      .populate("category", "name")
-      .populate("model", "name");
+    const [brands, categories, models, products] = await Promise.all([
+      Brand.find({}, "name").sort({ name: 1 }),
+      Category.find({}, "name").sort({ name: 1 }),
+      Model.find({}, "name").sort({ name: 1 }),
+      Product.find({})
+        .populate("brand", "name")
+        .populate("category", "name")
+        .populate("model", "name")
+        .sort({ name: 1 }),
+    ]);
 
     const workbook = new ExcelJS.Workbook();
-    const ws = workbook.addWorksheet("Products Backup");
+    workbook.creator = "PlusWay Admin";
+    workbook.lastModifiedBy = "PlusWay Admin";
+    workbook.created = new Date();
+    workbook.modified = new Date();
 
-    const columns = [
-      { header: "ID", key: "_id", width: 24 },
-      { header: "name *", key: "name", width: 28 },
-      { header: "SKU", key: "code", width: 15 },
-      { header: "brand *", key: "brand", width: 15 },
-      { header: "model *", key: "model", width: 20 },
-      { header: "category *", key: "category", width: 15 },
-      { header: "productType", key: "productType", width: 15 },
-      { header: "price *", key: "price", width: 10 },
-      { header: "mrp *", key: "mrp", width: 10 },
-      { header: "wholesalePrice *", key: "wholesalePrice", width: 15 },
-      { header: "wholesaleMinQty *", key: "wholesaleMinQty", width: 15 },
-      { header: "cashback", key: "cashback", width: 10 },
-      { header: "countInStock *", key: "countInStock", width: 15 },
-      { header: "description", key: "description", width: 30 },
-      { header: "images", key: "images", width: 30 },
-      { header: "videoUrl", key: "videoUrl", width: 20 },
-      { header: "colors", key: "colors", width: 20 },
-      { header: "colorVariants", key: "colorVariants", width: 50 },
-      { header: "specs", key: "specs", width: 30 },
-      { header: "inTheBox", key: "inTheBox", width: 20 },
-      { header: "warrantySummary", key: "warrantySummary", width: 30 },
-      { header: "coveredInWarranty", key: "coveredInWarranty", width: 30 },
-      { header: "warrantyServiceType", key: "warrantyServiceType", width: 30 },
-      { header: "warrantyTnC", key: "warrantyTnC", width: 30 },
-      { header: "countryOfOrigin", key: "countryOfOrigin", width: 20 },
-      { header: "packer", key: "packer", width: 30 },
-      { header: "highlights", key: "highlights", width: 30 },
-      { header: "descriptionPoints", key: "descriptionPoints", width: 30 },
-      { header: "createdAt", key: "createdAt", width: 20 },
-    ];
+    // Sheet name matches the upload template's default sheet ("Products")
+    // so XLSX.SheetNames[0] picks the same sheet on re-upload.
+    const ws = workbook.addWorksheet("Products");
 
-    ws.columns = columns;
+    // STEP 1: header + hidden _Lists sheet ONLY. Dropdowns are applied
+    // AFTER data rows are written, otherwise ExcelJS auto-materializes empty
+    // rows for the dropdown range and pushes the real data far below them.
+    setupExcelSheetHeader({
+      workbook,
+      ws,
+      columns: EXPORT_BACKUP_COLUMNS,
+      brands,
+      categories,
+      models,
+    });
 
-    const headerRow = ws.getRow(1);
-    headerRow.font = { bold: true };
-
+    // ---- Data rows ---- one row per product, matching the bulk-create
+    // convention: top-level pricing/stock live on the product row ONLY when
+    // there are no color variants. With variants, those top-level cells stay
+    // blank and the parser derives them from the first variant during upload.
     products.forEach((p) => {
-      ws.addRow({
-        _id: p._id.toString(),
-        name: p.name,
-        code: p.code,
+      const hasVariants = Array.isArray(p.colorVariants) && p.colorVariants.length > 0;
+      const rowObj = {
+        name: p.name || "",
         brand: p.brand?.name || "",
         model: p.model?.name || "",
         category: p.category?.name || "",
-        productType: p.productType,
-        price: p.price,
-        mrp: p.mrp,
-        wholesalePrice: p.wholesalePrice,
-        wholesaleMinQty: p.wholesaleMinQty,
-        cashback: p.cashback,
-        countInStock: p.countInStock,
-        description: Array.isArray(p.description) ? p.description.join("\n") : (p.description || ""),
-        images: p.images?.join("|") || "",
-        videoUrl: p.videoUrl,
-        colors: p.colors?.join(",") || "",
-        colorVariants: p.colorVariants?.map(v => {
-          const parts = [
-            v.colorName,
-            v.sku || "",
-            v.price !== undefined ? v.price : "",
-            v.mrp !== undefined ? v.mrp : "",
-            v.wholesalePrice !== undefined ? v.wholesalePrice : "",
-            v.wholesaleMinQty !== undefined ? v.wholesaleMinQty : "",
-            v.countInStock !== undefined ? v.countInStock : 0,
-            (v.images || []).join(","),
-          ];
-          return parts.join(";");
-        }).join("||") || "",
-        specs: p.details?.specs?.map(s => `${s.key}:${s.value}`).join("|") || "",
-        inTheBox: p.details?.inTheBox,
-        warrantySummary: p.details?.warranty?.summary,
-        coveredInWarranty: p.details?.warranty?.coveredInWarranty,
-        warrantyServiceType: p.details?.warranty?.serviceType,
-        warrantyTnC: p.details?.warranty?.tnc,
-        countryOfOrigin: p.details?.countryOfOrigin,
-        packer: p.details?.packer,
-        highlights: p.details?.highlights?.join("|") || "",
-        descriptionPoints: p.details?.descriptionPoints?.join("|") || "",
-        createdAt: p.createdAt,
-      });
+        SKU: p.code || "",
+        price: hasVariants ? "" : (p.price ?? ""),
+        mrp: hasVariants ? "" : (p.mrp ?? ""),
+        wholesalePrice: hasVariants ? "" : (p.wholesalePrice ?? ""),
+        wholesaleMinQty: hasVariants ? "" : (p.wholesaleMinQty ?? ""),
+        countInStock: hasVariants ? "" : (p.countInStock ?? ""),
+        colorVariants: hasVariants ? _serializeVariantsForCreate(p.colorVariants) : "",
+        description: _joinDescription(p.description),
+        images: _joinArr(p.images, "|"),
+        videoUrl: p.videoUrl || "",
+        specs: _joinSpecs(p.details?.specs),
+        inTheBox: p.details?.inTheBox || "",
+        warrantySummary: p.details?.warranty?.summary || "",
+        coveredInWarranty: p.details?.warranty?.coveredInWarranty || "",
+        warrantyServiceType: p.details?.warranty?.serviceType || "",
+        warrantyTnC: p.details?.warranty?.tnc || "",
+        countryOfOrigin: p.details?.countryOfOrigin || "",
+        packer: p.details?.packer || "",
+        highlights: _joinArr(p.details?.highlights, "|"),
+        descriptionPoints: _joinArr(p.details?.descriptionPoints, "|"),
+        productType: p.productType || "",
+        cashback: p.cashback ?? "",
+        colors: _joinArr(p.colors, ","),
+        warrantyPeriod: p.details?.warranty?.period || "",
+        warrantyPolicy: p.details?.warranty?.policy || "",
+      };
+      const pRow = ws.addRow(_buildRowArrayFor(EXPORT_BACKUP_COLUMNS, rowObj));
+      pRow.alignment = { vertical: "top", wrapText: false };
+    });
+
+    // STEP 2: dropdowns AFTER data rows. Pad ~200 rows beyond the last data
+    // row so admins can add brand-new products into the same file and still
+    // get the brand / model / category dropdowns.
+    const lastDataRow = ws.lastRow ? ws.lastRow.number : 1;
+    applyExcelSheetDropdowns({
+      ws,
+      columns: EXPORT_BACKUP_COLUMNS,
+      brands,
+      categories,
+      models,
+      validationRows: Math.max(lastDataRow + 200, 1000),
+    });
+
+    // ---- Instructions sheet ----
+    const instr = workbook.addWorksheet("Instructions");
+    instr.columns = [{ width: 38 }, { width: 78 }];
+    const instructionRows = [
+      ["PRODUCTS BACKUP — Restore via Bulk Upload", ""],
+      ["", ""],
+      ["What is this file?", "A complete backup of every product, in the EXACT same format as the bulk-upload template (Admin → Products → Bulk → Download Template). One row per product."],
+      ["How to restore", "If the catalog is wiped, upload this file via Admin → Products → Bulk (Upload). Every product is recreated with its SKU, pricing, variants, images, specs, warranty, etc."],
+      ["", ""],
+      ["1. Columns 1–4 (name, brand, model, category)", "Required on every row. Brand / model / category cells already have dropdowns matching the live admin lists."],
+      ["2. SKU", "Each product's existing code is preserved. If a SKU cell is left blank during upload, a new code (PW-XXXXXX) is auto-generated."],
+      ["3. Top-level price / mrp / wholesalePrice / wholesaleMinQty / countInStock", "Filled ONLY when the product has no color variants. For products with variants these stay blank — the parser derives them from the first variant."],
+      ["", ""],
+      ["colorVariants cell", "Each variant is a ';'-joined record:  colorName;sku;price;mrp;wholesalePrice;wholesaleMinQty;countInStock;img1,img2"],
+      ["", "Multiple variants are joined by '||'. A trailing '||' is included intentionally so the parser detects rich format even when an image URL contains a colon (e.g. https://...)."],
+      ["", "Example:  Black;PW-BLA-001;4500;5500;3800;10;50;https://server/img1.jpg,https://server/img2.jpg||White;PW-WHI-002;4700;5500;3900;10;20;https://server/img3.jpg||"],
+      ["", ""],
+      ["images (top-level)", "Pipe-separated URLs:  url1|url2|url3"],
+      ["specs", "Pipe-separated key:value pairs:  Color:Black|RAM:8GB|Storage:256GB"],
+      ["highlights / descriptionPoints", "Pipe-separated bullets:  Fast Charging|5G Ready"],
+      ["colors", "Comma-separated:  Black,White,Gold"],
+      ["description", "Use Alt+Enter (Excel) for paragraph breaks; stored as \\n in the cell. Each paragraph becomes one entry in the product's description array."],
+      ["", ""],
+      ["IMPORTANT — Restore vs Update", "This file is for RESTORE (re-uploading after a wipe). Each row CREATES a new product. If a product with the same name already exists, that row FAILS with \"already exists\". To edit existing products instead, use Admin → Products → Update (Bulk Update Products)."],
+      ["Brands / Models / Categories must exist first", "Create them via Admin → Brands / Models / Categories before restoring. The upload parser resolves names → IDs."],
+      ["Extra columns", "productType, cashback, colors, warrantyPeriod, warrantyPolicy are exported for full fidelity. The upload parser also reads them."],
+      ["Max upload size", "10 MB"],
+    ];
+    instructionRows.forEach((r) => instr.addRow(r));
+    instr.getRow(1).font = { bold: true, size: 13, color: { argb: "FF4F46E5" } };
+    [3, 4, 6, 7, 8, 10, 11, 14, 15, 16, 17, 18, 20, 21, 22, 23].forEach((rowNum) => {
+      const cell = instr.getRow(rowNum).getCell(1);
+      if (cell) cell.font = { bold: true };
     });
 
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     res.setHeader("Content-Disposition", "attachment; filename=plusway_products_backup.xlsx");
-
     await workbook.xlsx.write(res);
     res.end();
   } catch (error) {
+    console.error("Error generating products backup:", error);
     res.status(500).json({ message: "Failed to generate backup", error: error.message });
   }
 };
@@ -1123,75 +1373,16 @@ export const downloadBulkUpdateTemplate = async (req, res) => {
     // 1. Data sheet (must be first so it is parsed as the default sheet)
     const ws = workbook.addWorksheet("Bulk Update Products");
 
-    // 2. Hidden Lists sheet powering the dropdowns
-    const listsSheet = workbook.addWorksheet("_Lists");
-    listsSheet.state = "veryHidden";
-    listsSheet.getCell("A1").value = "Brands";
-    listsSheet.getCell("B1").value = "Categories";
-    listsSheet.getCell("C1").value = "Models";
-    brands.forEach((b, i) => { listsSheet.getCell(`A${i + 2}`).value = b.name; });
-    categories.forEach((c, i) => { listsSheet.getCell(`B${i + 2}`).value = c.name; });
-    models.forEach((m, i) => { listsSheet.getCell(`C${i + 2}`).value = m.name; });
-
-    // SKU + variant-applicable columns first so variant-heavy uploads don't scroll.
-    // Indices used below for dataValidation must stay in sync with this array.
-    const columns = [
-      { header: "SKU *", key: "SKU", width: 24 },
-      { header: "colorName", key: "colorName", width: 18 },
-      { header: "price", key: "price", width: 12 },
-      { header: "mrp", key: "mrp", width: 12 },
-      { header: "wholesalePrice", key: "wholesalePrice", width: 16 },
-      { header: "wholesaleMinQty", key: "wholesaleMinQty", width: 16 },
-      { header: "countInStock", key: "countInStock", width: 14 },
-      { header: "images", key: "images", width: 60 },
-      { header: "name", key: "name", width: 36 },
-      { header: "description", key: "description", width: 50 },
-      { header: "cashback", key: "cashback", width: 12 },
-      { header: "brand", key: "brand", width: 18 },
-      { header: "model", key: "model", width: 26 },
-      { header: "category", key: "category", width: 18 },
-      { header: "productType", key: "productType", width: 22 },
-      { header: "videoUrl", key: "videoUrl", width: 40 },
-      { header: "specs", key: "specs", width: 50 },
-      { header: "inTheBox", key: "inTheBox", width: 30 },
-      { header: "warrantyPeriod", key: "warrantyPeriod", width: 18 },
-      { header: "warrantyPolicy", key: "warrantyPolicy", width: 22 },
-      { header: "warrantySummary", key: "warrantySummary", width: 30 },
-      { header: "coveredInWarranty", key: "coveredInWarranty", width: 28 },
-      { header: "warrantyServiceType", key: "warrantyServiceType", width: 26 },
-      { header: "warrantyTnC", key: "warrantyTnC", width: 22 },
-      { header: "highlights", key: "highlights", width: 40 },
-      { header: "descriptionPoints", key: "descriptionPoints", width: 40 },
-      { header: "countryOfOrigin", key: "countryOfOrigin", width: 18 },
-      { header: "packer", key: "packer", width: 30 },
-      { header: "colors", key: "colors", width: 22 },
-    ];
-
-    ws.columns = columns.map((c) => ({ header: c.header, key: c.key, width: c.width }));
-
-    // Header styling — match downloadProductTemplate.
-    const headerRow = ws.getRow(1);
-    headerRow.height = 28;
-    headerRow.eachCell((cell) => {
-      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF4F46E5" } };
-      cell.font = { name: "Segoe UI", size: 11, bold: true, color: { argb: "FFFFFFFF" } };
-      cell.alignment = { vertical: "middle", horizontal: "center" };
+    // STEP 1: header + hidden _Lists sheet (no dropdowns yet — applied after
+    // the example rows so ExcelJS doesn't auto-materialize ghost rows above them).
+    setupExcelSheetHeader({
+      workbook,
+      ws,
+      columns: BULK_PRODUCT_COLUMNS,
+      brands,
+      categories,
+      models,
     });
-
-    // Find column indices we need for data validation. 1-indexed.
-    const findCol = (key) => columns.findIndex((c) => c.key === key) + 1;
-    const colLetter = (n) => {
-      let s = "";
-      while (n > 0) {
-        const m = (n - 1) % 26;
-        s = String.fromCharCode(65 + m) + s;
-        n = Math.floor((n - 1) / 26);
-      }
-      return s;
-    };
-    const brandColLetter = colLetter(findCol("brand"));
-    const modelColLetter = colLetter(findCol("model"));
-    const categoryColLetter = colLetter(findCol("category"));
 
     // Example rows pulled live from the DB so admins see real SKUs to template against.
     const variantExampleRow = {};
@@ -1242,10 +1433,8 @@ export const downloadBulkUpdateTemplate = async (req, res) => {
       productExampleRow.category = categories[0]?.name || "Battery";
     }
 
-    const buildRowArray = (rowObj) => columns.map((c) => (rowObj[c.key] !== undefined ? rowObj[c.key] : ""));
-
-    const row2 = ws.addRow(buildRowArray(variantExampleRow));
-    const row3 = ws.addRow(buildRowArray(productExampleRow));
+    const row2 = ws.addRow(_buildRowArrayFor(BULK_PRODUCT_COLUMNS, variantExampleRow));
+    const row3 = ws.addRow(_buildRowArrayFor(BULK_PRODUCT_COLUMNS, productExampleRow));
     [row2, row3].forEach((r) => {
       r.height = 20;
       r.eachCell((cell) => {
@@ -1254,37 +1443,16 @@ export const downloadBulkUpdateTemplate = async (req, res) => {
       });
     });
 
-    // Data validations on brand / model / category columns.
-    const brandEnd = Math.max(2, brands.length + 1);
-    const categoryEnd = Math.max(2, categories.length + 1);
-    const modelEnd = Math.max(2, models.length + 1);
-
-    for (let i = 2; i <= 1000; i++) {
-      ws.getCell(`${brandColLetter}${i}`).dataValidation = {
-        type: "list",
-        allowBlank: true,
-        formulae: [`_Lists!$A$2:$A$${brandEnd}`],
-        showErrorMessage: true,
-        errorTitle: "Invalid Brand",
-        error: "Please select a Brand from the dropdown list (or leave blank to keep current).",
-      };
-      ws.getCell(`${modelColLetter}${i}`).dataValidation = {
-        type: "list",
-        allowBlank: true,
-        formulae: [`_Lists!$C$2:$C$${modelEnd}`],
-        showErrorMessage: true,
-        errorTitle: "Invalid Model",
-        error: "Please select a Model from the dropdown list (or leave blank to keep current).",
-      };
-      ws.getCell(`${categoryColLetter}${i}`).dataValidation = {
-        type: "list",
-        allowBlank: true,
-        formulae: [`_Lists!$B$2:$B$${categoryEnd}`],
-        showErrorMessage: true,
-        errorTitle: "Invalid Category",
-        error: "Please select a Category from the dropdown list (or leave blank to keep current).",
-      };
-    }
+    // STEP 2: dropdowns. Applied AFTER the example rows so they aren't pushed
+    // below auto-materialized ghost rows.
+    applyExcelSheetDropdowns({
+      ws,
+      columns: BULK_PRODUCT_COLUMNS,
+      brands,
+      categories,
+      models,
+      validationRows: 1000,
+    });
 
     // Instructions sheet.
     const instr = workbook.addWorksheet("Instructions");

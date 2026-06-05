@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import ImageUpload from "../../../components/ImageUpload";
 import MultiImageUpload from "../../../components/MultiImageUpload";
+import SortableImageGrid from "../../../components/SortableImageGrid";
 import BulkUploadModal from "../../../components/BulkUploadModal";
 import { API_ENDPOINTS } from "../../../config/api";
 import Pagination from "../../../components/Pagination";
@@ -359,6 +360,15 @@ const ProductManagement = () => {
     setFormData({ ...formData, colorVariants: newVariants });
   };
 
+  const handleReorderColorVariantImages = (variantIndex, reorderedImages) => {
+    const newVariants = [...(formData.colorVariants || [])];
+    newVariants[variantIndex] = {
+      ...newVariants[variantIndex],
+      images: reorderedImages,
+    };
+    setFormData({ ...formData, colorVariants: newVariants });
+  };
+
   const handleImageUpload = (urls, index = -1) => {
     if (index === -1) {
       // Add new multiple images
@@ -550,7 +560,7 @@ const ProductManagement = () => {
       document.body.removeChild(link);
     } catch (error) {
       console.error(error);
-      alert("Failed to export backup");
+      alert("Failed to export products backup");
     }
   };
 
@@ -629,7 +639,7 @@ const ProductManagement = () => {
           <button
             onClick={handleExportBackup}
             className="flex items-center gap-1.5 px-3 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all text-xs font-bold shadow-sm"
-            title="Export Backup">
+            title="Download a full backup in the bulk-upload format. If the catalog is wiped, restore everything via Admin → Products → Bulk (Upload).">
             <Save size={14} className="text-gray-500" />
             <span className="hidden lg:inline">Export</span>
           </button>
@@ -866,34 +876,30 @@ const ProductManagement = () => {
                 className="p-8 space-y-8 max-w-6xl mx-auto w-full">
               {/* Product Gallery Section */}
               <div className="space-y-3">
-                <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
-                  Product Gallery
-                </label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {formData.images.map((img, index) => (
-                    <div key={index} className="relative group aspect-square">
-                      <div className="w-full h-full rounded-xl overflow-hidden border border-gray-200">
-                        <img
-                          src={img}
-                          alt={`Product ${index}`}
-                          className="w-full h-full object-contain"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveImage(index)}
-                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  ))}
-                  <div className="aspect-square">
+                <div className="flex items-baseline justify-between gap-3">
+                  <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                    Product Gallery
+                  </label>
+                  {formData.images.length > 1 && (
+                    <span className="text-[11px] text-gray-400 font-medium">
+                      Drag thumbnails to reorder · first image is the primary
+                    </span>
+                  )}
+                </div>
+                <SortableImageGrid
+                  images={formData.images}
+                  onReorder={(reordered) =>
+                    setFormData((prev) => ({ ...prev, images: reordered }))
+                  }
+                  onRemove={handleRemoveImage}
+                  altPrefix="Product"
+                  uploadSlot={
                     <MultiImageUpload
                       onUpload={(urls) => handleImageUpload(urls)}
                       placeholder="Add Images"
                     />
-                  </div>
-                </div>
+                  }
+                />
               </div>
 
               {/* Color Variants */}
@@ -1014,32 +1020,32 @@ const ProductManagement = () => {
 
                       {/* Row 4: Variant Images */}
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Variant Images</label>
-                        <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
-                          {variant.images?.map((img, imgIndex) => (
-                            <div key={imgIndex} className="relative group aspect-square">
-                              <div className="w-full h-full rounded-lg overflow-hidden border border-gray-200 bg-white">
-                                <img
-                                  src={img}
-                                  alt={`${variant.colorName} ${imgIndex}`}
-                                  className="w-full h-full object-contain"
-                                />
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveColorVariantImage(index, imgIndex)}
-                                className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
-                                <X size={12} />
-                              </button>
-                            </div>
-                          ))}
-                          <div className="aspect-square">
+                        <div className="flex items-baseline justify-between gap-3">
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Variant Images</label>
+                          {(variant.images?.length || 0) > 1 && (
+                            <span className="text-[10px] text-gray-400">Drag to reorder</span>
+                          )}
+                        </div>
+                        <SortableImageGrid
+                          images={variant.images || []}
+                          onReorder={(reordered) =>
+                            handleReorderColorVariantImages(index, reordered)
+                          }
+                          onRemove={(imgIndex) =>
+                            handleRemoveColorVariantImage(index, imgIndex)
+                          }
+                          gridClassName="grid grid-cols-3 md:grid-cols-5 gap-3"
+                          thumbnailClassName="bg-white"
+                          removeIconSize={12}
+                          RemoveIcon={X}
+                          altPrefix={variant.colorName || "Variant"}
+                          uploadSlot={
                             <MultiImageUpload
                               onUpload={(urls) => handleColorVariantImages(index, urls)}
                               placeholder="Images"
                             />
-                          </div>
-                        </div>
+                          }
+                        />
                       </div>
                     </div>
                   ))}
