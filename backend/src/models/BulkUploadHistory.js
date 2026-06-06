@@ -32,6 +32,20 @@ const bulkUploadHistorySchema = new mongoose.Schema(
       ref: "Admin",
       required: true,
     },
+    // Per-row failure details captured at upload time. Capped on the
+    // controller side to keep history documents bounded for huge files.
+    errors: {
+      type: [
+        {
+          _id: false,
+          row: Number,
+          name: String, // product/model name or SKU (best available identifier)
+          field: String, // optional column hint, when known
+          error: String, // human-readable failure reason
+        },
+      ],
+      default: [],
+    },
   },
   {
     timestamps: true,

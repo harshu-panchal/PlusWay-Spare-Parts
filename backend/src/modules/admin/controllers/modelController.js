@@ -390,7 +390,7 @@ export const bulkCreateModels = async (req, res) => {
       savedFilePath = `${req.file.path}${ext}`;
       fs.renameSync(req.file.path, savedFilePath);
 
-      // Record in history
+      // Record in history (including per-row error details, capped to 1000).
       await BulkUploadHistory.create({
         fileName: req.file.originalname,
         filePath: savedFileName, // just store the filename in uploads dir
@@ -399,6 +399,12 @@ export const bulkCreateModels = async (req, res) => {
         successCount: results.success.length,
         errorCount: results.errors.length,
         uploadedBy: req.user._id, // Assumes admin user is in req.user
+        errors: results.errors.slice(0, 1000).map((e) => ({
+          row: Number.isFinite(e?.row) ? e.row : null,
+          name: e?.name || "?",
+          field: e?.field || undefined,
+          error: String(e?.error || "Unknown error"),
+        })),
       });
     } else {
       try {

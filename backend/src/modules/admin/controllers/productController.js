@@ -23,6 +23,22 @@ const genVariantSku = (colorName) => {
 const escapeRegex = (s) =>
   String(s ?? "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+// Cap per-upload error list so a pathologically bad file can't bloat the
+// history document beyond Mongo's 16 MB BSON limit. 1000 covers any realistic
+// case while keeping documents small.
+const BULK_HISTORY_ERROR_CAP = 1000;
+
+// Normalize the in-memory `results.errors` list (which different bulk
+// controllers fill with slightly different extra fields) into the shape
+// expected by BulkUploadHistory.errors[]. Trims the list to BULK_HISTORY_ERROR_CAP.
+const _normalizeErrorsForHistory = (errors = []) =>
+  errors.slice(0, BULK_HISTORY_ERROR_CAP).map((e) => ({
+    row: Number.isFinite(e?.row) ? e.row : null,
+    name: e?.name || e?.productName || e?.sku || "?",
+    field: e?.field || undefined,
+    error: String(e?.error || "Unknown error"),
+  }));
+
 // @desc    Get all products
 // @route   GET /api/admin/products
 // @access  Private/Admin
@@ -454,38 +470,67 @@ export const bulkCreateProducts = async (req, res) => {
           ? String(row.colors).split(",").map((c) => c.trim()).filter(Boolean)
           : [];
 
-        // Parse colorVariants (rich format):
-        // colorVariants column: each variant separated by ||
-        // Each variant format: colorName;sku;price;mrp;wholesalePrice;wholesaleMinQty;countInStock;img1,img2
-        // Legacy simple format still supported: Black:url1,url2|White:url3
+        // Parse colorVariants. Two supported formats:
+        //   Rich    : colorName;sku;price;mrp;wholesalePrice;wholesaleMinQty;countInStock;img1,img2
+        //             multiple variants separated by ||
+        //   Legacy  : Black:url1,url2|White:url3   (or just "Black|White" with no images)
+        //
+        // Rich format is detected by the presence of `;` — the legacy format
+        // never uses semicolons. We deliberately do NOT use `:` to disambiguate,
+        // since image URLs (https://…) contain colons and would otherwise flip
+        // single-variant rich rows back into legacy mode.
         const colorVariants = (() => {
           if (!row.colorVariants) return [];
           const raw = String(row.colorVariants).trim();
-          // Detect rich format (contains semicolons in first segment)
-          if (raw.includes("||") || (raw.includes(";") && !raw.includes(":"))) {
-            // Rich format: variantA||variantB where each = name;sku;price;mrp;wsPrice;wsMinQty;stock;img1,img2
-            return raw.split("||").map(variantStr => {
-              const parts = variantStr.split(";").map(p => p.trim());
+          let parsed = [];
+
+          if (raw.includes(";")) {
+            // Rich format
+            parsed = raw.split("||").map((variantStr) => {
+              const parts = variantStr.split(";").map((p) => p.trim());
               return {
                 colorName: parts[0] || "",
-                sku: (parts[1] && parts[1].trim()) ? parts[1].trim() : genVariantSku(parts[0] || "VAR"),
+                sku: parts[1] && parts[1].trim() ? parts[1].trim() : "",
                 price: parts[2] ? Number(parts[2]) : undefined,
                 mrp: parts[3] ? Number(parts[3]) : undefined,
                 wholesalePrice: parts[4] ? Number(parts[4]) : undefined,
                 wholesaleMinQty: parts[5] ? Number(parts[5]) : undefined,
                 countInStock: parts[6] ? Number(parts[6]) : 0,
-                images: parts[7] ? parts[7].split(",").map(u => u.trim()).filter(Boolean) : [],
+                images: parts[7]
+                  ? parts[7].split(",").map((u) => u.trim()).filter(Boolean)
+                  : [],
               };
-            }).filter(v => v.colorName);
+            });
+          } else {
+            // Legacy format
+            parsed = raw.split("|").map((variantStr) => {
+              const colonIdx = variantStr.indexOf(":");
+              if (colonIdx === -1) {
+                return { colorName: variantStr.trim(), images: [] };
+              }
+              const colorName = variantStr.substring(0, colonIdx).trim();
+              const images = variantStr
+                .substring(colonIdx + 1)
+                .split(",")
+                .map((i) => i.trim())
+                .filter(Boolean);
+              return { colorName, images };
+            });
           }
-          // Legacy format: Black:url1,url2|White:url3
-          return raw.split("|").map(variantStr => {
-            const colonIdx = variantStr.indexOf(":");
-            if (colonIdx === -1) return { colorName: variantStr.trim(), images: [] };
-            const colorName = variantStr.substring(0, colonIdx).trim();
-            const images = variantStr.substring(colonIdx + 1).split(",").map(i => i.trim()).filter(Boolean);
-            return { colorName, sku: genVariantSku(colorName), images };
-          }).filter(Boolean);
+
+          // Final safety net: drop blank rows and guarantee every surviving
+          // variant has a SKU. This mirrors the single-product createProduct
+          // path (line ~178) so the bulk path can never persist a SKU-less
+          // variant regardless of which parser branch fed it.
+          return parsed
+            .filter((v) => v && v.colorName)
+            .map((v) => ({
+              ...v,
+              sku:
+                v.sku && String(v.sku).trim()
+                  ? String(v.sku).trim()
+                  : genVariantSku(v.colorName),
+            }));
         })();
 
         // Parse specs: "Color:Black|RAM:8GB|Storage:256GB"
@@ -586,7 +631,7 @@ export const bulkCreateProducts = async (req, res) => {
       savedFilePath = `${req.file.path}${ext}`;
       fs.renameSync(req.file.path, savedFilePath);
 
-      // Record in history
+      // Record in history (including per-row error details, capped).
       await BulkUploadHistory.create({
         fileName: req.file.originalname,
         filePath: savedFileName, // just store the filename in uploads dir
@@ -595,6 +640,7 @@ export const bulkCreateProducts = async (req, res) => {
         successCount: results.success.length,
         errorCount: results.errors.length,
         uploadedBy: req.user._id, // Assumes admin user is in req.user
+        errors: _normalizeErrorsForHistory(results.errors),
       });
     } else {
       try { fs.unlinkSync(req.file.path); } catch (_) {}
@@ -1925,6 +1971,7 @@ export const bulkUpdateProductsBySku = async (req, res) => {
           successCount: results.success.length,
           errorCount: results.errors.length,
           uploadedBy: req.user._id,
+          errors: _normalizeErrorsForHistory(results.errors),
         });
       } catch (historyErr) {
         // History logging is best-effort; don't fail the response.
