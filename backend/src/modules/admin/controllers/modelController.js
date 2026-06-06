@@ -6,7 +6,6 @@ import ExcelJS from "exceljs";
 import BulkUploadHistory from "../../../models/BulkUploadHistory.js";
 import path from "path";
 
-
 const escapeRegex = (value = "") =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -21,7 +20,7 @@ export const getModels = async (req, res) => {
 
   if (req.query.all === "true") {
     const models = await Model.find({})
-      .populate("brand", "name")
+      .populate("brand", "name logo")
       .sort({ name: 1 });
     return res.json({ models, total: models.length });
   }
@@ -36,7 +35,7 @@ export const getModels = async (req, res) => {
 
   const count = await Model.countDocuments(filter);
   const models = await Model.find(filter)
-    .populate("brand", "name")
+    .populate("brand", "name logo")
     .limit(pageSize)
     .skip(pageSize * (page - 1))
     .sort({ createdAt: -1 });
@@ -69,9 +68,13 @@ export const createModel = async (req, res) => {
     finalName = `${brandDoc.name} ${name}`;
   }
 
-  const modelExists = await Model.findOne({ name: { $regex: new RegExp(`^${finalName}$`, "i") } });
+  const modelExists = await Model.findOne({
+    name: { $regex: new RegExp(`^${finalName}$`, "i") },
+  });
   if (modelExists) {
-    return res.status(400).json({ message: "Model with this name already exists" });
+    return res
+      .status(400)
+      .json({ message: "Model with this name already exists" });
   }
 
   const model = new Model({
@@ -116,11 +119,13 @@ export const updateModel = async (req, res) => {
 
     const modelExists = await Model.findOne({
       _id: { $ne: req.params.id },
-      name: { $regex: new RegExp(`^${finalName}$`, "i") }
+      name: { $regex: new RegExp(`^${finalName}$`, "i") },
     });
 
     if (modelExists) {
-      return res.status(400).json({ message: "Model with this name already exists" });
+      return res
+        .status(400)
+        .json({ message: "Model with this name already exists" });
     }
 
     model.name = finalName;
@@ -228,10 +233,10 @@ export const bulkCreateModels = async (req, res) => {
     const rawRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
 
     // Normalize keys (remove " *" from required field headers)
-    const rows = rawRows.map(row => {
+    const rows = rawRows.map((row) => {
       const cleanRow = {};
       for (const key in row) {
-        const cleanKey = key.replace(/\s*\*\s*$/, '').trim();
+        const cleanKey = key.replace(/\s*\*\s*$/, "").trim();
         cleanRow[cleanKey] = row[key];
       }
       return cleanRow;
@@ -256,7 +261,8 @@ export const bulkCreateModels = async (req, res) => {
       `${pad2(d.getUTCDate())}/${pad2(d.getUTCMonth() + 1)}/${d.getUTCFullYear()}`;
     const normalizeReleasedDate = (v) => {
       if (v === undefined || v === null || v === "") return undefined;
-      if (v instanceof Date && !Number.isNaN(v.getTime())) return fmtExcelDateDDMMYYYY(v);
+      if (v instanceof Date && !Number.isNaN(v.getTime()))
+        return fmtExcelDateDDMMYYYY(v);
       if (typeof v === "number" && Number.isFinite(v)) {
         // Excel serial date: days since 1900-01-01 (with the 1900 leap-year bug).
         // 25569 = days from 1900-01-01 to 1970-01-01.
@@ -279,8 +285,12 @@ export const bulkCreateModels = async (req, res) => {
     };
 
     if (!rows.length) {
-      try { fs.unlinkSync(req.file.path); } catch (_) {}
-      return res.status(400).json({ message: "Excel file is empty or has no data rows" });
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (_) {}
+      return res
+        .status(400)
+        .json({ message: "Excel file is empty or has no data rows" });
     }
 
     // Pre-fetch all brands for name → _id resolution
@@ -308,7 +318,11 @@ export const bulkCreateModels = async (req, res) => {
         // Resolve brand name → document
         const brandDoc = brandMap[String(row.brand).toLowerCase().trim()];
         if (!brandDoc) {
-          results.errors.push({ row: rowNum, name: row.name, error: `Brand "${row.brand}" not found in database` });
+          results.errors.push({
+            row: rowNum,
+            name: row.name,
+            error: `Brand "${row.brand}" not found in database`,
+          });
           continue;
         }
 
@@ -320,10 +334,19 @@ export const bulkCreateModels = async (req, res) => {
 
         // Check model name uniqueness
         const modelExists = await Model.findOne({
-          name: { $regex: new RegExp(`^${finalName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i") },
+          name: {
+            $regex: new RegExp(
+              `^${finalName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
+              "i",
+            ),
+          },
         });
         if (modelExists) {
-          results.errors.push({ row: rowNum, name: finalName, error: `Model "${finalName}" already exists` });
+          results.errors.push({
+            row: rowNum,
+            name: finalName,
+            error: `Model "${finalName}" already exists`,
+          });
           continue;
         }
 
@@ -331,19 +354,26 @@ export const bulkCreateModels = async (req, res) => {
           name: finalName,
           brand: brandDoc._id,
           released: normalizeReleasedDate(row.released),
-          displaySize: row.displaySize ? String(row.displaySize).trim() : undefined,
+          displaySize: row.displaySize
+            ? String(row.displaySize).trim()
+            : undefined,
           image: row.image ? String(row.image).trim() : undefined,
         });
 
         const saved = await model.save();
 
         // Keep Brand.models array in sync
-        await Brand.findByIdAndUpdate(brandDoc._id, { $push: { models: saved._id } });
+        await Brand.findByIdAndUpdate(brandDoc._id, {
+          $push: { models: saved._id },
+        });
 
         results.success.push({ row: rowNum, name: finalName });
-
       } catch (rowError) {
-        results.errors.push({ row: rowNum, name: row.name || "?", error: rowError.message });
+        results.errors.push({
+          row: rowNum,
+          name: row.name || "?",
+          error: rowError.message,
+        });
       }
     }
 
@@ -355,7 +385,7 @@ export const bulkCreateModels = async (req, res) => {
 
     if (rows.length > 0) {
       // Append original extension so it can be downloaded properly
-      const ext = path.extname(req.file.originalname) || '.xlsx';
+      const ext = path.extname(req.file.originalname) || ".xlsx";
       savedFileName = `${req.file.filename}${ext}`;
       savedFilePath = `${req.file.path}${ext}`;
       fs.renameSync(req.file.path, savedFilePath);
@@ -371,7 +401,9 @@ export const bulkCreateModels = async (req, res) => {
         uploadedBy: req.user._id, // Assumes admin user is in req.user
       });
     } else {
-      try { fs.unlinkSync(req.file.path); } catch (_) {}
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (_) {}
     }
 
     const statusCode = results.success.length > 0 ? 200 : 400;
@@ -382,11 +414,14 @@ export const bulkCreateModels = async (req, res) => {
       errorCount: results.errors.length,
       results,
     });
-
   } catch (error) {
-    try { fs.unlinkSync(req.file.path); } catch (_) {}
+    try {
+      fs.unlinkSync(req.file.path);
+    } catch (_) {}
     console.error("Bulk model upload error:", error);
-    return res.status(500).json({ message: "Bulk model upload failed", error: error.message });
+    return res
+      .status(500)
+      .json({ message: "Bulk model upload failed", error: error.message });
   }
 };
 
@@ -422,13 +457,33 @@ export const downloadModelTemplate = async (req, res) => {
     // NOTE: the `released` column key MUST stay "released" so the backend parser
     // finds it. The displayed header may include format hints if we ever want.
     const columns = [
-      { header: "name *", key: "name", example: "Galaxy S23 Ultra", example2: "iPhone 14 Pro" },
-      { header: "brand *", key: "brand", example: "Samsung", example2: "Apple" },
-      { header: "released", key: "released", example: "15/02/2023", example2: "28/09/2022" },
-      { header: "image", key: "image", example: "http://server/uploads/s23ultra.jpg", example2: "" },
+      {
+        header: "name *",
+        key: "name",
+        example: "Galaxy S23 Ultra",
+        example2: "iPhone 14 Pro",
+      },
+      {
+        header: "brand *",
+        key: "brand",
+        example: "Samsung",
+        example2: "Apple",
+      },
+      {
+        header: "released",
+        key: "released",
+        example: "15/02/2023",
+        example2: "28/09/2022",
+      },
+      {
+        header: "image",
+        key: "image",
+        example: "http://server/uploads/s23ultra.jpg",
+        example2: "",
+      },
     ];
 
-    ws.columns = columns.map(c => ({
+    ws.columns = columns.map((c) => ({
       header: c.header,
       key: c.key,
       width: 28,
@@ -467,7 +522,7 @@ export const downloadModelTemplate = async (req, res) => {
     });
 
     // Add Example rows
-    const row2 = ws.addRow(columns.map(c => c.example));
+    const row2 = ws.addRow(columns.map((c) => c.example));
     row2.height = 20;
     row2.eachCell((cell) => {
       cell.font = {
@@ -481,7 +536,7 @@ export const downloadModelTemplate = async (req, res) => {
       };
     });
 
-    const row3 = ws.addRow(columns.map(c => c.example2));
+    const row3 = ws.addRow(columns.map((c) => c.example2));
     row3.height = 20;
     row3.eachCell((cell) => {
       cell.font = {
@@ -499,9 +554,10 @@ export const downloadModelTemplate = async (req, res) => {
     const brandEnd = Math.max(2, brands.length + 1);
 
     // Column letter for `released` (1-indexed → A,B,C,...). Calc once.
-    const releasedColLetter = releasedColIdx > 0
-      ? String.fromCharCode(64 + releasedColIdx) // safe for cols 1..26
-      : null;
+    const releasedColLetter =
+      releasedColIdx > 0
+        ? String.fromCharCode(64 + releasedColIdx) // safe for cols 1..26
+        : null;
 
     for (let i = 2; i <= 1000; i++) {
       ws.getCell(`B${i}`).dataValidation = {
@@ -510,7 +566,7 @@ export const downloadModelTemplate = async (req, res) => {
         formulae: [`_Lists!$A$2:$A$${brandEnd}`],
         showErrorMessage: true,
         errorTitle: "Invalid Brand",
-        error: "Please select a Brand from the dropdown list."
+        error: "Please select a Brand from the dropdown list.",
       };
 
       // Released cells: show an in-cell prompt clarifying the expected format.
@@ -525,24 +581,29 @@ export const downloadModelTemplate = async (req, res) => {
           showInputMessage: true,
           promptTitle: "Release date",
           prompt:
-            "Use dd/mm/yyyy (e.g. 15/02/2023). Freeform text like \"February 2023\" is also accepted.",
+            'Use dd/mm/yyyy (e.g. 15/02/2023). Freeform text like "February 2023" is also accepted.',
         };
       }
     }
 
     res.setHeader(
       "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     );
     res.setHeader(
       "Content-Disposition",
-      "attachment; filename=plusway_models_bulk_template.xlsx"
+      "attachment; filename=plusway_models_bulk_template.xlsx",
     );
 
     await workbook.xlsx.write(res);
     res.end();
   } catch (error) {
     console.error("Error generating model template:", error);
-    res.status(500).json({ message: "Failed to generate Excel template", error: error.message });
+    res
+      .status(500)
+      .json({
+        message: "Failed to generate Excel template",
+        error: error.message,
+      });
   }
 };

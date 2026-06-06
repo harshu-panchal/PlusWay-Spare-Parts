@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import useSwipe from "../../../hooks/useSwipe";
 
 const ImageLightbox = ({
   isOpen,
@@ -35,8 +36,6 @@ const ImageLightbox = ({
     };
   }, [isOpen, images.length, onClose]);
 
-  if (!isOpen || !images.length) return null;
-
   const next = (e) => {
     e?.stopPropagation();
     setIndex((i) => (i + 1) % images.length);
@@ -46,6 +45,18 @@ const ImageLightbox = ({
     e?.stopPropagation();
     setIndex((i) => (i - 1 + images.length) % images.length);
   };
+
+  // Touch swipe between images. Declared above the early-return so hook
+  // order stays stable across renders.
+  const { swipeHandlers } = useSwipe({
+    onSwipeLeft: () => setIndex((i) => (i + 1) % Math.max(1, images.length)),
+    onSwipeRight: () =>
+      setIndex(
+        (i) => (i - 1 + Math.max(1, images.length)) % Math.max(1, images.length),
+      ),
+  });
+
+  if (!isOpen || !images.length) return null;
 
   return (
     <div
@@ -64,8 +75,9 @@ const ImageLightbox = ({
       </button>
 
       <div
+        {...swipeHandlers}
         onClick={(e) => e.stopPropagation()}
-        className="relative flex flex-col items-center justify-center gap-3">
+        className="relative flex flex-col items-center justify-center gap-3 touch-pan-y">
         <img
           src={images[index]}
           alt={alt}

@@ -69,23 +69,36 @@ const ProductTypeSelection = () => {
 
             <div className="max-w-7xl mx-auto px-[2%] md:px-4 py-8">
                 {/* Handset Header */}
-                <div className="bg-white p-6 mb-8 flex items-center gap-8 border-b border-gray-100 shadow-sm rounded">
-                    <div className="w-40 h-40 flex-shrink-0 bg-gray-50 p-4 rounded flex items-center justify-center">
-                        <div className="text-center">
-                            <span className="block font-black text-primary text-xl tracking-tighter italic">PLUSWAY</span>
-                            <span className="text-[10px] font-bold text-gray-400 uppercase">Handset Part</span>
+                {(() => {
+                    // Display priority: model image -> brand logo -> branded placeholder.
+                    const headerImage = modelInfo.image || modelInfo.brand?.logo || null;
+                    return (
+                        <div className="bg-white p-6 mb-8 flex items-center gap-8 border-b border-gray-100 shadow-sm rounded">
+                            <div className="w-40 h-40 shrink-0 bg-gray-50 p-4 rounded flex items-center justify-center">
+                                {headerImage ? (
+                                    <LazyImage
+                                        src={headerImage}
+                                        alt={modelInfo.name}
+                                        className="w-full h-full object-contain"
+                                    />
+                                ) : (
+                                    <div className="text-center">
+                                        <span className="block font-black text-primary text-xl tracking-tighter italic">PLUSWAY</span>
+                                        <span className="text-[10px] font-bold text-gray-400 uppercase">Handset Part</span>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex-grow">
+                                <h1 className="text-2xl font-black text-secondary mb-2 uppercase tracking-tight italic">
+                                    {modelInfo.name} <span className="text-primary">Spare Parts</span>
+                                </h1>
+                                <div className="flex flex-col gap-1 text-sm text-gray-500 font-bold">
+                                    <p>Released: <span className="text-secondary">{modelInfo.released ? formatReleasedDate(modelInfo.released) : "—"}</span></p>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div className="flex-grow">
-                        <h1 className="text-2xl font-black text-secondary mb-2 uppercase tracking-tight italic">
-                            {modelInfo.name} <span className="text-primary">Spare Parts</span>
-                        </h1>
-                        <div className="flex flex-col gap-1 text-sm text-gray-500 font-bold">
-                            <p>Released: <span className="text-secondary">{formatReleasedDate(modelInfo.released)}</span></p>
-                            <p>Display Size: <span className="text-secondary">{modelInfo.displaySize}</span></p>
-                        </div>
-                    </div>
-                </div>
+                    );
+                })()}
 
                 {/* Spare Parts Grid by Category */}
                 <div className="space-y-12">

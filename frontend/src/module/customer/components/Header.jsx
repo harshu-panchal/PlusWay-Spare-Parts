@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, useRef } from "react";
 import {
   Search,
   User,
@@ -31,6 +31,8 @@ const Header = () => {
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [categories, setCategories] = useState([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCategoriesMenuOpen, setIsCategoriesMenuOpen] = useState(false);
+  const categoriesMenuRef = useRef(null);
   const navigate = useNavigate();
 
   const userInfo = JSON.parse(localStorage.getItem("userInfo"));
@@ -65,6 +67,28 @@ const Header = () => {
   }, [isMobileMenuOpen]);
 
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
+
+  // Close the desktop "All Categories" dropdown on outside-click / ESC.
+  useEffect(() => {
+    if (!isCategoriesMenuOpen) return;
+    const onClickAway = (e) => {
+      if (
+        categoriesMenuRef.current &&
+        !categoriesMenuRef.current.contains(e.target)
+      ) {
+        setIsCategoriesMenuOpen(false);
+      }
+    };
+    const onKey = (e) => {
+      if (e.key === "Escape") setIsCategoriesMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onClickAway);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClickAway);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [isCategoriesMenuOpen]);
 
   const handleLogout = () => {
     localStorage.removeItem("userInfo");
@@ -494,9 +518,65 @@ const Header = () => {
       {/* Navigation Drawer Trigger Style */}
       <div className="bg-secondary text-white hidden md:block border-b border-white/10">
         <div className="max-w-7xl mx-auto px-[2%] md:px-4 flex items-center h-10">
-          <div className="flex items-center gap-2 bg-primary h-full px-6 cursor-pointer font-black text-xs uppercase tracking-widest">
-            <Menu size={16} /> All Categories
+          {/* "All Categories" dropdown trigger */}
+          <div ref={categoriesMenuRef} className="relative h-full">
+            <button
+              type="button"
+              onClick={() => setIsCategoriesMenuOpen((o) => !o)}
+              aria-haspopup="true"
+              aria-expanded={isCategoriesMenuOpen}
+              className="flex items-center gap-2 bg-primary hover:bg-primary/90 h-full px-6 font-black text-xs uppercase tracking-widest transition-colors">
+              <Menu size={16} /> All Categories
+              <ChevronDown
+                size={14}
+                className={`transition-transform ${
+                  isCategoriesMenuOpen ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+
+            {isCategoriesMenuOpen && (
+              <div
+                role="menu"
+                className="absolute z-50 left-0 top-full w-72 max-h-[70vh] overflow-y-auto bg-white text-secondary rounded-b-xl shadow-2xl border border-gray-100">
+                <ul className="py-2">
+                  {Array.isArray(categories) && categories.length > 0 ? (
+                    categories.map((category) => (
+                      <li key={category._id}>
+                        <Link
+                          to={`/products?category=${category._id}`}
+                          onClick={() => setIsCategoriesMenuOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm font-bold normal-case tracking-normal hover:bg-orange-50 hover:text-primary transition-colors">
+                          {category.image ? (
+                            <img
+                              src={category.image}
+                              alt={category.name}
+                              className="w-8 h-8 object-contain rounded-md bg-gray-50 p-1 shrink-0"
+                            />
+                          ) : (
+                            <Tag
+                              size={16}
+                              className="text-primary shrink-0"
+                            />
+                          )}
+                          <span className="truncate">{category.name}</span>
+                          <ChevronRight
+                            size={14}
+                            className="ml-auto text-gray-300 shrink-0"
+                          />
+                        </Link>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="px-4 py-3 text-xs text-gray-400 italic text-center">
+                      No categories yet
+                    </li>
+                  )}
+                </ul>
+              </div>
+            )}
           </div>
+
           <div className="flex gap-8 px-8 items-center h-full text-[11px] font-black uppercase tracking-widest overflow-x-auto no-scrollbar whitespace-nowrap">
             <Link
               to="/brand-selection"

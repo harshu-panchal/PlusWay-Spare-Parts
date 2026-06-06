@@ -1,9 +1,17 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Smartphone, ShieldCheck, Lock, ChevronRight } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { API_ENDPOINTS } from "../../../config/api";
 import { registerFCMToken } from "../../../services/pushNotificationService";
+import CountryCodePicker from "../../../components/CountryCodePicker";
+import {
+  DEFAULT_COUNTRY,
+  STORAGE_KEY,
+  getCountryByIso,
+  getMaxLength,
+  isMobileValidForCountry,
+} from "../../../data/countryCodes";
 
 const Login = () => {
   const [step, setStep] = useState(1); // 1: Mobile, 2: OTP
@@ -11,12 +19,38 @@ const Login = () => {
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [country, setCountry] = useState(() => {
+    try {
+      return getCountryByIso(localStorage.getItem(STORAGE_KEY));
+    } catch {
+      return DEFAULT_COUNTRY;
+    }
+  });
   const navigate = useNavigate();
   const inputRefs = useRef([]);
 
+  // Persist the chosen country so it stays selected across sessions.
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, country.code);
+    } catch {
+      // Storage may be unavailable (private mode / SSR); ignore.
+    }
+  }, [country]);
+
+  const mobileMaxLength = getMaxLength(country);
+  const mobileIsValid = isMobileValidForCountry(mobile, country);
+
+  // Clamp the existing input if the user picks a country with a shorter max.
+  const handleCountryChange = (next) => {
+    setCountry(next);
+    const nextMax = getMaxLength(next);
+    setMobile((m) => m.slice(0, nextMax));
+  };
+
   const handleSendOTP = async (e) => {
     e.preventDefault();
-    if (mobile.length === 10) {
+    if (mobileIsValid) {
       setLoading(true);
       setError("");
       try {
@@ -90,7 +124,7 @@ const Login = () => {
             <p className="text-gray-400 text-xs font-black uppercase tracking-[0.2em] text-center mb-6">
               {step === 1
                 ? "Login with mobile number"
-                : `OTP sent to +91 ${mobile}`}
+                : `OTP sent to ${country.dial} ${mobile}`}
             </p>
 
             {error && (
@@ -104,21 +138,24 @@ const Login = () => {
               className="space-y-6">
               {step === 1 ? (
                 <div>
-                  <div className="relative group">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 border-r border-gray-200 pr-3 h-6">
-                      <span className="text-xs font-black text-secondary">
-                        +91
-                      </span>
+                  <div className="flex items-stretch bg-gray-50 border border-gray-200 rounded-2xl focus-within:border-primary transition-all overflow-hidden">
+                    <div className="flex items-center pl-2 pr-1 border-r border-gray-200">
+                      <CountryCodePicker
+                        value={country}
+                        onChange={handleCountryChange}
+                      />
                     </div>
                     <input
                       type="tel"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       required
                       placeholder="Enter mobile number"
-                      className="w-full pl-20 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-primary font-black tracking-widest text-secondary transition-all"
+                      className="flex-1 min-w-0 px-4 py-4 bg-transparent focus:outline-none font-black tracking-widest text-secondary"
                       value={mobile}
                       onChange={(e) =>
                         setMobile(
-                          e.target.value.replace(/\D/g, "").slice(0, 10),
+                          e.target.value.replace(/\D/g, "").slice(0, mobileMaxLength),
                         )
                       }
                     />
@@ -130,7 +167,15 @@ const Login = () => {
                     <input
                       key={i}
                       ref={(el) => (inputRefs.current[i] = el)}
-                      type="text"
+                      // type="tel" + inputMode="numeric" + pattern keeps the
+                      // Android numeric keypad open across each per-digit
+                      // box; type="text" defaults to alphabetic on every
+                      // focus jump. autoComplete="one-time-code" enables
+                      // iOS SMS autofill and Android's SMS Retriever hooks.
+                      type="tel"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      autoComplete="one-time-code"
                       maxLength={1}
                       className="w-14 h-16 bg-gray-50 border border-gray-200 rounded-2xl text-center text-2xl font-black text-secondary focus:outline-none focus:border-primary focus:bg-white transition-all"
                       value={otp[i] || ""}
@@ -158,8 +203,7 @@ const Login = () => {
               <button
                 type="submit"
                 disabled={
-                  loading ||
-                  (step === 1 ? mobile.length !== 10 : otp.length !== 4)
+                  loading || (step === 1 ? !mobileIsValid : otp.length !== 4)
                 }
                 className="w-full bg-secondary text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-opacity-90 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-secondary/20">
                 {loading ? (

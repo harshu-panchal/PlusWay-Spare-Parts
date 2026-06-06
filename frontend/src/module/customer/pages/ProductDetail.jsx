@@ -30,6 +30,7 @@ import LazyImage from "../../../components/LazyImage";
 import ImageZoom from "../components/ImageZoom";
 import ImageLightbox from "../components/ImageLightbox";
 import ProductCard from "../components/ProductCard";
+import useSwipe from "../../../hooks/useSwipe";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -83,6 +84,22 @@ const ProductDetail = () => {
       setSelectedImage(displayImages[0]);
     }
   }, [selectedColor, product]);
+
+  // Touch swipe navigation for the main gallery — wraps around at the ends
+  // so swiping past the last image returns to the first, matching the
+  // existing chevron behavior.
+  const navigateImageBy = (delta) => {
+    if (!displayImages?.length) return;
+    const curIdx = displayImages.indexOf(selectedImage);
+    const baseIdx = curIdx === -1 ? 0 : curIdx;
+    const newIdx =
+      (baseIdx + delta + displayImages.length) % displayImages.length;
+    setSelectedImage(displayImages[newIdx]);
+  };
+  const gallerySwipe = useSwipe({
+    onSwipeLeft: () => navigateImageBy(1),
+    onSwipeRight: () => navigateImageBy(-1),
+  });
 
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -243,8 +260,15 @@ const ProductDetail = () => {
           <div className="lg:col-span-4 lg:sticky lg:top-8 space-y-4">
             <div className="bg-white p-4 border border-gray-200 relative group">
               <div
-                onClick={() => setLightboxOpen(true)}
-                className="aspect-square bg-white overflow-hidden relative cursor-zoom-in"
+                {...gallerySwipe.swipeHandlers}
+                onClick={() => {
+                  // Browsers fire a synthesized `click` at the end of a
+                  // touch — skip opening the lightbox when the user was
+                  // actually swiping between images.
+                  if (gallerySwipe.wasSwiped()) return;
+                  setLightboxOpen(true);
+                }}
+                className="aspect-square bg-white overflow-hidden relative cursor-zoom-in touch-pan-y select-none"
                 title="Click to view larger">
                 <div 
                   className="flex transition-transform duration-500 ease-in-out h-full w-full"

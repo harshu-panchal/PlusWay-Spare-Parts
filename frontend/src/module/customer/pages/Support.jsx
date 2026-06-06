@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import {
     HelpCircle,
     Search,
-    MessageCircle,
     Phone,
     Mail,
     ChevronDown,
@@ -90,12 +89,6 @@ const Support = () => {
             details: "support@plusway.com",
             description: "Response within 24 hours",
         },
-        {
-            icon: MessageCircle,
-            title: "Live Chat",
-            details: "Chat with us",
-            description: "Available during business hours",
-        },
     ];
 
     return (
@@ -131,7 +124,7 @@ const Support = () => {
                 </div>
 
                 {/* Support Channels */}
-                <div className="grid md:grid-cols-3 gap-6 mb-12">
+                <div className="grid md:grid-cols-2 gap-6 mb-12 max-w-3xl mx-auto">
                     {supportChannels.map((channel, index) => {
                         const IconComponent = channel.icon;
                         return (

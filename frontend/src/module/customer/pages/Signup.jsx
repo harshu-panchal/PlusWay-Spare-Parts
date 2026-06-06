@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Smartphone,
   User,
@@ -9,6 +9,14 @@ import {
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { API_ENDPOINTS } from "../../../config/api";
+import CountryCodePicker from "../../../components/CountryCodePicker";
+import {
+  DEFAULT_COUNTRY,
+  STORAGE_KEY,
+  getCountryByIso,
+  getMaxLength,
+  isMobileValidForCountry,
+} from "../../../data/countryCodes";
 
 const Signup = () => {
   const [step, setStep] = useState(1); // 1: Info, 2: OTP
@@ -20,11 +28,35 @@ const Signup = () => {
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [country, setCountry] = useState(() => {
+    try {
+      return getCountryByIso(localStorage.getItem(STORAGE_KEY));
+    } catch {
+      return DEFAULT_COUNTRY;
+    }
+  });
   const navigate = useNavigate();
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, country.code);
+    } catch {
+      // Storage may be unavailable; ignore.
+    }
+  }, [country]);
+
+  const mobileMaxLength = getMaxLength(country);
+  const mobileIsValid = isMobileValidForCountry(formData.mobile, country);
+
+  const handleCountryChange = (next) => {
+    setCountry(next);
+    const nextMax = getMaxLength(next);
+    setFormData((f) => ({ ...f, mobile: f.mobile.slice(0, nextMax) }));
+  };
 
   const handleNextStep = async (e) => {
     e.preventDefault();
-    if (formData.mobile.length === 10 && formData.name.length > 2) {
+    if (mobileIsValid && formData.name.length > 2) {
       setLoading(true);
       setError("");
       try {
@@ -83,7 +115,7 @@ const Signup = () => {
     if (name === "mobile") {
       setFormData({
         ...formData,
-        [name]: value.replace(/\D/g, "").slice(0, 10),
+        [name]: value.replace(/\D/g, "").slice(0, mobileMaxLength),
       });
     } else {
       setFormData({ ...formData, [name]: value });
@@ -105,7 +137,7 @@ const Signup = () => {
             <p className="text-gray-400 text-xs font-black uppercase tracking-[0.2em] text-center mb-6">
               {step === 1
                 ? "Join our community"
-                : `Verify mobile +91 ${formData.mobile}`}
+                : `Verify mobile ${country.dial} ${formData.mobile}`}
             </p>
 
             {error && (
@@ -139,18 +171,21 @@ const Signup = () => {
 
                   {/* Mobile Number */}
                   <div>
-                    <div className="relative group">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 border-r border-gray-200 pr-3 h-6">
-                        <span className="text-xs font-black text-secondary">
-                          +91
-                        </span>
+                    <div className="flex items-stretch bg-gray-50 border border-gray-200 rounded-2xl focus-within:border-primary transition-all overflow-hidden">
+                      <div className="flex items-center pl-2 pr-1 border-r border-gray-200">
+                        <CountryCodePicker
+                          value={country}
+                          onChange={handleCountryChange}
+                        />
                       </div>
                       <input
                         type="tel"
                         name="mobile"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         required
                         placeholder="Mobile Number"
-                        className="w-full pl-20 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-primary font-black tracking-widest text-secondary transition-all"
+                        className="flex-1 min-w-0 px-4 py-4 bg-transparent focus:outline-none font-black tracking-widest text-secondary"
                         value={formData.mobile}
                         onChange={handleChange}
                       />
@@ -180,7 +215,15 @@ const Signup = () => {
                     <input
                       key={i}
                       id={`otp-signup-${i}`}
-                      type="text"
+                      // type="tel" + inputMode="numeric" + pattern keeps the
+                      // Android numeric keypad open across each per-digit
+                      // box; type="text" defaults to alphabetic on every
+                      // focus jump. autoComplete="one-time-code" enables
+                      // iOS SMS autofill and Android's SMS Retriever hooks.
+                      type="tel"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      autoComplete="one-time-code"
                       maxLength="1"
                       className="w-14 h-16 bg-gray-50 border border-gray-200 rounded-2xl text-center text-2xl font-black text-secondary focus:outline-none focus:border-primary focus:bg-white transition-all"
                       value={otp[i] || ""}
@@ -214,7 +257,7 @@ const Signup = () => {
               <button
                 type="submit"
                 disabled={loading || (step === 1
-                  ? formData.mobile.length !== 10 || formData.name.length <= 2
+                  ? !mobileIsValid || formData.name.length <= 2
                   : otp.length !== 4)}
                 className={`w-full bg-secondary text-white font-black py-4 rounded-2xl shadow-lg hover:bg-black transition-all uppercase tracking-widest flex items-center justify-center gap-2 mt-2 ${loading ? "opacity-50 cursor-not-allowed" : ""}`}>
                 {loading
