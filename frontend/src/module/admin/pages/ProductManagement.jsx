@@ -343,29 +343,40 @@ const ProductManagement = () => {
   };
 
   const handleColorVariantFieldChange = (index, field, value) => {
-    const newVariants = [...(formData.colorVariants || [])];
-    newVariants[index][field] = value;
+    const newVariants = (formData.colorVariants || []).map((v, i) =>
+      i === index ? { ...v, [field]: value } : v,
+    );
     setFormData({ ...formData, colorVariants: newVariants });
   };
 
+  // NOTE: variants must be updated immutably down to the `images` array. A
+  // shallow copy of `colorVariants` keeps the inner variant objects (and their
+  // `images` arrays) referentially identical, so children that memoize on the
+  // images-array reference (e.g. SortableImageGrid's `items` useMemo) skip
+  // re-rendering. Each handler below therefore rebuilds the affected variant
+  // and its `images` array with fresh references.
   const handleColorVariantImages = (index, urls) => {
-    const newVariants = [...(formData.colorVariants || [])];
-    newVariants[index].images = [...(newVariants[index].images || []), ...urls];
+    const newVariants = (formData.colorVariants || []).map((v, i) =>
+      i === index
+        ? { ...v, images: [...(v.images || []), ...urls] }
+        : v,
+    );
     setFormData({ ...formData, colorVariants: newVariants });
   };
 
   const handleRemoveColorVariantImage = (variantIndex, imageIndex) => {
-    const newVariants = [...(formData.colorVariants || [])];
-    newVariants[variantIndex].images.splice(imageIndex, 1);
+    const newVariants = (formData.colorVariants || []).map((v, i) => {
+      if (i !== variantIndex) return v;
+      const nextImages = (v.images || []).filter((_, j) => j !== imageIndex);
+      return { ...v, images: nextImages };
+    });
     setFormData({ ...formData, colorVariants: newVariants });
   };
 
   const handleReorderColorVariantImages = (variantIndex, reorderedImages) => {
-    const newVariants = [...(formData.colorVariants || [])];
-    newVariants[variantIndex] = {
-      ...newVariants[variantIndex],
-      images: reorderedImages,
-    };
+    const newVariants = (formData.colorVariants || []).map((v, i) =>
+      i === variantIndex ? { ...v, images: reorderedImages } : v,
+    );
     setFormData({ ...formData, colorVariants: newVariants });
   };
 

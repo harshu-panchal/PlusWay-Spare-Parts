@@ -1,49 +1,47 @@
-import React, { useState, useEffect } from "react";
-import { Package, ChevronRight, Clock, Truck, Star, Download } from "lucide-react";
+import React, { useCallback, useEffect } from "react";
+import { Package, ChevronRight, Loader } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import ProfileSidebar from "../components/ProfileSidebar";
 import { API_ENDPOINTS } from "../../../config/api";
-import Pagination from "../../../components/Pagination";
+import useInfiniteScroll from "../../../hooks/useInfiniteScroll";
+
+const PAGE_SIZE = 20;
 
 const Orders = () => {
-  const [orders, setOrders] = useState([]);
-  const [page, setPage] = useState(1);
-  const [pages, setPages] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const navigate = useNavigate();
+
   useEffect(() => {
     const userInfo = JSON.parse(localStorage.getItem("userInfo"));
     if (!userInfo) {
       navigate("/login");
-      return;
     }
-    fetchMyOrders();
-  }, [navigate, page]);
+  }, [navigate]);
 
-  const fetchMyOrders = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem("token");
-      const { data } = await axios.get(
-        `${API_ENDPOINTS.MY_ORDERS}?pageNumber=${page}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-      setOrders(data.orders);
-      setPages(data.pages);
-      setTotal(data.total);
-      setLoading(false);
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to fetch orders");
-      setLoading(false);
-    }
-  };
+  // Chunked orders fetcher.
+  const fetchOrdersPage = useCallback(async (page) => {
+    const token = localStorage.getItem("token");
+    const { data } = await axios.get(
+      `${API_ENDPOINTS.MY_ORDERS}?pageNumber=${page}&pageSize=${PAGE_SIZE}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    const items = data.orders || [];
+    const totalPages = data.pages || 1;
+    return {
+      items,
+      hasMore: page < totalPages,
+      total: data.total || items.length,
+    };
+  }, []);
+
+  const {
+    items: orders,
+    loading,
+    hasMore,
+    error,
+    total,
+    sentinelRef,
+  } = useInfiniteScroll({ fetchPage: fetchOrdersPage, resetKey: "orders" });
 
   const getOrderStatus = (order) => {
     if (order.isDelivered) return "Delivered";
@@ -68,6 +66,8 @@ const Orders = () => {
     }
   };
 
+  const errorMessage = error?.response?.data?.message || error?.message;
+
   return (
     <div className="bg-[#f4f4f4] min-h-screen pb-12">
       <div className="max-w-7xl mx-auto px-[2%] md:px-4 py-8">
@@ -88,14 +88,14 @@ const Orders = () => {
               </div>
 
               <div className="space-y-4">
-                {loading ? (
+                {loading && orders.length === 0 ? (
                   <p className="text-center font-bold text-gray-400 uppercase tracking-widest py-8">
                     Loading your orders...
                   </p>
-                ) : error ? (
+                ) : errorMessage ? (
                   <div className="text-center py-12">
                     <p className="text-red-500 font-bold uppercase tracking-widest">
-                      {error}
+                      {errorMessage}
                     </p>
                   </div>
                 ) : orders.length === 0 ? (
@@ -130,7 +130,7 @@ const Orders = () => {
                                     day: "numeric",
                                     month: "short",
                                     year: "numeric",
-                                  }
+                                  },
                                 )}
                               </p>
                             </div>
@@ -139,7 +139,7 @@ const Orders = () => {
                           <div className="flex items-center gap-3">
                             <span
                               className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${getStatusColor(
-                                status
+                                status,
                               )}`}
                             >
                               {status}
@@ -158,14 +158,21 @@ const Orders = () => {
                 )}
               </div>
 
-              <Pagination
-                page={page}
-                pages={pages}
-                onPageChange={(p) => setPage(p)}
-              />
-              <p className="text-center text-[10px] font-black text-gray-400 uppercase tracking-widest mt-4">
-                Total {total} orders
-              </p>
+              {/* Infinite-scroll sentinel + loading / end-of-list indicators */}
+              <div ref={sentinelRef} aria-hidden="true" className="h-1" />
+
+              {loading && orders.length > 0 && (
+                <div className="flex items-center justify-center gap-3 py-6 text-gray-500 font-bold uppercase tracking-widest text-xs">
+                  <Loader size={16} className="animate-spin text-primary" />
+                  Loading more…
+                </div>
+              )}
+
+              {!hasMore && orders.length > 0 && (
+                <p className="text-center text-[10px] font-black text-gray-400 uppercase tracking-widest mt-4">
+                  Showing all {total || orders.length} orders
+                </p>
+              )}
             </div>
           </div>
         </div>

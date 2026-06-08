@@ -6,7 +6,13 @@ import asyncHandler from "../../../middleware/asyncHandler.js";
 // @route   GET /api/customer/products
 // @access  Public
 export const getProducts = asyncHandler(async (req, res) => {
-    const pageSize = 20;
+    // Page size is client-controlled but capped at 100 so a malicious caller
+    // can't trigger an unbounded read. Default 20 preserves the legacy
+    // behaviour for any callers that don't supply pageSize.
+    const pageSize = Math.min(
+        Math.max(Number(req.query.pageSize) || 20, 1),
+        100,
+    );
     const page = Number(req.query.pageNumber) || 1;
     const sort = req.query.sort || "relevance";
 

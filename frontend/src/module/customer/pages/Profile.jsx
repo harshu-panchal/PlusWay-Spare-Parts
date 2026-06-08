@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   User,
   Package,
@@ -13,20 +13,19 @@ import {
   Truck,
   Download,
   MessageSquare,
+  Loader,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 
 import ProfileSidebar from "../components/ProfileSidebar";
 import { API_ENDPOINTS } from "../../../config/api";
-import Pagination from "../../../components/Pagination";
+import useInfiniteScroll from "../../../hooks/useInfiniteScroll";
+
+const REVIEW_PAGE_SIZE = 20;
 
 const Profile = () => {
   const [orders, setOrders] = useState([]);
-  const [reviews, setReviews] = useState([]);
-  const [reviewPage, setReviewPage] = useState(1);
-  const [reviewPages, setReviewPages] = useState(1);
-  const [totalReviews, setTotalReviews] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("overview"); // overview, reviews
@@ -37,14 +36,51 @@ const Profile = () => {
   });
   const navigate = useNavigate();
 
+  // Chunked reviews fetcher used by the infinite-scroll hook below.
+  const fetchReviewsPage = useCallback(async (page) => {
+    try {
+      const token = localStorage.getItem("token");
+      const { data } = await axios.get(
+        `${API_ENDPOINTS.MY_REVIEWS}?pageNumber=${page}&pageSize=${REVIEW_PAGE_SIZE}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      const items = data.reviews || [];
+      const totalPages = data.pages || 1;
+      return {
+        items,
+        hasMore: page < totalPages,
+        total: data.total || items.length,
+      };
+    } catch {
+      // Reviews API may not be available for new users — degrade gracefully.
+      return { items: [], hasMore: false, total: 0 };
+    }
+  }, []);
+
+  const {
+    items: reviews,
+    loading: reviewsLoading,
+    hasMore: hasMoreReviews,
+    total: totalReviews,
+    sentinelRef: reviewsSentinelRef,
+  } = useInfiniteScroll({
+    fetchPage: fetchReviewsPage,
+    resetKey: "my-reviews",
+  });
+
+  // Keep the "Reviews" stats card in sync with the hook's total.
+  useEffect(() => {
+    setStats((s) => ({ ...s, reviews: totalReviews }));
+  }, [totalReviews]);
+
   useEffect(() => {
     const userInfo = JSON.parse(localStorage.getItem("userInfo"));
     if (!userInfo) {
       navigate("/login");
       return;
     }
-    fetchData();
-  }, [navigate, reviewPage]);
+    fetchMeta();
+  }, [navigate]);
 
   const [trackOrderId, setTrackOrderId] = useState("");
 
@@ -61,7 +97,9 @@ const Profile = () => {
     return "Pending";
   };
 
-  const fetchData = async () => {
+  // One-shot fetch of recent orders (used for the overview list and stat
+  // counts). Reviews are paged independently by the hook above.
+  const fetchMeta = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
@@ -69,30 +107,19 @@ const Profile = () => {
         headers: { Authorization: `Bearer ${token}` },
       };
 
-      const [ordersRes, reviewsRes] = await Promise.all([
-        axios.get(API_ENDPOINTS.MY_ORDERS, config),
-        axios
-          .get(`${API_ENDPOINTS.MY_REVIEWS}?pageNumber=${reviewPage}`, config)
-          .catch(() => ({ data: { reviews: [], pages: 1, total: 0 } })),
-      ]);
-
+      const ordersRes = await axios.get(API_ENDPOINTS.MY_ORDERS, config);
       const sortedOrders = (ordersRes.data.orders || ordersRes.data).sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
       );
       setOrders(sortedOrders);
-      setReviews(reviewsRes.data.reviews || []);
-      setReviewPages(reviewsRes.data.pages || 1);
-      setTotalReviews(reviewsRes.data.total || 0);
 
-      // Calculate stats
       const pendingCount = sortedOrders.filter((o) => !o.isPaid).length;
       const deliveredCount = sortedOrders.filter((o) => o.isDelivered).length;
-
-      setStats({
+      setStats((s) => ({
+        ...s,
         pending: pendingCount,
         shipped: deliveredCount,
-        reviews: reviewsRes.data.total || reviewsRes.data.length,
-      });
+      }));
 
       setLoading(false);
     } catch (err) {
@@ -379,14 +406,21 @@ const Profile = () => {
                   </div>
                 )}
 
-                <Pagination
-                  page={reviewPage}
-                  pages={reviewPages}
-                  onPageChange={(p) => setReviewPage(p)}
-                />
-                <p className="text-center text-[10px] font-black text-gray-400 uppercase tracking-widest mt-4">
-                  Total {totalReviews} reviews
-                </p>
+                {/* Infinite-scroll sentinel + loading / end-of-list indicators */}
+                <div ref={reviewsSentinelRef} aria-hidden="true" className="h-1" />
+
+                {reviewsLoading && reviews.length > 0 && (
+                  <div className="flex items-center justify-center gap-3 py-6 text-gray-500 font-bold uppercase tracking-widest text-xs">
+                    <Loader size={16} className="animate-spin text-primary" />
+                    Loading more…
+                  </div>
+                )}
+
+                {!hasMoreReviews && reviews.length > 0 && (
+                  <p className="text-center text-[10px] font-black text-gray-400 uppercase tracking-widest mt-4">
+                    Showing all {totalReviews || reviews.length} reviews
+                  </p>
+                )}
               </div>
             )}
           </div>

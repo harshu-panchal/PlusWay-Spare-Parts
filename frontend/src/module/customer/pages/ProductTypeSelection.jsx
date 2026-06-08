@@ -1,58 +1,88 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 
-import { ChevronRight, Star, ShoppingCart } from 'lucide-react';
+import { Loader } from 'lucide-react';
 
-import { useCart } from '../context/CartContext';
 import LazyImage from '../../../components/LazyImage';
 import ProductCard from '../components/ProductCard';
-
-
 
 import axios from 'axios';
 import { API_ENDPOINTS, API_BASE_URL } from '../../../config/api';
 import { formatReleasedDate } from '../../../utils/formatReleasedDate';
+import useInfiniteScroll from '../../../hooks/useInfiniteScroll';
+
+const PAGE_SIZE = 20;
 
 const ProductTypeSelection = () => {
     const { modelId } = useParams();
     const [modelInfo, setModelInfo] = useState(null);
-    const [groupedProducts, setGroupedProducts] = useState({});
-    const [loading, setLoading] = useState(true);
+    const [modelInfoLoading, setModelInfoLoading] = useState(true);
 
+    // Model meta (image, brand logo, release date) is a one-shot fetch on
+    // mount — only the product list itself is paged.
     useEffect(() => {
-        const fetchData = async () => {
+        let cancelled = false;
+        const fetchModelInfo = async () => {
             try {
-                const [productsRes, modelsRes] = await Promise.all([
-                    axios.get(`${API_BASE_URL}/api/customer/products?model=${modelId}`),
-                    axios.get(`${API_ENDPOINTS.MODELS}?all=true`)
-                ]);
-
-                // Find model info
-                const models = modelsRes.data.models || modelsRes.data || [];
-                const foundModel = models.find(m => m._id === modelId);
-                setModelInfo(foundModel || { name: "Unknown Model" });
-
-                // Group products by category
-                const groups = {};
-                const products = productsRes.data.products || productsRes.data || [];
-                products.forEach(product => {
-                    const catName = product.category?.name || "Other";
-                    if (!groups[catName]) groups[catName] = [];
-                    groups[catName].push(product);
-                });
-                setGroupedProducts(groups);
-                setLoading(false);
-            } catch (error) {
-                console.error("Error fetching data", error);
-                setLoading(false);
+                setModelInfoLoading(true);
+                const { data } = await axios.get(`${API_ENDPOINTS.MODELS}?all=true`);
+                if (cancelled) return;
+                const models = data.models || data || [];
+                const found = models.find((m) => m._id === modelId);
+                setModelInfo(found || { name: "Unknown Model" });
+            } catch (err) {
+                if (cancelled) return;
+                console.error("Error fetching model info", err);
+                setModelInfo({ name: "Unknown Model" });
+            } finally {
+                if (!cancelled) setModelInfoLoading(false);
             }
         };
-        fetchData();
+        fetchModelInfo();
+        return () => { cancelled = true; };
     }, [modelId]);
+
+    // Chunked products fetcher. The hook owns the page counter and append logic.
+    const fetchProductsPage = useCallback(async (page) => {
+        const { data } = await axios.get(
+            `${API_BASE_URL}/api/customer/products?model=${modelId}&pageNumber=${page}&pageSize=${PAGE_SIZE}`,
+        );
+        const products = data.products || data || [];
+        const totalPages = data.pages || 1;
+        return {
+            items: products,
+            hasMore: page < totalPages,
+            total: data.total || products.length,
+        };
+    }, [modelId]);
+
+    const {
+        items: products,
+        loading,
+        hasMore,
+        sentinelRef,
+        total,
+    } = useInfiniteScroll({
+        fetchPage: fetchProductsPage,
+        resetKey: modelId,
+    });
+
+    // Group products by category as they accumulate.
+    const groupedProducts = useMemo(() => {
+        const groups = {};
+        for (const product of products) {
+            const catName = product.category?.name || "Other";
+            if (!groups[catName]) groups[catName] = [];
+            groups[catName].push(product);
+        }
+        return groups;
+    }, [products]);
 
     const categories = Object.keys(groupedProducts);
 
-    if (loading) return <div className="p-8 text-center">Loading...</div>;
+    if (modelInfoLoading && products.length === 0) {
+        return <div className="p-8 text-center">Loading...</div>;
+    }
 
     return (
         <div className="bg-[#f4f4f4] min-h-screen">
@@ -62,14 +92,14 @@ const ProductTypeSelection = () => {
                     <div className="flex items-center gap-2 text-xs text-gray-400">
                         <Link to="/" className="hover:text-primary">Home</Link>
                         <span className="text-gray-300">/</span>
-                        <span className="text-gray-600 font-bold">{modelInfo.name} Spare Parts & Accessories</span>
+                        <span className="text-gray-600 font-bold">{modelInfo?.name} Spare Parts & Accessories</span>
                     </div>
                 </div>
             </div>
 
             <div className="max-w-7xl mx-auto px-[2%] md:px-4 py-8">
                 {/* Handset Header */}
-                {(() => {
+                {modelInfo && (() => {
                     // Display priority: model image -> brand logo -> branded placeholder.
                     const headerImage = modelInfo.image || modelInfo.brand?.logo || null;
                     return (
@@ -102,7 +132,7 @@ const ProductTypeSelection = () => {
 
                 {/* Spare Parts Grid by Category */}
                 <div className="space-y-12">
-                    {categories.length === 0 ? (
+                    {!loading && categories.length === 0 ? (
                         <div className="text-center py-12 bg-white rounded shadow-sm">
                             <p className="text-gray-500 font-bold">No products found for this model.</p>
                         </div>
@@ -120,6 +150,22 @@ const ProductTypeSelection = () => {
                             </section>
                         )))}
                 </div>
+
+                {/* Infinite-scroll sentinel + loading / end-of-list indicators */}
+                <div ref={sentinelRef} aria-hidden="true" className="h-1" />
+
+                {loading && products.length > 0 && (
+                    <div className="flex items-center justify-center gap-3 py-8 text-gray-500 font-bold uppercase tracking-widest text-xs">
+                        <Loader size={16} className="animate-spin text-primary" />
+                        Loading more…
+                    </div>
+                )}
+
+                {!hasMore && products.length > 0 && (
+                    <p className="text-center py-8 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                        Showing all {total || products.length} products
+                    </p>
+                )}
             </div>
         </div>
     );

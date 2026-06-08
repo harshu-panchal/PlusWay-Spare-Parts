@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { ChevronRight, Filter } from "lucide-react";
+import { ChevronRight, Filter, Loader } from "lucide-react";
 import { API_ENDPOINTS, API_BASE_URL } from "../../../config/api";
 import { useCart } from "../context/CartContext";
-import Pagination from "../../../components/Pagination";
 import ProductCard from "../components/ProductCard";
 import LazyImage from "../../../components/LazyImage";
 import { formatReleasedDate } from "../../../utils/formatReleasedDate";
+import useInfiniteScroll from "../../../hooks/useInfiniteScroll";
+
+const PAGE_SIZE = 20;
 
 const ProductListing = () => {
   const location = useLocation();
@@ -25,48 +27,46 @@ const ProductListing = () => {
   const selectedModel = models.find((m) => m._id === modelId);
   const selectedCategory = categories.find((c) => c._id === categoryId);
 
-  const [products, setProducts] = useState([]);
-  const [page, setPage] = useState(1);
-  const [pages, setPages] = useState(1);
-  const [total, setTotal] = useState(0);
   const [sortBy, setSortBy] = useState("relevance");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
+  // Chunked products fetcher. The hook handles page state + appending.
+  const fetchProductsPage = useCallback(
+    async (page) => {
+      let url = `${API_BASE_URL}/api/customer/products?pageNumber=${page}&pageSize=${PAGE_SIZE}&`;
+      if (modelId) url += `model=${modelId}&`;
+      if (categoryId) url += `category=${categoryId}&`;
+      if (keyword) url += `keyword=${keyword}&`;
+      url += `sort=${sortBy}&`;
+
+      const { data } = await axios.get(url);
+      const items = data.products || [];
+      const totalPages = data.pages || 1;
+      return {
+        items,
+        hasMore: page < totalPages,
+        total: data.total || items.length,
+      };
+    },
+    [modelId, categoryId, keyword, sortBy],
+  );
+
+  const {
+    items: products,
+    loading,
+    hasMore,
+    error,
+    total,
+    sentinelRef,
+  } = useInfiniteScroll({
+    fetchPage: fetchProductsPage,
+    // Any change to these filters resets the list and re-fetches page 1.
+    resetKey: `${modelId || ""}|${categoryId || ""}|${keyword || ""}|${sortBy}`,
+  });
+
+  // Whenever the filter/sort changes, jump back to the top of the listing.
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        let url = `${API_BASE_URL}/api/customer/products?pageNumber=${page}&`;
-        if (modelId) url += `model=${modelId}&`;
-        if (categoryId) url += `category=${categoryId}&`;
-        if (keyword) url += `keyword=${keyword}&`;
-        url += `sort=${sortBy}&`;
-
-        const { data } = await axios.get(url);
-        setProducts(data.products);
-        setPages(data.pages);
-        setTotal(data.total);
-        setLoading(false);
-        // Scroll to top when page changes
-        window.scrollTo(0, 0);
-      } catch (err) {
-        setError(err.message);
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, [modelId, categoryId, keyword, location.search, page, sortBy]);
-
-  // Reset page when filters change
-  useEffect(() => {
-    setPage(1);
-  }, [modelId, categoryId, keyword, location.search, sortBy]);
-
-  // Mock data for display titles (optional, could fetch real objects)
-  const modelName = "Selected Model";
-  const typeName = "Selected Category";
+    window.scrollTo(0, 0);
+  }, [modelId, categoryId, keyword, sortBy]);
 
   const [loadingModels, setLoadingModels] = useState(true);
 
@@ -97,7 +97,9 @@ const ProductListing = () => {
 
   const { addToCart } = useCart();
 
-  if (loading)
+  // Show full-screen loading only on the very first load (no products yet).
+  // Subsequent loads use the inline "Loading more…" indicator instead.
+  if (loading && products.length === 0)
     return (
       <div className="min-h-screen flex items-center justify-center">
         Loading...
@@ -106,7 +108,7 @@ const ProductListing = () => {
   if (error)
     return (
       <div className="min-h-screen flex items-center justify-center text-red-500">
-        {error}
+        {error.message || "Failed to load products"}
       </div>
     );
 
@@ -237,10 +239,7 @@ const ProductListing = () => {
                 <span>Sort by:</span>
                 <select
                   value={sortBy}
-                  onChange={(e) => {
-                    setSortBy(e.target.value);
-                    setPage(1);
-                  }}
+                  onChange={(e) => setSortBy(e.target.value)}
                   className="bg-transparent text-secondary font-bold focus:outline-none cursor-pointer">
                   <option value="relevance">Relevance</option>
                   <option value="newest">Newest</option>
@@ -258,14 +257,23 @@ const ProductListing = () => {
               ))}
             </div>
 
-            {/* Pagination */}
-            <Pagination
-              page={page}
-              pages={pages}
-              onPageChange={(p) => setPage(p)}
-            />
+            {/* Infinite-scroll sentinel + loading / end-of-list indicators */}
+            <div ref={sentinelRef} aria-hidden="true" className="h-1" />
 
-            {products.length === 0 && (
+            {loading && products.length > 0 && (
+              <div className="flex items-center justify-center gap-3 py-8 text-gray-500 font-bold uppercase tracking-widest text-xs">
+                <Loader size={16} className="animate-spin text-primary" />
+                Loading more…
+              </div>
+            )}
+
+            {!hasMore && products.length > 0 && (
+              <p className="text-center py-8 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                Showing all {total || products.length} products
+              </p>
+            )}
+
+            {!loading && products.length === 0 && (
               <div className="py-20 text-center bg-white rounded-3xl shadow-sm border border-dashed border-gray-200">
                 <p className="text-gray-400 font-black uppercase tracking-widest">
                   No products found
