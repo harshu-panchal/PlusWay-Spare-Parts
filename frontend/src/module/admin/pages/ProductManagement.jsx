@@ -17,6 +17,7 @@ import {
   ChevronLeft,
   AlertTriangle,
   FileSpreadsheet,
+  Wand2,
 } from "lucide-react";
 import ImageUpload from "../../../components/ImageUpload";
 import MultiImageUpload from "../../../components/MultiImageUpload";
@@ -364,15 +365,9 @@ const ProductManagement = () => {
     setFormData({ ...formData, colorVariants: newVariants });
   };
 
-  const handleRemoveColorVariantImage = (variantIndex, imageIndex) => {
-    const newVariants = (formData.colorVariants || []).map((v, i) => {
-      if (i !== variantIndex) return v;
-      const nextImages = (v.images || []).filter((_, j) => j !== imageIndex);
-      return { ...v, images: nextImages };
-    });
-    setFormData({ ...formData, colorVariants: newVariants });
-  };
-
+  // Used for both reorder and post-remove updates of a variant's image list.
+  // SortableImageGrid hands us the full new array in either case — we just
+  // swap it in immutably so memoized children re-render.
   const handleReorderColorVariantImages = (variantIndex, reorderedImages) => {
     const newVariants = (formData.colorVariants || []).map((v, i) =>
       i === variantIndex ? { ...v, images: reorderedImages } : v,
@@ -391,12 +386,6 @@ const ProductManagement = () => {
       // we'll handle multiple addition only for now
       setFormData({ ...formData, images: [...formData.images, ...urls] });
     }
-  };
-
-  const handleRemoveImage = (index) => {
-    const newImages = [...formData.images];
-    newImages.splice(index, 1);
-    setFormData({ ...formData, images: newImages });
   };
 
   const handleSubmit = async (e) => {
@@ -575,6 +564,44 @@ const ProductManagement = () => {
     }
   };
 
+  const [isBackfillingSkus, setIsBackfillingSkus] = useState(false);
+
+  // One-shot maintenance: ask the backend to scan every product and generate
+  // SKUs for any color variant that's missing one. Legacy products created
+  // before the bulk-create SKU-generation fix ended up with variants like
+  // "Black: -" in the export because the SKU field was blank in the DB. The
+  // backfill endpoint is idempotent, so admins can run it whenever they
+  // notice missing SKUs in the export.
+  const handleBackfillVariantSkus = async () => {
+    const confirmed = window.confirm(
+      "Scan all products and auto-generate SKUs for any color variant that doesn't have one?\n\nThis is safe to run multiple times — only missing SKUs are filled in.",
+    );
+    if (!confirmed) return;
+    setIsBackfillingSkus(true);
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}`,
+        },
+      };
+      const { data } = await axios.post(
+        API_ENDPOINTS.ADMIN_PRODUCTS_BACKFILL_VARIANT_SKUS,
+        {},
+        config,
+      );
+      alert(data?.message || "Backfill complete.");
+      fetchData();
+    } catch (error) {
+      console.error(error);
+      alert(
+        error?.response?.data?.message ||
+          "Failed to backfill variant SKUs. Check the server log.",
+      );
+    } finally {
+      setIsBackfillingSkus(false);
+    }
+  };
+
   // Bulk-upload template columns.
   // For products WITHOUT color variants: fill SKU, price, mrp, wholesalePrice, wholesaleMinQty,
   // countInStock and leave colorVariants empty.
@@ -653,6 +680,14 @@ const ProductManagement = () => {
             title="Download a full backup in the bulk-upload format. If the catalog is wiped, restore everything via Admin → Products → Bulk (Upload).">
             <Save size={14} className="text-gray-500" />
             <span className="hidden lg:inline">Export</span>
+          </button>
+          <button
+            onClick={handleBackfillVariantSkus}
+            disabled={isBackfillingSkus}
+            className="flex items-center gap-1.5 px-3 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all text-xs font-bold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            title="One-shot fix: auto-generate SKUs for any color variant that's missing one in the DB. Safe to re-run.">
+            <Wand2 size={14} className="text-gray-500" />
+            <span className="hidden lg:inline">{isBackfillingSkus ? "Filling…" : "Backfill SKUs"}</span>
           </button>
           <button
             onClick={() => setIsBulkPriceModalOpen(true)}
@@ -902,7 +937,9 @@ const ProductManagement = () => {
                   onReorder={(reordered) =>
                     setFormData((prev) => ({ ...prev, images: reordered }))
                   }
-                  onRemove={handleRemoveImage}
+                  onRemove={(nextImages) =>
+                    setFormData((prev) => ({ ...prev, images: nextImages }))
+                  }
                   altPrefix="Product"
                   uploadSlot={
                     <MultiImageUpload
@@ -1042,8 +1079,8 @@ const ProductManagement = () => {
                           onReorder={(reordered) =>
                             handleReorderColorVariantImages(index, reordered)
                           }
-                          onRemove={(imgIndex) =>
-                            handleRemoveColorVariantImage(index, imgIndex)
+                          onRemove={(nextImages) =>
+                            handleReorderColorVariantImages(index, nextImages)
                           }
                           gridClassName="grid grid-cols-3 md:grid-cols-5 gap-3"
                           thumbnailClassName="bg-white"

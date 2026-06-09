@@ -42,6 +42,7 @@ import {
   downloadPriceUpdateTemplate,
   bulkUpdateProductsBySku,
   downloadBulkUpdateTemplate,
+  backfillVariantSkus,
 } from "../controllers/productController.js";
 import {
   getCategories,
@@ -128,6 +129,7 @@ router.post("/products/bulk-update-price", protect, admin, excelUpload.single("f
 router.get("/products/bulk-price-template", protect, admin, downloadPriceUpdateTemplate);
 router.post("/products/bulk-update", protect, admin, excelUpload.single("file"), bulkUpdateProductsBySku);
 router.get("/products/bulk-update-template", protect, admin, downloadBulkUpdateTemplate);
+router.post("/products/backfill-variant-skus", protect, admin, backfillVariantSkus);
 router
   .route("/products")
   .get(protect, admin, getProducts)

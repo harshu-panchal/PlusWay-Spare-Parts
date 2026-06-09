@@ -92,6 +92,7 @@ export const API_ENDPOINTS = {
     ADMIN_PRODUCTS_BULK_PRICE_UPDATE: `${API_BASE_URL}/api/admin/products/bulk-update-price`,
     ADMIN_PRODUCTS_BULK_UPDATE: `${API_BASE_URL}/api/admin/products/bulk-update`,
     ADMIN_PRODUCTS_BULK_UPDATE_TEMPLATE: `${API_BASE_URL}/api/admin/products/bulk-update-template`,
+    ADMIN_PRODUCTS_BACKFILL_VARIANT_SKUS: `${API_BASE_URL}/api/admin/products/backfill-variant-skus`,
     ADMIN_MODELS_BULK_UPLOAD: `${API_BASE_URL}/api/admin/models/bulk-upload`,
     ADMIN_MODELS_BULK_DELETE: `${API_BASE_URL}/api/admin/models/bulk`,
 

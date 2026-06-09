@@ -297,6 +297,67 @@ export const updateProduct = async (req, res) => {
   }
 };
 
+// @desc    Backfill missing SKUs on existing color variants.
+//
+// One-shot maintenance endpoint for products created before the
+// bulkCreateProducts SKU-generation fix landed (those rows ended up with
+// variants that have a colorName but a blank/undefined `sku`). Scans every
+// product, auto-generates a SKU via `genVariantSku(colorName)` for any
+// variant missing one, and persists the update. Fully idempotent — re-running
+// after all variants have SKUs is a no-op.
+// @route   POST /api/admin/products/backfill-variant-skus
+// @access  Private/Admin
+export const backfillVariantSkus = async (req, res) => {
+  try {
+    // Match only products that actually need work: at least one variant where
+    // sku is missing, null, or an empty/whitespace string.
+    const candidates = await Product.find({
+      colorVariants: {
+        $elemMatch: {
+          $or: [
+            { sku: { $exists: false } },
+            { sku: null },
+            { sku: "" },
+            { sku: /^\s*$/ },
+          ],
+        },
+      },
+    });
+
+    let productsUpdated = 0;
+    let variantsFilled = 0;
+
+    for (const product of candidates) {
+      let changed = false;
+      product.colorVariants = (product.colorVariants || []).map((v) => {
+        const existing = typeof v.sku === "string" ? v.sku.trim() : "";
+        if (existing) return v;
+        changed = true;
+        variantsFilled += 1;
+        return { ...v.toObject?.() ?? v, sku: genVariantSku(v.colorName || "VAR") };
+      });
+      if (changed) {
+        product.markModified("colorVariants");
+        await product.save();
+        productsUpdated += 1;
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Backfill complete. ${variantsFilled} variant SKU${variantsFilled === 1 ? "" : "s"} generated across ${productsUpdated} product${productsUpdated === 1 ? "" : "s"}.`,
+      productsScanned: candidates.length,
+      productsUpdated,
+      variantsFilled,
+    });
+  } catch (error) {
+    console.error("[backfillVariantSkus] error:", error);
+    res
+      .status(500)
+      .json({ message: "Failed to backfill variant SKUs", error: error.message });
+  }
+};
+
 // @desc    Delete a product
 // @route   DELETE /api/admin/products/:id
 // @access  Private/Admin

@@ -25,16 +25,20 @@ import { GripVertical, Trash2 } from "lucide-react";
  * customer-facing display.
  *
  * Props:
- *  images               string[]                     URLs in current display order
- *  onReorder            (newImages: string[]) => void  Called with the reordered array
- *  onRemove             (index: number) => void      Called when the trash button is clicked
- *  uploadSlot           ReactNode                    Optional — rendered after the thumbnails as a non-sortable cell
- *  gridClassName        string                       Tailwind grid classes (default 2-col / md:4-col)
- *  thumbnailClassName   string                       Extra classes applied to the inner image container
- *  removeIconSize       number                       Lucide icon size for the trash button (default 14)
- *  RemoveIcon           component                    Override the trash icon (e.g. <X />)
- *  altPrefix            string                       Used for the img alt attribute
- *  showPrimaryBadge     boolean                      Show the "PRIMARY" pill on the first thumbnail (default true)
+ *  images               string[]                       URLs in current display order
+ *  onReorder            (newImages: string[]) => void  Called with the reordered (and sanitized) array
+ *  onRemove             (newImages: string[]) => void  Called with the post-removal (and sanitized) array
+ *  uploadSlot           ReactNode                      Optional — rendered after the thumbnails as a non-sortable cell
+ *  gridClassName        string                         Tailwind grid classes (default 2-col / md:4-col)
+ *  thumbnailClassName   string                         Extra classes applied to the inner image container
+ *  removeIconSize       number                         Lucide icon size for the trash button (default 14)
+ *  RemoveIcon           component                      Override the trash icon (e.g. <X />)
+ *  altPrefix            string                         Used for the img alt attribute
+ *  showPrimaryBadge     boolean                        Show the "PRIMARY" pill on the first thumbnail (default true)
+ *
+ * Note: both `onReorder` and `onRemove` hand the parent the COMPLETE next
+ * array (with any null/empty entries already stripped), so the parent's
+ * handler is just a setState — no index math required.
  */
 
 const SortableThumbnail = ({
@@ -138,17 +142,27 @@ const SortableImageGrid = ({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
-  // dnd-kit requires unique stable ids per item. URLs are unique in practice
-  // for product galleries, but a defensive map handles the duplicate-URL edge
-  // case so dnd-kit never collides ids.
+  // Sanitize once so `items`, `handleDragEnd`, and the remove callback all
+  // operate on the same index space. Strips falsy entries (null / undefined /
+  // empty strings) that can leak in from legacy DB rows or interrupted
+  // uploads — passing null to SortableContext crashes with
+  // "Cannot use 'in' operator on null".
+  const safeImages = useMemo(
+    () => images.filter((url) => typeof url === "string" && url.trim() !== ""),
+    [images],
+  );
+
+  // dnd-kit requires unique, non-null stable ids per item. URLs are unique in
+  // practice for product galleries, but a defensive map disambiguates
+  // accidental duplicates with a `#n` suffix.
   const items = useMemo(() => {
     const seen = new Map();
-    return images.map((url) => {
+    return safeImages.map((url) => {
       const count = seen.get(url) ?? 0;
       seen.set(url, count + 1);
       return { id: count === 0 ? url : `${url}#${count}`, url };
     });
-  }, [images]);
+  }, [safeImages]);
 
   const handleDragEnd = (event) => {
     const { active, over } = event;
@@ -156,7 +170,13 @@ const SortableImageGrid = ({
     const oldIndex = items.findIndex((it) => it.id === active.id);
     const newIndex = items.findIndex((it) => it.id === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
-    onReorder(arrayMove(images, oldIndex, newIndex));
+    onReorder?.(arrayMove(safeImages, oldIndex, newIndex));
+  };
+
+  const handleRemoveAt = (index) => {
+    if (index < 0 || index >= safeImages.length) return;
+    const next = safeImages.filter((_, i) => i !== index);
+    onRemove?.(next);
   };
 
   return (
@@ -174,7 +194,7 @@ const SortableImageGrid = ({
               index={idx}
               src={it.url}
               alt={`${altPrefix} ${idx + 1}`}
-              onRemove={onRemove}
+              onRemove={handleRemoveAt}
               removeIconSize={removeIconSize}
               RemoveIcon={RemoveIcon}
               thumbnailClassName={thumbnailClassName}
