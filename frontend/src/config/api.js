@@ -50,8 +50,10 @@ export const API_ENDPOINTS = {
     RAZORPAY_CREATE_ORDER: (id) => `${API_BASE_URL}/api/customer/orders/${id}/razorpay`,
     RAZORPAY_VERIFY: (id) => `${API_BASE_URL}/api/customer/orders/${id}/razorpay/verify`,
 
-    // Config
+    // Config & Settings
     PAYPAL_CONFIG: `${API_BASE_URL}/api/config/paypal`,
+    GET_SETTINGS: `${API_BASE_URL}/api/settings`,
+    UPDATE_SETTINGS: `${API_BASE_URL}/api/settings`,
 
     // Cart
     CART: `${API_BASE_URL}/api/customer/cart`,

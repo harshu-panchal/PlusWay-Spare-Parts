@@ -42,6 +42,12 @@ const ProductDetail = () => {
 
   const [selectedImage, setSelectedImage] = useState("");
   const [activeTab, setActiveTab] = useState("Description");
+  const [sidebarInfo, setSidebarInfo] = useState({
+    needHelp: { title: "Need help?", description: "Call us on 9599197756 & select ext. 2 to speak to our sales team specialist." },
+    freeShipping: { title: "Free Shipping", description: "All India Free Shipping with Express Delivery" },
+    guarantee: { title: "Plusway Guarantee", description: "100% Refund if you do not get your shipment within time" },
+    paymentProtection: { title: "Payment Protection", description: "Secure Payments & Easy Returns" }
+  });
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -178,6 +184,18 @@ const ProductDetail = () => {
       }
     };
     fetchProduct();
+
+    const fetchSettings = async () => {
+      try {
+        const { data } = await axios.get(API_ENDPOINTS.GET_SETTINGS);
+        if (data && data.productSidebar) {
+          setSidebarInfo(data.productSidebar);
+        }
+      } catch (err) {
+        console.error("Error fetching settings", err);
+      }
+    };
+    fetchSettings();
   }, [id]);
 
   useEffect(() => {
@@ -618,38 +636,37 @@ const ProductDetail = () => {
             <div className="bg-white p-4 border border-gray-200 text-right space-y-4">
               <div>
                 <h4 className="font-black text-secondary text-sm">
-                  Need help?
+                  {sidebarInfo.needHelp?.title || "Need help?"}
                 </h4>
                 <p className="text-[10px] text-gray-500 font-bold leading-tight">
-                  Call us on 9599197756 & select ext. 2 to speak to our sales
-                  team specialist.
+                  {sidebarInfo.needHelp?.description || "Call us on 9599197756 & select ext. 2 to speak to our sales team specialist."}
                 </p>
               </div>
               <hr className="border-gray-100" />
               <div>
                 <h4 className="font-black text-secondary text-sm">
-                  Free Shipping
+                  {sidebarInfo.freeShipping?.title || "Free Shipping"}
                 </h4>
                 <p className="text-[10px] text-gray-500 font-bold leading-tight">
-                  All India Free Shipping with Express Delivery
+                  {sidebarInfo.freeShipping?.description || "All India Free Shipping with Express Delivery"}
                 </p>
               </div>
               <hr className="border-gray-100" />
               <div>
                 <h4 className="font-black text-secondary text-sm">
-                  Plusway Guarantee
+                  {sidebarInfo.guarantee?.title || "Plusway Guarantee"}
                 </h4>
                 <p className="text-[10px] text-gray-500 font-bold leading-tight">
-                  100% Refund if you do not get your shipment within time
+                  {sidebarInfo.guarantee?.description || "100% Refund if you do not get your shipment within time"}
                 </p>
               </div>
               <hr className="border-gray-100" />
               <div>
                 <h4 className="font-black text-secondary text-sm">
-                  Payment Protection
+                  {sidebarInfo.paymentProtection?.title || "Payment Protection"}
                 </h4>
                 <p className="text-[10px] text-gray-500 font-bold leading-tight">
-                  Secure Payments & Easy Returns
+                  {sidebarInfo.paymentProtection?.description || "Secure Payments & Easy Returns"}
                 </p>
               </div>
               <hr className="border-gray-100" />

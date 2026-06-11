@@ -29,6 +29,7 @@ const CategoryManagement = () => {
     slug: "",
     image: "",
     isAccessory: false,
+    showInMobileSpareParts: false,
   };
 
   const [formData, setFormData] = useState(initialCategoryState);
@@ -70,7 +71,11 @@ const CategoryManagement = () => {
   const handleOpenModal = (item = null) => {
     if (item) {
       setEditingItem(item);
-      setFormData(item);
+      setFormData({
+        ...item,
+        isAccessory: item.isAccessory || false,
+        showInMobileSpareParts: item.showInMobileSpareParts || false,
+      });
     } else {
       setEditingItem(null);
       setFormData(initialCategoryState);
@@ -232,8 +237,8 @@ const CategoryManagement = () => {
       {/* Add/Edit Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center flex-shrink-0">
               <h3 className="text-xl font-bold text-gray-800">
                 {editingItem ? "Edit Category" : "Add New Category"}
               </h3>
@@ -244,7 +249,7 @@ const CategoryManagement = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto flex-1">
               <div className="space-y-2">
                 <label className="text-sm font-bold text-gray-700">
                   Category Name
@@ -275,24 +280,26 @@ const CategoryManagement = () => {
                 />
               </div>
 
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="isAccessory"
-                  className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  checked={formData.isAccessory}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      isAccessory: e.target.checked,
-                    })
-                  }
-                />
-                <label
-                  htmlFor="isAccessory"
-                  className="text-sm font-bold text-gray-700 cursor-pointer">
-                  This is an Accessory Category
-                </label>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="showInMobileSpareParts"
+                    className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    checked={formData.showInMobileSpareParts}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        showInMobileSpareParts: e.target.checked,
+                      })
+                    }
+                  />
+                  <label
+                    htmlFor="showInMobileSpareParts"
+                    className="text-sm font-bold text-gray-700 cursor-pointer">
+                    Show in Mobile spare parts
+                  </label>
+                </div>
               </div>
 
               <div className="space-y-2">

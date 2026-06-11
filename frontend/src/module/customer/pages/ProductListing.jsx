@@ -36,7 +36,7 @@ const ProductListing = () => {
       if (modelId) url += `model=${modelId}&`;
       if (categoryId) url += `category=${categoryId}&`;
       if (keyword) url += `keyword=${keyword}&`;
-      url += `sort=${sortBy}&`;
+      url += `sort=${sortBy}&_t=${Date.now()}`;
 
       const { data } = await axios.get(url);
       const items = data.products || [];
@@ -146,18 +146,23 @@ const ProductListing = () => {
                   <h3 className="font-bold text-gray-900 text-sm">Models</h3>
                   <div className="space-y-2">
                     <Link
-                      to={`/products`}
+                      to={`/products${categoryId ? `?category=${categoryId}` : ''}${keyword ? (categoryId ? '&' : '?') + `keyword=${keyword}` : ''}`}
                       className={`block text-sm ${!modelId ? "font-bold text-primary" : "text-gray-600 hover:text-primary"}`}>
                       All Models
                     </Link>
-                    {models.map((model) => (
-                      <Link
-                        key={model._id}
-                        to={`/products?model=${model._id}`}
-                        className={`block text-sm ${modelId === model._id ? "font-bold text-primary" : "text-gray-600 hover:text-primary"}`}>
-                        {model.name}
-                      </Link>
-                    ))}
+                    {models.map((model) => {
+                      let url = `/products?model=${model._id}`;
+                      if (categoryId) url += `&category=${categoryId}`;
+                      if (keyword) url += `&keyword=${keyword}`;
+                      return (
+                        <Link
+                          key={model._id}
+                          to={url}
+                          className={`block text-sm ${modelId === model._id ? "font-bold text-primary" : "text-gray-600 hover:text-primary"}`}>
+                          {model.name}
+                        </Link>
+                      );
+                    })}
                   </div>
                 </div>
               </div>

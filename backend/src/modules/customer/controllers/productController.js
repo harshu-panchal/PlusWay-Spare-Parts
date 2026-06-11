@@ -1,4 +1,5 @@
 import Product from "../../../models/Product.js";
+import Category from "../../../models/Category.js";
 import Review from "../../../models/Review.js";
 import asyncHandler from "../../../middleware/asyncHandler.js";
 
@@ -27,7 +28,19 @@ export const getProducts = asyncHandler(async (req, res) => {
 
     // Filters
     const filters = { ...keyword };
-    if (req.query.category) filters.category = req.query.category;
+    
+    if (req.query.category) {
+        // Special logic for "Mobile spare parts"
+        const requestedCategory = await Category.findById(req.query.category);
+        const catName = requestedCategory ? requestedCategory.name.trim().toLowerCase() : "";
+        if (catName === "mobile spare parts" || catName === "mobile spare part") {
+            const extraCategories = await Category.find({ showInMobileSpareParts: true });
+            const categoryIds = [req.query.category, ...extraCategories.map(c => c._id)];
+            filters.category = { $in: categoryIds };
+        } else {
+            filters.category = req.query.category;
+        }
+    }
     if (req.query.brand) filters.brand = req.query.brand;
     if (req.query.model) filters.model = req.query.model;
 

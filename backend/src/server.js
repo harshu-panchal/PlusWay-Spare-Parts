@@ -14,6 +14,7 @@ import homeSectionRoutes from "./modules/admin/routes/homeSectionRoutes.js";
 import customerHomeSectionRoutes from "./modules/customer/routes/homeSectionRoutes.js";
 import translationRoutes from "./routes/translationRoutes.js";
 import fcmTokenRoutes from "./routes/fcmTokenRoutes.js";
+import settingRoutes from "./routes/settingRoutes.js";
 
 // Define __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -92,6 +93,7 @@ app.use("/api/upload", uploadRoutes);
 app.use("/api/config", configRoutes);
 app.use("/api/v1/translate", translationRoutes);
 app.use("/api/fcm-tokens", fcmTokenRoutes);
+app.use("/api/settings", settingRoutes);
 
 // Basic Route
 app.get("/", (req, res) => {

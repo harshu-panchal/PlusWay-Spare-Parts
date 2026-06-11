@@ -18,6 +18,10 @@ const categorySchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  showInMobileSpareParts: {
+    type: Boolean,
+    default: false,
+  },
 }, {
   timestamps: true,
 });
