@@ -40,7 +40,7 @@ const Settings = () => {
     if (settings) {
       try {
         setLoading(true);
-        const token = localStorage.getItem("token");
+        const token = JSON.parse(localStorage.getItem("adminInfo"))?.token;
         await axios.put(API_ENDPOINTS.UPDATE_SETTINGS, settings, {
           headers: { Authorization: `Bearer ${token}` }
         });
