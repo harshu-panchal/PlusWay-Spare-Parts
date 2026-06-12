@@ -24,6 +24,7 @@ import {
   User,
   Image,
   Wallet,
+  Sidebar,
 } from "lucide-react";
 import { removeFCMToken } from "../../../services/pushNotificationService";
 
@@ -70,6 +71,7 @@ const AdminLayout = () => {
       items: [
         { name: "Home Sections", path: "/admin/home-sections", icon: Layers }, // Using Layers icon or similar
         { name: "Banners", path: "/admin/banners", icon: Image },
+        { name: "Product Sidebar", path: "/admin/product-sidebar", icon: Sidebar },
         { name: "Settings", path: "/admin/settings", icon: Settings },
       ],
     },

@@ -37,7 +37,7 @@ const Settings = () => {
   }, []);
 
   const handleSave = async () => {
-    if (activeTab === "productSidebar" && settings) {
+    if (settings) {
       try {
         setLoading(true);
         const token = localStorage.getItem("token");
@@ -51,14 +51,11 @@ const Settings = () => {
       } finally {
         setLoading(false);
       }
-    } else {
-      alert("Settings saved (Mock)!");
     }
   };
 
   const tabs = [
     { id: "general", name: "General", icon: Globe },
-    { id: "productSidebar", name: "Product Sidebar", icon: Sidebar },
     { id: "contact", name: "Contact & Support", icon: Phone },
     { id: "social", name: "Social Media", icon: Facebook },
     { id: "shipping", name: "Shipping & Tax", icon: Truck },
@@ -126,52 +123,7 @@ const Settings = () => {
             </div>
           )}
 
-          {activeTab === "productSidebar" && settings && (
-            <div className="space-y-8">
-              {['needHelp', 'freeShipping', 'guarantee', 'paymentProtection'].map((key) => {
-                const item = settings.productSidebar?.[key];
-                const label = key === 'needHelp' ? 'Need Help' :
-                              key === 'freeShipping' ? 'Free Shipping' :
-                              key === 'guarantee' ? 'Plusway Guarantee' : 'Payment Protection';
-                return (
-                  <div key={key} className="p-4 border border-gray-100 rounded-xl bg-gray-50/50">
-                    <h4 className="font-bold text-secondary mb-4">{label} Section</h4>
-                    <div className="grid grid-cols-1 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-bold text-gray-700">Title</label>
-                        <input
-                          type="text"
-                          className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                          value={item?.title || ''}
-                          onChange={(e) => setSettings({
-                            ...settings,
-                            productSidebar: {
-                              ...settings.productSidebar,
-                              [key]: { ...item, title: e.target.value }
-                            }
-                          })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-bold text-gray-700">Description</label>
-                        <textarea
-                          className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-20"
-                          value={item?.description || ''}
-                          onChange={(e) => setSettings({
-                            ...settings,
-                            productSidebar: {
-                              ...settings.productSidebar,
-                              [key]: { ...item, description: e.target.value }
-                            }
-                          })}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+
 
           {activeTab === "contact" && (
             <div className="space-y-6">

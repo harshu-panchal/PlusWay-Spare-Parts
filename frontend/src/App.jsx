@@ -68,6 +68,7 @@ const CustomerManagement = lazy(() => import("./module/admin/pages/CustomerManag
 const CustomerDetail = lazy(() => import("./module/admin/pages/CustomerDetail"));
 const ReviewManagement = lazy(() => import("./module/admin/pages/ReviewManagement"));
 const Settings = lazy(() => import("./module/admin/pages/Settings"));
+const ProductSidebarSettings = lazy(() => import("./module/admin/pages/ProductSidebarSettings"));
 const Reports = lazy(() => import("./module/admin/pages/Reports"));
 const Wallet = lazy(() => import("./module/admin/pages/Wallet"));
 const SupportManagement = lazy(() => import("./module/admin/pages/SupportManagement"));
@@ -175,6 +176,7 @@ const App = () => {
               <Route path="reports" element={<Reports />} />
               <Route path="wallet" element={<Wallet />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="product-sidebar" element={<ProductSidebarSettings />} />
               <Route path="banners" element={<BannerManagement />} />
               <Route path="home-sections" element={<HomeSectionManagement />} />
             </Route>
