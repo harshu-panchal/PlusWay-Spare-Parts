@@ -22,6 +22,10 @@ const categorySchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  showInAccessories: {
+    type: Boolean,
+    default: false,
+  },
 }, {
   timestamps: true,
 });

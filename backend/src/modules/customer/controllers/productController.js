@@ -30,11 +30,15 @@ export const getProducts = asyncHandler(async (req, res) => {
     const filters = { ...keyword };
     
     if (req.query.category) {
-        // Special logic for "Mobile spare parts"
+        // Special logic for "Mobile spare parts" and "Accessories"
         const requestedCategory = await Category.findById(req.query.category);
         const catName = requestedCategory ? requestedCategory.name.trim().toLowerCase() : "";
         if (catName === "mobile spare parts" || catName === "mobile spare part") {
             const extraCategories = await Category.find({ showInMobileSpareParts: true });
+            const categoryIds = [req.query.category, ...extraCategories.map(c => c._id)];
+            filters.category = { $in: categoryIds };
+        } else if (catName === "accessories" || catName === "accessory") {
+            const extraCategories = await Category.find({ showInAccessories: true });
             const categoryIds = [req.query.category, ...extraCategories.map(c => c._id)];
             filters.category = { $in: categoryIds };
         } else {

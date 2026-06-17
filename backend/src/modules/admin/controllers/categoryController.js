@@ -40,7 +40,7 @@ export const getCategories = asyncHandler(async (req, res) => {
 // @route   POST /api/admin/categories
 // @access  Private/Admin
 export const createCategory = asyncHandler(async (req, res) => {
-  const { name, slug, image, isAccessory, showInMobileSpareParts } = req.body;
+  const { name, slug, image, isAccessory, showInMobileSpareParts, showInAccessories } = req.body;
 
   const categoryExists = await Category.findOne({
     $or: [
@@ -60,6 +60,7 @@ export const createCategory = asyncHandler(async (req, res) => {
     image,
     isAccessory,
     showInMobileSpareParts,
+    showInAccessories,
   });
 
   const createdCategory = await category.save();
@@ -70,7 +71,7 @@ export const createCategory = asyncHandler(async (req, res) => {
 // @route   PUT /api/admin/categories/:id
 // @access  Private/Admin
 export const updateCategory = asyncHandler(async (req, res) => {
-  const { name, slug, image, isAccessory, showInMobileSpareParts } = req.body;
+  const { name, slug, image, isAccessory, showInMobileSpareParts, showInAccessories } = req.body;
 
   const category = await Category.findById(req.params.id);
 
@@ -96,6 +97,7 @@ export const updateCategory = asyncHandler(async (req, res) => {
     category.image = image || category.image;
     category.isAccessory = isAccessory !== undefined ? isAccessory : category.isAccessory;
     category.showInMobileSpareParts = showInMobileSpareParts !== undefined ? showInMobileSpareParts : category.showInMobileSpareParts;
+    category.showInAccessories = showInAccessories !== undefined ? showInAccessories : category.showInAccessories;
 
     const updatedCategory = await category.save();
     res.json(updatedCategory);

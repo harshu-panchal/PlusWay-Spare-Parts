@@ -30,6 +30,7 @@ const CategoryManagement = () => {
     image: "",
     isAccessory: false,
     showInMobileSpareParts: false,
+    showInAccessories: false,
   };
 
   const [formData, setFormData] = useState(initialCategoryState);
@@ -75,6 +76,7 @@ const CategoryManagement = () => {
         ...item,
         isAccessory: item.isAccessory || false,
         showInMobileSpareParts: item.showInMobileSpareParts || false,
+        showInAccessories: item.showInAccessories || false,
       });
     } else {
       setEditingItem(null);
@@ -298,6 +300,25 @@ const CategoryManagement = () => {
                     htmlFor="showInMobileSpareParts"
                     className="text-sm font-bold text-gray-700 cursor-pointer">
                     Show in Mobile spare parts
+                  </label>
+                </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="showInAccessories"
+                    className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    checked={formData.showInAccessories}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        showInAccessories: e.target.checked,
+                      })
+                    }
+                  />
+                  <label
+                    htmlFor="showInAccessories"
+                    className="text-sm font-bold text-gray-700 cursor-pointer">
+                    Show in Accessories
                   </label>
                 </div>
               </div>
