@@ -32,6 +32,9 @@ const Header = () => {
   const [categories, setCategories] = useState([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCategoriesMenuOpen, setIsCategoriesMenuOpen] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
+  const searchDropdownRef = useRef(null);
   const categoriesMenuRef = useRef(null);
   const navigate = useNavigate();
 
@@ -102,9 +105,47 @@ const Header = () => {
       const trimmed = searchQuery.trim();
       if (!trimmed) return;
       closeMobileMenu();
+      setIsSearchDropdownOpen(false);
       navigate(`/products?keyword=${encodeURIComponent(trimmed)}`);
     }
   };
+
+  const handleSearchChange = async (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    const trimmed = value.trim();
+    if (trimmed.length >= 2) {
+      try {
+        const { data } = await axios.get(
+          `${API_ENDPOINTS.MODELS}?search=${encodeURIComponent(trimmed)}&pageSize=5`
+        );
+        setSearchResults(data.models || []);
+        setIsSearchDropdownOpen(true);
+      } catch (error) {
+        console.error("Error fetching models:", error);
+      }
+    } else {
+      setSearchResults([]);
+      setIsSearchDropdownOpen(false);
+    }
+  };
+
+  // Close search dropdown on outside click
+  useEffect(() => {
+    if (!isSearchDropdownOpen) return;
+    const onClickAway = (e) => {
+      if (
+        searchDropdownRef.current &&
+        !searchDropdownRef.current.contains(e.target)
+      ) {
+        setIsSearchDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClickAway);
+    return () => {
+      document.removeEventListener("mousedown", onClickAway);
+    };
+  }, [isSearchDropdownOpen]);
 
   const safeCartItems = Array.isArray(cartItems) ? cartItems : [];
   const cartCount = safeCartItems.reduce((acc, item) => acc + item.quantity, 0);
@@ -156,13 +197,13 @@ const Header = () => {
         </Link>
 
         {/* Search Bar */}
-        <div className="flex-1 max-w-2xl relative hidden md:block group">
+        <div className="flex-1 max-w-2xl relative hidden md:block group" ref={searchDropdownRef}>
           <input
             type="text"
             placeholder="Search Plusway.com"
             className="w-full pl-4 pr-12 py-2 border border-gray-300 rounded focus:outline-none focus:border-primary transition-all text-sm font-medium bg-white"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleSearchChange}
             onKeyDown={handleSearch}
           />
           <button
@@ -170,6 +211,41 @@ const Header = () => {
             className="absolute right-0 top-0 h-full px-4 bg-gray-50 border-l border-gray-300 rounded-r hover:bg-gray-100 transition-colors">
             <Search size={18} className="text-gray-500" />
           </button>
+          
+          {/* Dropdown */}
+          {isSearchDropdownOpen && searchResults.length > 0 && (
+            <div
+              className="absolute left-0 top-full mt-1 w-full bg-white rounded shadow-xl border border-gray-200 max-h-96 overflow-y-auto z-[60]"
+            >
+              {searchResults.map((model) => (
+                <div
+                  key={model._id}
+                  className="flex items-center gap-4 px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0"
+                  onClick={() => {
+                    setIsSearchDropdownOpen(false);
+                    setSearchQuery(model.name);
+                    navigate(`/products?keyword=${encodeURIComponent(model.name)}`);
+                  }}
+                >
+                  {model.image ? (
+                    <img src={model.image} alt={model.name} className="w-8 h-10 object-contain" />
+                  ) : (
+                    <div className="w-8 h-10 bg-gray-100 flex items-center justify-center rounded">
+                       <Search size={16} className="text-gray-400" />
+                    </div>
+                  )}
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-gray-800">{model.name}</span>
+                    <span className="text-xs text-gray-500">
+                      {model.displaySize ? `${model.displaySize}"` : ""} 
+                      {model.displaySize && model.released ? " - " : ""} 
+                      {model.released || ""}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Actions */}
@@ -402,13 +478,48 @@ const Header = () => {
                 placeholder="Search Plusway.com"
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded focus:outline-none focus:border-primary transition-all text-sm font-medium bg-white"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={handleSearchChange}
                 onKeyDown={handleSearch}
               />
               <Search
                 size={16}
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
               />
+              {/* Dropdown for Mobile */}
+              {isSearchDropdownOpen && searchResults.length > 0 && (
+                <div
+                  className="absolute left-0 top-full mt-1 w-full bg-white rounded shadow-xl border border-gray-200 max-h-60 overflow-y-auto z-[60]"
+                >
+                  {searchResults.map((model) => (
+                    <div
+                      key={model._id}
+                      className="flex items-center gap-4 px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0"
+                      onClick={() => {
+                        setIsSearchDropdownOpen(false);
+                        closeMobileMenu();
+                        setSearchQuery(model.name);
+                        navigate(`/products?keyword=${encodeURIComponent(model.name)}`);
+                      }}
+                    >
+                      {model.image ? (
+                        <img src={model.image} alt={model.name} className="w-8 h-10 object-contain" />
+                      ) : (
+                        <div className="w-8 h-10 bg-gray-100 flex items-center justify-center rounded">
+                           <Search size={16} className="text-gray-400" />
+                        </div>
+                      )}
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-gray-800">{model.name}</span>
+                        <span className="text-xs text-gray-500">
+                          {model.displaySize ? `${model.displaySize}"` : ""} 
+                          {model.displaySize && model.released ? " - " : ""} 
+                          {model.released || ""}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
