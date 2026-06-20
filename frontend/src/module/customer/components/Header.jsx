@@ -224,7 +224,7 @@ const Header = () => {
                   onClick={() => {
                     setIsSearchDropdownOpen(false);
                     setSearchQuery(model.name);
-                    navigate(`/products?keyword=${encodeURIComponent(model.name)}`);
+                    navigate(`/model/${model._id}/products`);
                   }}
                 >
                   {model.image ? (
@@ -498,7 +498,7 @@ const Header = () => {
                         setIsSearchDropdownOpen(false);
                         closeMobileMenu();
                         setSearchQuery(model.name);
-                        navigate(`/products?keyword=${encodeURIComponent(model.name)}`);
+                        navigate(`/model/${model._id}/products`);
                       }}
                     >
                       {model.image ? (
