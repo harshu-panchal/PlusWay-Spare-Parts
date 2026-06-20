@@ -75,7 +75,7 @@ export const updateBrand = asyncHandler(async (req, res) => {
     }
 
     brand.name = newName;
-    brand.logo = logo || brand.logo;
+    brand.logo = logo !== undefined ? logo : brand.logo;
 
     const updatedBrand = await brand.save();
     res.json(updatedBrand);

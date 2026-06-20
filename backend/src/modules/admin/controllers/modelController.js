@@ -132,7 +132,7 @@ export const updateModel = async (req, res) => {
     model.brand = targetBrandId;
     model.released = released || model.released;
     model.displaySize = displaySize || model.displaySize;
-    model.image = image || model.image;
+    model.image = image !== undefined ? image : model.image;
 
     const updatedModel = await model.save();
 

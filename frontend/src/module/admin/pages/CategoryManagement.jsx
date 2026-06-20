@@ -10,8 +10,23 @@ import {
   Save,
 } from "lucide-react";
 import ImageUpload from "../../../components/ImageUpload";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+} from '@dnd-kit/sortable';
 import { API_BASE_URL } from "../../../config/api";
 import Pagination from "../../../components/Pagination";
+import { SortableCategoryItem } from "../components/SortableCategoryItem";
 
 const CategoryManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -34,6 +49,17 @@ const CategoryManagement = () => {
   };
 
   const [formData, setFormData] = useState(initialCategoryState);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
@@ -140,6 +166,38 @@ const CategoryManagement = () => {
     }
   };
 
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
+    
+    if (active.id !== over?.id) {
+      setItems((items) => {
+        const oldIndex = items.findIndex((item) => item._id === active.id);
+        const newIndex = items.findIndex((item) => item._id === over.id);
+        
+        const newItems = arrayMove(items, oldIndex, newIndex);
+        
+        // Optimistically update the UI order and prep the payload
+        const reorderedData = newItems.map((item, index) => ({
+          _id: item._id,
+          order: index, // New order index
+        }));
+
+        // Send API request in background
+        const token = localStorage.getItem("adminToken");
+        axios.put(
+          `${API_BASE_URL}/api/admin/categories/reorder`,
+          { categories: reorderedData },
+          { headers: { Authorization: `Bearer ${token}` } }
+        ).catch(err => {
+          console.error("Failed to reorder categories", err);
+          setError("Failed to reorder categories.");
+        });
+
+        return newItems;
+      });
+    }
+  };
+
   const handleNameChange = (name) => {
     if (!editingItem) {
       const slug = name
@@ -195,40 +253,27 @@ const CategoryManagement = () => {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {items.map((item) => (
-            <div
-              key={item._id}
-              className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group">
-              <div className="h-40 bg-gray-50 relative flex items-center justify-center p-4">
-                <img
-                  src={item.image || null}
-                  alt={item.name}
-                  className="max-w-full max-h-full object-contain"
+        <DndContext 
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <SortableContext 
+              items={items.map(item => item._id)}
+              strategy={rectSortingStrategy}
+            >
+              {items.map((item) => (
+                <SortableCategoryItem 
+                  key={item._id} 
+                  item={item} 
+                  handleOpenModal={handleOpenModal} 
+                  handleDelete={handleDelete} 
                 />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                  <button
-                    onClick={() => handleOpenModal(item)}
-                    className="p-2 bg-white text-gray-800 rounded-lg hover:bg-blue-600 hover:text-white transition-colors">
-                    <Edit size={18} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(item._id)}
-                    className="p-2 bg-white text-gray-800 rounded-lg hover:bg-red-600 hover:text-white transition-colors">
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              </div>
-              <div className="p-4 flex justify-between items-center">
-                <div>
-                  <h4 className="font-bold text-gray-900">{item.name}</h4>
-                  <p className="text-xs text-gray-500">Slug: {item.slug}</p>
-                </div>
-                <ChevronRight size={20} className="text-gray-300" />
-              </div>
-            </div>
-          ))}
-        </div>
+              ))}
+            </SortableContext>
+          </div>
+        </DndContext>
       )}
 
       <Pagination page={page} pages={pages} onPageChange={(p) => setPage(p)} />

@@ -87,7 +87,7 @@ export const getProducts = asyncHandler(async (req, res) => {
         Product.countDocuments(filters),
         Product.find(filters)
             .populate("brand", "name")
-            .populate("category", "name")
+            .populate("category", "name order")
             .populate("model", "name")
             .sort(sortQuery)
             .limit(pageSize)
@@ -103,7 +103,7 @@ export const getProducts = asyncHandler(async (req, res) => {
 export const getProductById = asyncHandler(async (req, res) => {
     const product = await Product.findById(req.params.id)
         .populate("brand", "name")
-        .populate("category", "name")
+        .populate("category", "name order")
         .populate("model", "name image");
 
     if (product) {

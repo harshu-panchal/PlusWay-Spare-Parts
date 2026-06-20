@@ -78,7 +78,11 @@ const ProductTypeSelection = () => {
         return groups;
     }, [products]);
 
-    const categories = Object.keys(groupedProducts);
+    const categories = Object.keys(groupedProducts).sort((a, b) => {
+        const orderA = groupedProducts[a][0].category?.order ?? 9999;
+        const orderB = groupedProducts[b][0].category?.order ?? 9999;
+        return orderA - orderB;
+    });
 
     if (modelInfoLoading && products.length === 0) {
         return <div className="p-8 text-center">Loading...</div>;

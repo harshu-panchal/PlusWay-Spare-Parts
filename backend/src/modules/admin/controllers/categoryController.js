@@ -13,7 +13,7 @@ export const getCategories = asyncHandler(async (req, res) => {
   const search = req.query.search || '';
 
   if (req.query.all === 'true') {
-    const categories = await Category.find({}).sort({ name: 1 });
+    const categories = await Category.find({}).sort({ order: 1, createdAt: -1 });
     return res.json({ categories, total: categories.length });
   }
 
@@ -31,7 +31,7 @@ export const getCategories = asyncHandler(async (req, res) => {
   const categories = await Category.find(filter)
     .limit(pageSize)
     .skip(pageSize * (page - 1))
-    .sort({ createdAt: -1 });
+    .sort({ order: 1, createdAt: -1 });
 
   res.json({ categories, page, pages: Math.ceil(count / pageSize), total: count });
 });
@@ -94,7 +94,7 @@ export const updateCategory = asyncHandler(async (req, res) => {
 
     category.name = newName;
     category.slug = newSlug;
-    category.image = image || category.image;
+    category.image = image !== undefined ? image : category.image;
     category.isAccessory = isAccessory !== undefined ? isAccessory : category.isAccessory;
     category.showInMobileSpareParts = showInMobileSpareParts !== undefined ? showInMobileSpareParts : category.showInMobileSpareParts;
     category.showInAccessories = showInAccessories !== undefined ? showInAccessories : category.showInAccessories;
@@ -119,5 +119,27 @@ export const deleteCategory = asyncHandler(async (req, res) => {
   } else {
     res.status(404);
     throw new Error('Category not found');
+  }
+});
+
+// @desc    Update category order
+// @route   PUT /api/admin/categories/reorder
+// @access  Private/Admin
+export const updateCategoryOrder = asyncHandler(async (req, res) => {
+  const { categories } = req.body;
+
+  if (categories && categories.length > 0) {
+    const bulkOps = categories.map((cat) => ({
+      updateOne: {
+        filter: { _id: cat._id },
+        update: { order: cat.order },
+      },
+    }));
+
+    await Category.bulkWrite(bulkOps);
+    res.json({ message: 'Category order updated successfully' });
+  } else {
+    res.status(400);
+    throw new Error('No categories provided');
   }
 });

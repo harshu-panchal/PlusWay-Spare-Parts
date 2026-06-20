@@ -49,6 +49,7 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
+  updateCategoryOrder,
 } from "../controllers/categoryController.js";
 import {
   getModels,
@@ -173,6 +174,7 @@ router
   .route("/categories")
   .get(protect, admin, getCategories)
   .post(protect, admin, createCategory);
+router.put("/categories/reorder", protect, admin, updateCategoryOrder);
 router
   .route("/categories/:id")
   .put(protect, admin, updateCategory)

@@ -43,7 +43,7 @@ export const updateBanner = asyncHandler(async (req, res) => {
     const banner = await Banner.findById(req.params.id);
 
     if (banner) {
-        banner.image = image || banner.image;
+        banner.image = image !== undefined ? image : banner.image;
         banner.type = type || banner.type;
         banner.link = link !== undefined ? link : banner.link;
         banner.isActive = isActive !== undefined ? isActive : banner.isActive;
