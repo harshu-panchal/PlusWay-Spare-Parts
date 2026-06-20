@@ -479,7 +479,90 @@ export const bulkCreateProducts = async (req, res) => {
       const rowNum = i + 2; // Excel row number (1-indexed, +1 for header)
 
       try {
-        // Required field validation — pricing/stock only required when no colorVariants provided
+        const skuValue = row.SKU || row.code;
+        const codeStr = skuValue ? String(skuValue).trim() : "";
+        let existingProduct = null;
+        let isVariantMatch = false;
+
+        if (codeStr) {
+          existingProduct = await Product.findOne({
+            $or: [
+              { code: codeStr },
+              { "colorVariants.sku": codeStr }
+            ]
+          });
+          if (existingProduct) {
+            isVariantMatch = existingProduct.code !== codeStr;
+          }
+        }
+
+        if (existingProduct) {
+          // --- UPDATE MODE ---
+          if (isVariantMatch) {
+            const variantIdx = existingProduct.colorVariants.findIndex(v => v.sku === codeStr);
+            if (variantIdx !== -1) {
+              if (row.price !== undefined && row.price !== "") existingProduct.colorVariants[variantIdx].price = Number(row.price);
+              if (row.mrp !== undefined && row.mrp !== "") existingProduct.colorVariants[variantIdx].mrp = Number(row.mrp);
+              if (row.wholesalePrice !== undefined && row.wholesalePrice !== "") existingProduct.colorVariants[variantIdx].wholesalePrice = Number(row.wholesalePrice);
+              if (row.wholesaleMinQty !== undefined && row.wholesaleMinQty !== "") existingProduct.colorVariants[variantIdx].wholesaleMinQty = Number(row.wholesaleMinQty);
+              if (row.countInStock !== undefined && row.countInStock !== "") existingProduct.colorVariants[variantIdx].countInStock = Number(row.countInStock);
+              
+              const activeVariants = existingProduct.colorVariants.filter(v => v.colorName?.trim());
+              const firstVariant = activeVariants[0];
+              if (firstVariant) {
+                existingProduct.price = firstVariant.price ?? existingProduct.price;
+                existingProduct.mrp = firstVariant.mrp ?? existingProduct.mrp;
+                existingProduct.wholesalePrice = firstVariant.wholesalePrice ?? existingProduct.wholesalePrice;
+                existingProduct.wholesaleMinQty = firstVariant.wholesaleMinQty ?? existingProduct.wholesaleMinQty;
+              }
+              existingProduct.countInStock = activeVariants.reduce((sum, v) => sum + (Number(v.countInStock) || 0), 0);
+              existingProduct.markModified("colorVariants");
+            }
+          } else {
+            if (row.name && String(row.name).trim()) {
+              const productName = String(row.name).trim();
+              const nameExists = await Product.findOne({
+                _id: { $ne: existingProduct._id },
+                name: { $regex: new RegExp(`^${escapeRegex(productName)}$`, "i") },
+              });
+              if (nameExists) {
+                results.errors.push({ row: rowNum, name: productName, error: `Product "${productName}" already exists` });
+                continue;
+              }
+              existingProduct.name = productName;
+            }
+            if (row.brand) {
+              const brandId = brandMap[String(row.brand).toLowerCase().trim()];
+              if (!brandId) { results.errors.push({ row: rowNum, name: row.name, error: `Brand "${row.brand}" not found` }); continue; }
+              existingProduct.brand = brandId;
+            }
+            if (row.category) {
+              const categoryId = categoryMap[String(row.category).toLowerCase().trim()];
+              if (!categoryId) { results.errors.push({ row: rowNum, name: row.name, error: `Category "${row.category}" not found` }); continue; }
+              existingProduct.category = categoryId;
+            }
+            if (row.model) {
+              const modelId = modelMap[String(row.model).toLowerCase().trim()];
+              if (!modelId) { results.errors.push({ row: rowNum, name: row.name, error: `Model "${row.model}" not found` }); continue; }
+              existingProduct.model = modelId;
+            }
+            if (row.price !== undefined && row.price !== "") existingProduct.price = Number(row.price);
+            if (row.mrp !== undefined && row.mrp !== "") existingProduct.mrp = Number(row.mrp);
+            if (row.wholesalePrice !== undefined && row.wholesalePrice !== "") existingProduct.wholesalePrice = Number(row.wholesalePrice);
+            if (row.wholesaleMinQty !== undefined && row.wholesaleMinQty !== "") existingProduct.wholesaleMinQty = Number(row.wholesaleMinQty);
+            if (row.countInStock !== undefined && row.countInStock !== "") existingProduct.countInStock = Number(row.countInStock);
+            if (row.cashback !== undefined && row.cashback !== "") existingProduct.cashback = Number(row.cashback);
+            if (row.description) existingProduct.description = String(row.description).split("\n").map(p => p.trim()).filter(Boolean);
+            if (row.videoUrl !== undefined && row.videoUrl !== "") existingProduct.videoUrl = String(row.videoUrl).trim();
+            if (row.productType) existingProduct.productType = String(row.productType).trim();
+          }
+
+          await existingProduct.save();
+          results.success.push({ row: rowNum, name: existingProduct.name });
+          continue; // Skip the creation logic
+        }
+
+        // --- CREATION MODE ---
         const hasVariantData = row.colorVariants && String(row.colorVariants).trim().length > 0;
         const alwaysRequired = ["name", "brand", "category", "model"];
         const pricingRequired = hasVariantData ? [] : ["price", "mrp", "wholesalePrice", "wholesaleMinQty", "countInStock"];
@@ -490,63 +573,27 @@ export const bulkCreateProducts = async (req, res) => {
           continue;
         }
 
-        // Resolve brand name → ObjectId
         const brandId = brandMap[String(row.brand).toLowerCase().trim()];
-        if (!brandId) {
-          results.errors.push({ row: rowNum, name: row.name, error: `Brand "${row.brand}" not found in database` });
-          continue;
-        }
+        if (!brandId) { results.errors.push({ row: rowNum, name: row.name, error: `Brand "${row.brand}" not found` }); continue; }
 
-        // Resolve category name → ObjectId
         const categoryId = categoryMap[String(row.category).toLowerCase().trim()];
-        if (!categoryId) {
-          results.errors.push({ row: rowNum, name: row.name, error: `Category "${row.category}" not found in database` });
-          continue;
-        }
+        if (!categoryId) { results.errors.push({ row: rowNum, name: row.name, error: `Category "${row.category}" not found` }); continue; }
 
-        // Resolve model name → ObjectId
         const modelId = modelMap[String(row.model).toLowerCase().trim()];
-        if (!modelId) {
-          results.errors.push({ row: rowNum, name: row.name, error: `Model "${row.model}" not found in database` });
-          continue;
-        }
+        if (!modelId) { results.errors.push({ row: rowNum, name: row.name, error: `Model "${row.model}" not found` }); continue; }
 
-        // Check product name uniqueness
         const productName = String(row.name).trim();
-        const nameExists = await Product.findOne({
-          name: { $regex: new RegExp(`^${escapeRegex(productName)}$`, "i") },
-        });
-        if (nameExists) {
-          results.errors.push({ row: rowNum, name: productName, error: `Product "${productName}" already exists` });
-          continue;
-        }
+        const nameExists = await Product.findOne({ name: { $regex: new RegExp(`^${escapeRegex(productName)}$`, "i") } });
+        if (nameExists) { results.errors.push({ row: rowNum, name: productName, error: `Product "${productName}" already exists` }); continue; }
 
-        // Parse pipe-separated image URLs
-        const images = row.images
-          ? String(row.images).split("|").map((u) => u.trim()).filter(Boolean)
-          : [];
+        const images = row.images ? String(row.images).split("|").map((u) => u.trim()).filter(Boolean) : [];
+        const colors = row.colors ? String(row.colors).split(",").map((c) => c.trim()).filter(Boolean) : [];
 
-        // Parse comma-separated colors
-        const colors = row.colors
-          ? String(row.colors).split(",").map((c) => c.trim()).filter(Boolean)
-          : [];
-
-        // Parse colorVariants. Two supported formats:
-        //   Rich    : colorName;sku;price;mrp;wholesalePrice;wholesaleMinQty;countInStock;img1,img2
-        //             multiple variants separated by ||
-        //   Legacy  : Black:url1,url2|White:url3   (or just "Black|White" with no images)
-        //
-        // Rich format is detected by the presence of `;` — the legacy format
-        // never uses semicolons. We deliberately do NOT use `:` to disambiguate,
-        // since image URLs (https://…) contain colons and would otherwise flip
-        // single-variant rich rows back into legacy mode.
         const colorVariants = (() => {
           if (!row.colorVariants) return [];
           const raw = String(row.colorVariants).trim();
           let parsed = [];
-
           if (raw.includes(";")) {
-            // Rich format
             parsed = raw.split("||").map((variantStr) => {
               const parts = variantStr.split(";").map((p) => p.trim());
               return {
@@ -557,68 +604,33 @@ export const bulkCreateProducts = async (req, res) => {
                 wholesalePrice: parts[4] ? Number(parts[4]) : undefined,
                 wholesaleMinQty: parts[5] ? Number(parts[5]) : undefined,
                 countInStock: parts[6] ? Number(parts[6]) : 0,
-                images: parts[7]
-                  ? parts[7].split(",").map((u) => u.trim()).filter(Boolean)
-                  : [],
+                images: parts[7] ? parts[7].split(",").map((u) => u.trim()).filter(Boolean) : [],
               };
             });
           } else {
-            // Legacy format
             parsed = raw.split("|").map((variantStr) => {
               const colonIdx = variantStr.indexOf(":");
-              if (colonIdx === -1) {
-                return { colorName: variantStr.trim(), images: [] };
-              }
+              if (colonIdx === -1) return { colorName: variantStr.trim(), images: [] };
               const colorName = variantStr.substring(0, colonIdx).trim();
-              const images = variantStr
-                .substring(colonIdx + 1)
-                .split(",")
-                .map((i) => i.trim())
-                .filter(Boolean);
+              const images = variantStr.substring(colonIdx + 1).split(",").map((i) => i.trim()).filter(Boolean);
               return { colorName, images };
             });
           }
-
-          // Final safety net: drop blank rows and guarantee every surviving
-          // variant has a SKU. This mirrors the single-product createProduct
-          // path (line ~178) so the bulk path can never persist a SKU-less
-          // variant regardless of which parser branch fed it.
-          return parsed
-            .filter((v) => v && v.colorName)
-            .map((v) => ({
-              ...v,
-              sku:
-                v.sku && String(v.sku).trim()
-                  ? String(v.sku).trim()
-                  : genVariantSku(v.colorName),
-            }));
+          return parsed.filter((v) => v && v.colorName).map((v) => ({ ...v, sku: v.sku && String(v.sku).trim() ? String(v.sku).trim() : genVariantSku(v.colorName) }));
         })();
 
-        // Parse specs: "Color:Black|RAM:8GB|Storage:256GB"
-        const specs = row.specs
-          ? String(row.specs).split("|").map((s) => {
-              const colonIdx = s.indexOf(":");
-              if (colonIdx === -1) return null;
-              return { key: s.substring(0, colonIdx).trim(), value: s.substring(colonIdx + 1).trim() };
-            }).filter(Boolean)
-          : [];
+        const specs = row.specs ? String(row.specs).split("|").map((s) => {
+          const colonIdx = s.indexOf(":");
+          if (colonIdx === -1) return null;
+          return { key: s.substring(0, colonIdx).trim(), value: s.substring(colonIdx + 1).trim() };
+        }).filter(Boolean) : [];
 
-        // Parse pipe-separated highlights
-        const highlights = row.highlights
-          ? String(row.highlights).split("|").map((h) => h.trim()).filter(Boolean)
-          : [];
+        const highlights = row.highlights ? String(row.highlights).split("|").map((h) => h.trim()).filter(Boolean) : [];
+        const descriptionPoints = row.descriptionPoints ? String(row.descriptionPoints).split("|").map((p) => p.trim()).filter(Boolean) : [];
 
-        // Parse pipe-separated description points
-        const descriptionPoints = row.descriptionPoints
-          ? String(row.descriptionPoints).split("|").map((p) => p.trim()).filter(Boolean)
-          : [];
-
-        // Generate unique slug
         let slug = productName.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-");
         const slugExists = await Product.findOne({ slug });
-        if (slugExists) {
-          slug = `${slug}-${Date.now()}`;
-        }
+        if (slugExists) slug = `${slug}-${Date.now()}`;
 
         const firstVariant = colorVariants.length ? colorVariants[0] : null;
 
@@ -629,16 +641,12 @@ export const bulkCreateProducts = async (req, res) => {
           model: modelId,
           category: categoryId,
           productType: row.productType ? String(row.productType).trim() : undefined,
-          // When variants exist, derive product-level pricing from first variant for listing display
           price: firstVariant?.price ?? (row.price ? Number(row.price) : 0),
           mrp: firstVariant?.mrp ?? (row.mrp ? Number(row.mrp) : 0),
           wholesalePrice: firstVariant?.wholesalePrice ?? (row.wholesalePrice ? Number(row.wholesalePrice) : 0),
           wholesaleMinQty: firstVariant?.wholesaleMinQty ?? (row.wholesaleMinQty ? Number(row.wholesaleMinQty) : 10),
           cashback: Number(row.cashback) || 0,
-          // Product-level stock = sum of variant stocks when variants are used
-          countInStock: colorVariants.length
-            ? colorVariants.reduce((sum, v) => sum + (Number(v.countInStock) || 0), 0)
-            : (Number(row.countInStock) || 0),
+          countInStock: colorVariants.length ? colorVariants.reduce((sum, v) => sum + (Number(v.countInStock) || 0), 0) : (Number(row.countInStock) || 0),
           description: row.description ? String(row.description).split("\n").map(p => p.trim()).filter(Boolean) : [],
           images,
           videoUrl: row.videoUrl ? String(row.videoUrl).trim() : undefined,
@@ -662,10 +670,8 @@ export const bulkCreateProducts = async (req, res) => {
           },
         };
 
-        // Only set code if non-empty (sparse unique index dislikes empty strings)
-        const skuValue = row.SKU || row.code;
-        if (skuValue && String(skuValue).trim()) {
-          productData.code = String(skuValue).trim();
+        if (codeStr) {
+          productData.code = codeStr;
         } else {
           productData.code = `PW-${Date.now().toString().slice(-6)}${Math.floor(100 + Math.random() * 900)}`;
         }
@@ -673,7 +679,6 @@ export const bulkCreateProducts = async (req, res) => {
         const product = new Product(productData);
         await product.save();
         results.success.push({ row: rowNum, name: productName });
-
       } catch (rowError) {
         results.errors.push({ row: rowNum, name: row.name || "?", error: rowError.message });
       }
