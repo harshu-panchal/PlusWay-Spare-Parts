@@ -1,7 +1,13 @@
 import Product from "../../../models/Product.js";
 import Category from "../../../models/Category.js";
+import Brand from "../../../models/Brand.js";
+import Model from "../../../models/Model.js";
 import Review from "../../../models/Review.js";
 import asyncHandler from "../../../middleware/asyncHandler.js";
+import {
+  escapeRegex,
+  tokenizeSearchQuery,
+} from "../../../utils/wildSearch.js";
 
 // @desc    Get all products
 // @route   GET /api/customer/products
@@ -17,17 +23,34 @@ export const getProducts = asyncHandler(async (req, res) => {
     const page = Number(req.query.pageNumber) || 1;
     const sort = req.query.sort || "relevance";
 
-    const keyword = req.query.keyword
-        ? {
-            name: {
-                $regex: req.query.keyword,
-                $options: "i",
-            },
-        }
-        : {};
+    const keywordRaw = String(req.query.keyword || "").trim();
+    const keywordTokens = tokenizeSearchQuery(keywordRaw);
 
-    // Filters
-    const filters = { ...keyword };
+    const filters = {};
+
+    if (keywordTokens.length > 0) {
+        const tokenClauses = await Promise.all(
+            keywordTokens.map(async (token) => {
+                const regex = { $regex: escapeRegex(token), $options: "i" };
+                const [brandIds, modelIds] = await Promise.all([
+                    Brand.find({ name: regex }).distinct("_id"),
+                    Model.find({ name: regex }).distinct("_id"),
+                ]);
+
+                const orClause = [
+                    { name: regex },
+                    { code: regex },
+                    { "colorVariants.sku": regex },
+                    { "colorVariants.colorName": regex },
+                ];
+                if (brandIds.length) orClause.push({ brand: { $in: brandIds } });
+                if (modelIds.length) orClause.push({ model: { $in: modelIds } });
+
+                return { $or: orClause };
+            }),
+        );
+        filters.$and = tokenClauses;
+    }
     
     if (req.query.category) {
         // Special logic for "Mobile spare parts" and "Accessories"

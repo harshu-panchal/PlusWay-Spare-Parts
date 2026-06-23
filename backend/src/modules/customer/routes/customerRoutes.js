@@ -40,6 +40,7 @@ import { getCategories } from "../../admin/controllers/categoryController.js";
 import { getBrands } from "../../admin/controllers/brandController.js";
 import { getModels } from "../../admin/controllers/modelController.js";
 import { getActiveBanners } from "../../admin/controllers/bannerController.js";
+import { globalSearch } from "../controllers/searchController.js";
 import { protect } from "../../../middleware/authMiddleware.js";
 
 const router = express.Router();
@@ -64,6 +65,7 @@ router
 router.put("/addresses/:id/default", protect, setDefaultAddress);
 
 // Product & Content routes
+router.get("/search", globalSearch);
 router.get("/products", getProducts);
 router.get("/products/:id", getProductById);
 router.route("/products/:id/reviews").post(protect, createProductReview);

@@ -22,8 +22,118 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { CartContext } from "../context/CartContext";
 import { API_ENDPOINTS } from "../../../config/api";
+import { formatReleasedDate } from "../../../utils/formatReleasedDate";
 
 import axios from "axios";
+
+const EMPTY_SEARCH_RESULTS = { models: [], products: [] };
+
+const SearchDropdown = ({
+  results,
+  loading,
+  onSelectModel,
+  onSelectProduct,
+}) => {
+  const hasModels = results.models.length > 0;
+  const hasProducts = results.products.length > 0;
+
+  if (loading) {
+    return (
+      <div className="px-4 py-3 text-sm text-gray-500 border-t border-gray-100">
+        Searching…
+      </div>
+    );
+  }
+
+  if (!hasModels && !hasProducts) {
+    return (
+      <div className="px-4 py-3 text-sm text-gray-500 border-t border-gray-100">
+        No matching products or models
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {hasModels && (
+        <div>
+          <div className="px-4 py-2 text-[10px] font-black uppercase tracking-wider text-gray-400 bg-gray-50 border-b border-gray-100">
+            Models
+          </div>
+          {results.models.map((model) => (
+            <button
+              key={model._id}
+              type="button"
+              className="w-full flex items-center gap-4 px-4 py-3 hover:bg-gray-50 text-left border-b border-gray-100 last:border-0"
+              onClick={() => onSelectModel(model)}
+            >
+              {model.image ? (
+                <img
+                  src={model.image}
+                  alt={model.name}
+                  className="w-8 h-10 object-contain shrink-0"
+                />
+              ) : (
+                <div className="w-8 h-10 bg-gray-100 flex items-center justify-center rounded shrink-0">
+                  <Package size={16} className="text-gray-400" />
+                </div>
+              )}
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-medium text-gray-800 truncate">
+                  {model.name}
+                </span>
+                <span className="text-xs text-gray-500 truncate">
+                  {model.brand?.name ? `${model.brand.name}` : "Model"}
+                  {model.released
+                    ? ` · ${formatReleasedDate(model.released)}`
+                    : ""}
+                </span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {hasProducts && (
+        <div>
+          <div className="px-4 py-2 text-[10px] font-black uppercase tracking-wider text-gray-400 bg-gray-50 border-b border-gray-100">
+            Products
+          </div>
+          {results.products.map((product) => (
+            <button
+              key={product._id}
+              type="button"
+              className="w-full flex items-center gap-4 px-4 py-3 hover:bg-gray-50 text-left border-b border-gray-100 last:border-0"
+              onClick={() => onSelectProduct(product)}
+            >
+              {product.image ? (
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="w-8 h-10 object-contain shrink-0"
+                />
+              ) : (
+                <div className="w-8 h-10 bg-gray-100 flex items-center justify-center rounded shrink-0">
+                  <Tag size={16} className="text-gray-400" />
+                </div>
+              )}
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-medium text-gray-800 truncate">
+                  {product.name}
+                </span>
+                <span className="text-xs text-gray-500 truncate">
+                  {product.model?.name || product.brand?.name || "Product"}
+                  {product.code ? ` · ${product.code}` : ""}
+                  {product.price ? ` · ₹${product.price}` : ""}
+                </span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </>
+  );
+};
 
 const Header = () => {
   const { cartItems } = useContext(CartContext);
@@ -32,9 +142,12 @@ const Header = () => {
   const [categories, setCategories] = useState([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCategoriesMenuOpen, setIsCategoriesMenuOpen] = useState(false);
-  const [searchResults, setSearchResults] = useState([]);
+  const [searchResults, setSearchResults] = useState(EMPTY_SEARCH_RESULTS);
   const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
+  const [isSearchLoading, setIsSearchLoading] = useState(false);
   const searchDropdownRef = useRef(null);
+  const searchDebounceRef = useRef(null);
+  const searchRequestRef = useRef(0);
   const categoriesMenuRef = useRef(null);
   const navigate = useNavigate();
 
@@ -110,25 +223,72 @@ const Header = () => {
     }
   };
 
-  const handleSearchChange = async (e) => {
+  const handleSelectModel = (model) => {
+    setIsSearchDropdownOpen(false);
+    closeMobileMenu();
+    setSearchQuery(model.name);
+    navigate(`/model/${model._id}/products`);
+  };
+
+  const handleSelectProduct = (product) => {
+    setIsSearchDropdownOpen(false);
+    closeMobileMenu();
+    setSearchQuery(product.name);
+    navigate(`/product/${product._id}`);
+  };
+
+  const runWildSearch = async (trimmed) => {
+    const requestId = ++searchRequestRef.current;
+    setIsSearchLoading(true);
+    try {
+      const { data } = await axios.get(
+        `${API_ENDPOINTS.SEARCH}?q=${encodeURIComponent(trimmed)}&limit=5`,
+      );
+      if (requestId !== searchRequestRef.current) return;
+      setSearchResults({
+        models: data.models || [],
+        products: data.products || [],
+      });
+      setIsSearchDropdownOpen(true);
+    } catch (error) {
+      if (requestId !== searchRequestRef.current) return;
+      console.error("Error searching:", error);
+      setSearchResults(EMPTY_SEARCH_RESULTS);
+      setIsSearchDropdownOpen(false);
+    } finally {
+      if (requestId === searchRequestRef.current) {
+        setIsSearchLoading(false);
+      }
+    }
+  };
+
+  const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchQuery(value);
     const trimmed = value.trim();
-    if (trimmed.length >= 2) {
-      try {
-        const { data } = await axios.get(
-          `${API_ENDPOINTS.MODELS}?search=${encodeURIComponent(trimmed)}&pageSize=5`
-        );
-        setSearchResults(data.models || []);
-        setIsSearchDropdownOpen(true);
-      } catch (error) {
-        console.error("Error fetching models:", error);
-      }
-    } else {
-      setSearchResults([]);
-      setIsSearchDropdownOpen(false);
+
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current);
     }
+
+    if (trimmed.length < 2) {
+      searchRequestRef.current += 1;
+      setSearchResults(EMPTY_SEARCH_RESULTS);
+      setIsSearchDropdownOpen(false);
+      setIsSearchLoading(false);
+      return;
+    }
+
+    searchDebounceRef.current = setTimeout(() => {
+      runWildSearch(trimmed);
+    }, 300);
   };
+
+  useEffect(() => {
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, []);
 
   // Close search dropdown on outside click
   useEffect(() => {
@@ -213,37 +373,16 @@ const Header = () => {
           </button>
           
           {/* Dropdown */}
-          {isSearchDropdownOpen && searchResults.length > 0 && (
+          {isSearchDropdownOpen && searchQuery.trim().length >= 2 && (
             <div
               className="absolute left-0 top-full mt-1 w-full bg-white rounded shadow-xl border border-gray-200 max-h-96 overflow-y-auto z-[60]"
             >
-              {searchResults.map((model) => (
-                <div
-                  key={model._id}
-                  className="flex items-center gap-4 px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0"
-                  onClick={() => {
-                    setIsSearchDropdownOpen(false);
-                    setSearchQuery(model.name);
-                    navigate(`/model/${model._id}/products`);
-                  }}
-                >
-                  {model.image ? (
-                    <img src={model.image} alt={model.name} className="w-8 h-10 object-contain" />
-                  ) : (
-                    <div className="w-8 h-10 bg-gray-100 flex items-center justify-center rounded">
-                       <Search size={16} className="text-gray-400" />
-                    </div>
-                  )}
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-gray-800">{model.name}</span>
-                    <span className="text-xs text-gray-500">
-                      {model.displaySize ? `${model.displaySize}"` : ""} 
-                      {model.displaySize && model.released ? " - " : ""} 
-                      {model.released || ""}
-                    </span>
-                  </div>
-                </div>
-              ))}
+              <SearchDropdown
+                results={searchResults}
+                loading={isSearchLoading}
+                onSelectModel={handleSelectModel}
+                onSelectProduct={handleSelectProduct}
+              />
             </div>
           )}
         </div>
@@ -486,38 +625,16 @@ const Header = () => {
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
               />
               {/* Dropdown for Mobile */}
-              {isSearchDropdownOpen && searchResults.length > 0 && (
+              {isSearchDropdownOpen && searchQuery.trim().length >= 2 && (
                 <div
                   className="absolute left-0 top-full mt-1 w-full bg-white rounded shadow-xl border border-gray-200 max-h-60 overflow-y-auto z-[60]"
                 >
-                  {searchResults.map((model) => (
-                    <div
-                      key={model._id}
-                      className="flex items-center gap-4 px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0"
-                      onClick={() => {
-                        setIsSearchDropdownOpen(false);
-                        closeMobileMenu();
-                        setSearchQuery(model.name);
-                        navigate(`/model/${model._id}/products`);
-                      }}
-                    >
-                      {model.image ? (
-                        <img src={model.image} alt={model.name} className="w-8 h-10 object-contain" />
-                      ) : (
-                        <div className="w-8 h-10 bg-gray-100 flex items-center justify-center rounded">
-                           <Search size={16} className="text-gray-400" />
-                        </div>
-                      )}
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium text-gray-800">{model.name}</span>
-                        <span className="text-xs text-gray-500">
-                          {model.displaySize ? `${model.displaySize}"` : ""} 
-                          {model.displaySize && model.released ? " - " : ""} 
-                          {model.released || ""}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                  <SearchDropdown
+                    results={searchResults}
+                    loading={isSearchLoading}
+                    onSelectModel={handleSelectModel}
+                    onSelectProduct={handleSelectProduct}
+                  />
                 </div>
               )}
             </div>
