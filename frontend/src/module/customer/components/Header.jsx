@@ -146,6 +146,7 @@ const Header = () => {
   const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
   const [isSearchLoading, setIsSearchLoading] = useState(false);
   const searchDropdownRef = useRef(null);
+  const mobileSearchDropdownRef = useRef(null);
   const searchDebounceRef = useRef(null);
   const searchRequestRef = useRef(0);
   const categoriesMenuRef = useRef(null);
@@ -294,9 +295,15 @@ const Header = () => {
   useEffect(() => {
     if (!isSearchDropdownOpen) return;
     const onClickAway = (e) => {
-      if (
+      const desktopContains =
         searchDropdownRef.current &&
-        !searchDropdownRef.current.contains(e.target)
+        searchDropdownRef.current.contains(e.target);
+      const mobileContains =
+        mobileSearchDropdownRef.current &&
+        mobileSearchDropdownRef.current.contains(e.target);
+      if (
+        !desktopContains &&
+        !mobileContains
       ) {
         setIsSearchDropdownOpen(false);
       }
@@ -390,7 +397,7 @@ const Header = () => {
         {/* Actions */}
         <div className="flex items-center gap-4 md:gap-8">
           {/* Account Dropdown */}
-          <div className="relative group/account">
+          <div className="relative group/account hidden md:block">
             <div
               className="flex items-center gap-1 cursor-pointer group"
               onMouseEnter={() => setIsAccountOpen(true)}
@@ -497,7 +504,7 @@ const Header = () => {
           </div>
 
           {/* Cart */}
-          <Link to="/cart" className="flex items-center gap-2 group">
+          <Link to="/cart" className="hidden md:flex items-center gap-2 group">
             <div className="relative">
               <ShoppingCart
                 size={24}
@@ -528,6 +535,41 @@ const Header = () => {
             className="md:hidden text-secondary p-1 -mr-1 rounded hover:bg-gray-100 transition-colors">
             <Menu size={28} />
           </button>
+        </div>
+      </div>
+
+      {/* Mobile Search Bar */}
+      <div className="md:hidden px-[2%] pb-3" ref={mobileSearchDropdownRef}>
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search Plusway.com"
+            className="w-full pl-10 pr-12 py-2.5 border border-gray-300 rounded focus:outline-none focus:border-primary transition-all text-sm font-medium bg-white"
+            value={searchQuery}
+            onChange={handleSearchChange}
+            onKeyDown={handleSearch}
+          />
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          />
+          <button
+            onClick={handleSearch}
+            className="absolute right-0 top-0 h-full px-4 bg-gray-50 border-l border-gray-300 rounded-r hover:bg-gray-100 transition-colors"
+          >
+            <Send size={16} className="text-gray-500" />
+          </button>
+
+          {isSearchDropdownOpen && searchQuery.trim().length >= 2 && (
+            <div className="absolute left-0 top-full mt-1 w-full bg-white rounded shadow-xl border border-gray-200 max-h-60 overflow-y-auto z-[60]">
+              <SearchDropdown
+                results={searchResults}
+                loading={isSearchLoading}
+                onSelectModel={handleSelectModel}
+                onSelectProduct={handleSelectProduct}
+              />
+            </div>
+          )}
         </div>
       </div>
 
