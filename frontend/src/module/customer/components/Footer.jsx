@@ -95,6 +95,11 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
+                <Link to="/enquiry" className={"hover:text-primary transition-colors cursor-pointer"}>
+                  Submit an Enquiry
+                </Link>
+              </li>
+              <li>
                 <Link to="/track-order" className={"hover:text-primary transition-colors cursor-pointer"}>
                   Track Order Status
                 </Link>

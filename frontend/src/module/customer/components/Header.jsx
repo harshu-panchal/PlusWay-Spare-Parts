@@ -750,6 +750,15 @@ const Header = () => {
               </span>
               <ChevronRight size={16} className="text-gray-300" />
             </Link>
+            <Link
+              to="/enquiry"
+              onClick={closeMobileMenu}
+              className="flex items-center justify-between px-4 py-3 text-sm font-bold text-secondary hover:bg-gray-50 transition-colors border-b border-gray-50">
+              <span className="flex items-center gap-3">
+                <Send size={16} className="text-primary" /> Submit an Enquiry
+              </span>
+              <ChevronRight size={16} className="text-gray-300" />
+            </Link>
           </nav>
 
           {/* Language */}
@@ -863,6 +872,12 @@ const Header = () => {
                 </Link>
               ))}
           </div>
+
+          <Link
+            to="/enquiry"
+            className="ml-auto flex items-center gap-1.5 bg-primary hover:bg-primary/90 h-full px-6 font-black text-[11px] uppercase tracking-widest transition-colors shrink-0">
+            <Send size={14} /> Enquiry
+          </Link>
         </div>
       </div>
     </header>
