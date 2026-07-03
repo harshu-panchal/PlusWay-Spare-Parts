@@ -60,6 +60,9 @@ export const API_ENDPOINTS = {
     CART: `${API_BASE_URL}/api/customer/cart`,
     CART_ITEM: (id) => `${API_BASE_URL}/api/customer/cart/${id}`,
 
+    // Leads
+    CREATE_LEAD: `${API_BASE_URL}/api/customer/leads`,
+
     // Addresses
     ADDRESSES: `${API_BASE_URL}/api/customer/addresses`,
     ADDRESS_DETAIL: (id) => `${API_BASE_URL}/api/customer/addresses/${id}`,
@@ -104,6 +107,10 @@ export const API_ENDPOINTS = {
     ADMIN_ORDER_DETAIL: (id) => `${API_BASE_URL}/api/admin/orders/${id}`,
     ADMIN_ORDER_STATUS: (id) => `${API_BASE_URL}/api/admin/orders/${id}/status`,
     ADMIN_ORDER_INVOICE: (id) => `${API_BASE_URL}/api/admin/orders/${id}/invoice`,
+
+    // Admin Leads
+    ADMIN_LEADS: `${API_BASE_URL}/api/admin/leads`,
+    ADMIN_LEAD_DETAIL: (id) => `${API_BASE_URL}/api/admin/leads/${id}`,
 
     // Admin Customers
     ADMIN_CUSTOMERS: `${API_BASE_URL}/api/admin/customers`,

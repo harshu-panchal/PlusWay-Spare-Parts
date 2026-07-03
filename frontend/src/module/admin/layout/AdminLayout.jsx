@@ -25,6 +25,7 @@ import {
   Image,
   Wallet,
   Sidebar,
+  UserPlus,
 } from "lucide-react";
 import { removeFCMToken } from "../../../services/pushNotificationService";
 
@@ -57,6 +58,7 @@ const AdminLayout = () => {
       items: [
         { name: "Orders", path: "/admin/orders", icon: ShoppingCart },
         { name: "Customers", path: "/admin/customers", icon: Users },
+        { name: "Leads", path: "/admin/leads", icon: UserPlus },
       ],
     },
     {

@@ -41,9 +41,13 @@ import { getBrands } from "../../admin/controllers/brandController.js";
 import { getModels } from "../../admin/controllers/modelController.js";
 import { getActiveBanners } from "../../admin/controllers/bannerController.js";
 import { globalSearch } from "../controllers/searchController.js";
+import { createLead } from "../controllers/leadController.js";
 import { protect } from "../../../middleware/authMiddleware.js";
 
 const router = express.Router();
+
+// Lead routes (Public)
+router.post("/leads", createLead);
 
 // Auth routes
 router.post("/send-otp", otpLimiter, sendOtp);

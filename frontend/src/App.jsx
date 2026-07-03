@@ -41,6 +41,7 @@ const SettingsPage = lazy(() => import("./module/customer/pages/Settings"));
 // Lazy-loaded Informational Pages
 const About = lazy(() => import("./module/customer/pages/About"));
 const Contact = lazy(() => import("./module/customer/pages/Contact"));
+const LeadForm = lazy(() => import("./module/customer/pages/LeadForm"));
 const PrivacyPolicy = lazy(() => import("./module/customer/pages/PrivacyPolicy"));
 const RefundPolicy = lazy(() => import("./module/customer/pages/RefundPolicy"));
 const TermsConditions = lazy(() => import("./module/customer/pages/TermsConditions"));
@@ -75,6 +76,7 @@ const SupportManagement = lazy(() => import("./module/admin/pages/SupportManagem
 const BannerManagement = lazy(() => import("./module/admin/pages/BannerManagement"));
 const HomeSectionManagement = lazy(() => import("./module/admin/pages/HomeSectionManagement"));
 const BulkUploadHistory = lazy(() => import("./module/admin/pages/BulkUploadHistory"));
+const LeadManagement = lazy(() => import("./module/admin/pages/LeadManagement"));
 
 const AdminProtectedRoute = ({ children }) => {
   const isAdminAuthenticated = !!localStorage.getItem("adminToken");
@@ -137,6 +139,7 @@ const App = () => {
               {/* Informational Pages */}
               <Route path="about" element={<About />} />
               <Route path="contact" element={<Contact />} />
+              <Route path="enquiry" element={<LeadForm />} />
               <Route path="privacy-policy" element={<PrivacyPolicy />} />
               <Route path="refund-policy" element={<RefundPolicy />} />
               <Route path="terms-conditions" element={<TermsConditions />} />
@@ -171,6 +174,7 @@ const App = () => {
               <Route path="orders/:id" element={<OrderDetail />} />
               <Route path="customers" element={<CustomerManagement />} />
               <Route path="customers/:id" element={<CustomerDetail />} />
+              <Route path="leads" element={<LeadManagement />} />
               <Route path="reviews" element={<ReviewManagement />} />
               <Route path="support" element={<SupportManagement />} />
               <Route path="reports" element={<Reports />} />

@@ -68,6 +68,11 @@ import {
   updateOrderStatus,
   getOrderInvoice,
 } from "../controllers/orderController.js";
+import {
+  getLeads,
+  updateLeadStatus,
+  deleteLead,
+} from "../controllers/leadController.js";
 import { protect, admin } from "../../../middleware/authMiddleware.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -142,6 +147,13 @@ router
   .delete(protect, admin, deleteProduct);
 
 router.route("/products/:id/stock").put(protect, admin, updateProductStock);
+
+// Lead routes
+router.route("/leads").get(protect, admin, getLeads);
+router
+  .route("/leads/:id")
+  .put(protect, admin, updateLeadStatus)
+  .delete(protect, admin, deleteLead);
 
 // Customer routes
 router
