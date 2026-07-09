@@ -65,8 +65,7 @@ const SearchDropdown = ({
               key={model._id}
               type="button"
               className="w-full flex items-center gap-4 px-4 py-3 hover:bg-gray-50 text-left border-b border-gray-100 last:border-0"
-              onClick={() => onSelectModel(model)}
-            >
+              onClick={() => onSelectModel(model)}>
               {model.image ? (
                 <img
                   src={model.image}
@@ -104,8 +103,7 @@ const SearchDropdown = ({
               key={product._id}
               type="button"
               className="w-full flex items-center gap-4 px-4 py-3 hover:bg-gray-50 text-left border-b border-gray-100 last:border-0"
-              onClick={() => onSelectProduct(product)}
-            >
+              onClick={() => onSelectProduct(product)}>
               {product.image ? (
                 <img
                   src={product.image}
@@ -301,10 +299,7 @@ const Header = () => {
       const mobileContains =
         mobileSearchDropdownRef.current &&
         mobileSearchDropdownRef.current.contains(e.target);
-      if (
-        !desktopContains &&
-        !mobileContains
-      ) {
+      if (!desktopContains && !mobileContains) {
         setIsSearchDropdownOpen(false);
       }
     };
@@ -364,10 +359,12 @@ const Header = () => {
         </Link>
 
         {/* Search Bar */}
-        <div className="flex-1 max-w-2xl relative hidden md:block group" ref={searchDropdownRef}>
+        <div
+          className="flex-1 max-w-2xl relative hidden md:block group"
+          ref={searchDropdownRef}>
           <input
             type="text"
-            placeholder="Search Plusway.com"
+            placeholder="Search plusway.in"
             className="w-full pl-4 pr-12 py-2 border border-gray-300 rounded focus:outline-none focus:border-primary transition-all text-sm font-medium bg-white"
             value={searchQuery}
             onChange={handleSearchChange}
@@ -378,12 +375,10 @@ const Header = () => {
             className="absolute right-0 top-0 h-full px-4 bg-gray-50 border-l border-gray-300 rounded-r hover:bg-gray-100 transition-colors">
             <Search size={18} className="text-gray-500" />
           </button>
-          
+
           {/* Dropdown */}
           {isSearchDropdownOpen && searchQuery.trim().length >= 2 && (
-            <div
-              className="absolute left-0 top-full mt-1 w-full bg-white rounded shadow-xl border border-gray-200 max-h-96 overflow-y-auto z-[60]"
-            >
+            <div className="absolute left-0 top-full mt-1 w-full bg-white rounded shadow-xl border border-gray-200 max-h-96 overflow-y-auto z-[60]">
               <SearchDropdown
                 results={searchResults}
                 loading={isSearchLoading}
@@ -526,6 +521,12 @@ const Header = () => {
             </div>
           </Link>
 
+          <Link
+            to="/enquiry"
+            className="md:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-white text-[11px] font-black uppercase tracking-wider hover:bg-primary/90 transition-colors">
+            <Send size={14} /> Enquiry
+          </Link>
+
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen(true)}
@@ -543,7 +544,7 @@ const Header = () => {
         <div className="relative">
           <input
             type="text"
-            placeholder="Search Plusway.com"
+            placeholder="Search plusway.in"
             className="w-full pl-10 pr-12 py-2.5 border border-gray-300 rounded focus:outline-none focus:border-primary transition-all text-sm font-medium bg-white"
             value={searchQuery}
             onChange={handleSearchChange}
@@ -555,8 +556,7 @@ const Header = () => {
           />
           <button
             onClick={handleSearch}
-            className="absolute right-0 top-0 h-full px-4 bg-gray-50 border-l border-gray-300 rounded-r hover:bg-gray-100 transition-colors"
-          >
+            className="absolute right-0 top-0 h-full px-4 bg-gray-50 border-l border-gray-300 rounded-r hover:bg-gray-100 transition-colors">
             <Send size={16} className="text-gray-500" />
           </button>
 
@@ -592,8 +592,7 @@ const Header = () => {
         aria-label="Main menu"
         className={`md:hidden fixed top-0 right-0 h-dvh w-[88%] max-w-88 bg-white shadow-2xl z-70 flex flex-col transition-transform duration-300 ease-out ${
           isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
-        }`}
-      >
+        }`}>
         {/* Drawer header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-secondary text-white">
           <Link
@@ -638,12 +637,18 @@ const Header = () => {
             ) : (
               <div className="grid grid-cols-2 gap-2">
                 <button
-                  onClick={() => { closeMobileMenu(); navigate("/login"); }}
+                  onClick={() => {
+                    closeMobileMenu();
+                    navigate("/login");
+                  }}
                   className="flex items-center justify-center gap-1.5 bg-primary text-white font-black py-2.5 rounded text-[11px] uppercase tracking-widest hover:bg-orange-600 transition-colors">
                   <LogIn size={14} /> Sign In
                 </button>
                 <button
-                  onClick={() => { closeMobileMenu(); navigate("/signup"); }}
+                  onClick={() => {
+                    closeMobileMenu();
+                    navigate("/signup");
+                  }}
                   className="flex items-center justify-center gap-1.5 bg-white border border-gray-300 text-secondary font-black py-2.5 rounded text-[11px] uppercase tracking-widest hover:bg-gray-100 transition-colors">
                   <UserPlus size={14} /> Register
                 </button>
@@ -656,7 +661,7 @@ const Header = () => {
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search Plusway.com"
+                placeholder="Search plusway.in"
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded focus:outline-none focus:border-primary transition-all text-sm font-medium bg-white"
                 value={searchQuery}
                 onChange={handleSearchChange}
@@ -668,9 +673,7 @@ const Header = () => {
               />
               {/* Dropdown for Mobile */}
               {isSearchDropdownOpen && searchQuery.trim().length >= 2 && (
-                <div
-                  className="absolute left-0 top-full mt-1 w-full bg-white rounded shadow-xl border border-gray-200 max-h-60 overflow-y-auto z-[60]"
-                >
+                <div className="absolute left-0 top-full mt-1 w-full bg-white rounded shadow-xl border border-gray-200 max-h-60 overflow-y-auto z-[60]">
                   <SearchDropdown
                     results={searchResults}
                     loading={isSearchLoading}
@@ -737,7 +740,8 @@ const Header = () => {
               onClick={closeMobileMenu}
               className="flex items-center justify-between px-4 py-3 text-sm font-bold text-secondary hover:bg-gray-50 transition-colors border-b border-gray-50">
               <span className="flex items-center gap-3">
-                <RefreshCw size={16} className="text-primary" /> Replacement Requests
+                <RefreshCw size={16} className="text-primary" /> Replacement
+                Requests
               </span>
               <ChevronRight size={16} className="text-gray-300" />
             </Link>
@@ -746,16 +750,8 @@ const Header = () => {
               onClick={closeMobileMenu}
               className="flex items-center justify-between px-4 py-3 text-sm font-bold text-secondary hover:bg-gray-50 transition-colors border-b border-gray-50">
               <span className="flex items-center gap-3">
-                <HelpCircle size={16} className="text-primary" /> Plusway Support
-              </span>
-              <ChevronRight size={16} className="text-gray-300" />
-            </Link>
-            <Link
-              to="/enquiry"
-              onClick={closeMobileMenu}
-              className="flex items-center justify-between px-4 py-3 text-sm font-bold text-secondary hover:bg-gray-50 transition-colors border-b border-gray-50">
-              <span className="flex items-center gap-3">
-                <Send size={16} className="text-primary" /> Submit an Enquiry
+                <HelpCircle size={16} className="text-primary" /> Plusway
+                Support
               </span>
               <ChevronRight size={16} className="text-gray-300" />
             </Link>
@@ -766,7 +762,11 @@ const Header = () => {
             <p className="text-[10px] uppercase font-black tracking-widest text-gray-400 mb-2">
               Language
             </p>
-            <LanguageSelector variant="compact" showFlag={true} showNative={true} />
+            <LanguageSelector
+              variant="compact"
+              showFlag={true}
+              showNative={true}
+            />
           </div>
 
           {/* Contact */}
@@ -833,10 +833,7 @@ const Header = () => {
                               className="w-8 h-8 object-contain rounded-md bg-gray-50 p-1 shrink-0"
                             />
                           ) : (
-                            <Tag
-                              size={16}
-                              className="text-primary shrink-0"
-                            />
+                            <Tag size={16} className="text-primary shrink-0" />
                           )}
                           <span className="truncate">{category.name}</span>
                           <ChevronRight

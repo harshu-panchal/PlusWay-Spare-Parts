@@ -49,34 +49,54 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Plusway.com */}
+          {/* plusway.in */}
           <div>
             <h4 className="font-black text-secondary uppercase tracking-widest text-xs pb-2 border-b-2 border-primary w-fit mb-6">
-              Plusway.com
+              plusway.in
             </h4>
             <ul className="space-y-3 text-[13px] font-bold text-gray-500">
               <li>
-                <Link to="/about" className={"hover:text-primary transition-colors cursor-pointer"}>
+                <Link
+                  to="/about"
+                  className={
+                    "hover:text-primary transition-colors cursor-pointer"
+                  }>
                   About us
                 </Link>
               </li>
               <li>
-                <Link to="/contact" className={"hover:text-primary transition-colors cursor-pointer"}>
+                <Link
+                  to="/contact"
+                  className={
+                    "hover:text-primary transition-colors cursor-pointer"
+                  }>
                   Contact us
                 </Link>
               </li>
               <li>
-                <Link to="/career" className={"hover:text-primary transition-colors cursor-pointer"}>
+                <Link
+                  to="/career"
+                  className={
+                    "hover:text-primary transition-colors cursor-pointer"
+                  }>
                   Career with us
                 </Link>
               </li>
               <li>
-                <Link to="/sitemap" className={"hover:text-primary transition-colors cursor-pointer"}>
+                <Link
+                  to="/sitemap"
+                  className={
+                    "hover:text-primary transition-colors cursor-pointer"
+                  }>
                   Sitemap
                 </Link>
               </li>
               <li>
-                <Link to="/mobile-directory" className={"hover:text-primary transition-colors cursor-pointer"}>
+                <Link
+                  to="/mobile-directory"
+                  className={
+                    "hover:text-primary transition-colors cursor-pointer"
+                  }>
                   Mobile Directory
                 </Link>
               </li>
@@ -90,27 +110,47 @@ const Footer = () => {
             </h4>
             <ul className="space-y-3 text-[13px] font-bold text-gray-500">
               <li>
-                <Link to="/support" className={"hover:text-primary transition-colors cursor-pointer"}>
+                <Link
+                  to="/support"
+                  className={
+                    "hover:text-primary transition-colors cursor-pointer"
+                  }>
                   Contact Customer Support
                 </Link>
               </li>
               <li>
-                <Link to="/enquiry" className={"hover:text-primary transition-colors cursor-pointer"}>
+                <Link
+                  to="/enquiry"
+                  className={
+                    "hover:text-primary transition-colors cursor-pointer"
+                  }>
                   Submit an Enquiry
                 </Link>
               </li>
               <li>
-                <Link to="/track-order" className={"hover:text-primary transition-colors cursor-pointer"}>
+                <Link
+                  to="/track-order"
+                  className={
+                    "hover:text-primary transition-colors cursor-pointer"
+                  }>
                   Track Order Status
                 </Link>
               </li>
               <li>
-                <Link to="/terms-conditions" className={"hover:text-primary transition-colors cursor-pointer"}>
+                <Link
+                  to="/terms-conditions"
+                  className={
+                    "hover:text-primary transition-colors cursor-pointer"
+                  }>
                   Terms & Conditions
                 </Link>
               </li>
               <li>
-                <Link to="/warranty" className={"hover:text-primary transition-colors cursor-pointer"}>
+                <Link
+                  to="/warranty"
+                  className={
+                    "hover:text-primary transition-colors cursor-pointer"
+                  }>
                   Warranty T&C
                 </Link>
               </li>
@@ -124,7 +164,11 @@ const Footer = () => {
             </h4>
             <ul className="space-y-3 text-[13px] font-bold text-gray-500">
               <li>
-                <Link to="/how-to-manuals" className={"hover:text-primary transition-colors cursor-pointer"}>
+                <Link
+                  to="/how-to-manuals"
+                  className={
+                    "hover:text-primary transition-colors cursor-pointer"
+                  }>
                   How to Manual's
                 </Link>
               </li>
@@ -135,7 +179,7 @@ const Footer = () => {
         {/* Copyright Section */}
         <div className="mt-16 pt-8 border-t border-gray-100 flex flex-col items-center gap-4">
           <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] text-center">
-            © 2004 - 2026 Plusway.com. By Elcotek
+            © 2004 - 2026 plusway.in. By Elcotek
           </p>
           <div className="flex gap-4 opacity-50 grayscale hover:grayscale-0 transition-all duration-500 text-[10px] font-bold text-gray-400">
             VISA | MASTERCARD | UPI | NET BANKING

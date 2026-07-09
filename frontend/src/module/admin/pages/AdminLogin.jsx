@@ -27,20 +27,17 @@ const AdminLogin = () => {
     setError(null);
 
     try {
-      const { data } = await axios.post(
-        API_ENDPOINTS.ADMIN_LOGIN,
-        {
-          email,
-          password,
-        },
-      );
+      const { data } = await axios.post(API_ENDPOINTS.ADMIN_LOGIN, {
+        email,
+        password,
+      });
 
       localStorage.setItem("adminToken", data.token);
       localStorage.setItem("adminInfo", JSON.stringify(data));
-      
+
       // Register FCM token
       registerFCMToken(true);
-      
+
       navigate("/admin");
     } catch (err) {
       setError(
@@ -97,7 +94,7 @@ const AdminLogin = () => {
                   <input
                     type="email"
                     required
-                    placeholder="admin@plusway.com"
+                    placeholder="admin@plusway.in"
                     className="w-full pl-12 pr-4 py-4 bg-[#0F172A] border border-gray-800 rounded-2xl focus:outline-none focus:border-blue-500 text-white transition-all placeholder:text-gray-700"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}

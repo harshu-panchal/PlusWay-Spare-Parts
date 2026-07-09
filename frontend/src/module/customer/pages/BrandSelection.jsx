@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Search, ChevronRight } from "lucide-react";
 
-
 import axios from "axios";
 import { API_ENDPOINTS } from "../../../config/api";
 import LazyImage from "../../../components/LazyImage";
@@ -29,9 +28,13 @@ const BrandSelection = () => {
     fetchBrands();
   }, []);
 
-  const filteredBrands = brands.filter(b => {
-    const matchesSearch = b.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesLetter = selectedLetter ? b.name.toUpperCase().startsWith(selectedLetter) : true;
+  const filteredBrands = brands.filter((b) => {
+    const matchesSearch = b.name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const matchesLetter = selectedLetter
+      ? b.name.toUpperCase().startsWith(selectedLetter)
+      : true;
     return matchesSearch && matchesLetter;
   });
 
@@ -89,7 +92,9 @@ const BrandSelection = () => {
                   alt={brand.name}
                   className="max-w-full max-h-[80px] object-contain transition-all duration-300 transform group-hover:scale-110"
                 />
-                <span className="text-xs font-bold text-gray-400 group-hover:text-primary transition-colors">{brand.name}</span>
+                <span className="text-xs font-bold text-gray-400 group-hover:text-primary transition-colors">
+                  {brand.name}
+                </span>
               </Link>
             ))}
           </div>
@@ -104,7 +109,9 @@ const BrandSelection = () => {
             {alphabets.map((char) => (
               <button
                 key={char}
-                onClick={() => setSelectedLetter(selectedLetter === char ? null : char)}
+                onClick={() =>
+                  setSelectedLetter(selectedLetter === char ? null : char)
+                }
                 className={`w-8 h-8 flex items-center justify-center border font-bold transition-all rounded ${
                   selectedLetter === char
                     ? "bg-primary text-white border-primary"
@@ -144,7 +151,7 @@ const BrandSelection = () => {
             <div className="flex flex-col items-center">
               <div className="h-28 flex items-center justify-center mb-4">
                 <LazyImage
-                  src="https://www.Plusway.com/temp/images/search_v3/brand_search.jpg"
+                  src="https://www.plusway.in/temp/images/search_v3/brand_search.jpg"
                   alt="Select Brand"
                   className="max-h-full object-contain opacity-80"
                 />
@@ -161,7 +168,7 @@ const BrandSelection = () => {
             <div className="flex flex-col items-center">
               <div className="h-28 flex items-center justify-center mb-4">
                 <LazyImage
-                  src="https://www.Plusway.com/temp/images/search_v3/model_search.jpg"
+                  src="https://www.plusway.in/temp/images/search_v3/model_search.jpg"
                   alt="Select Model"
                   className="max-h-full object-contain opacity-80"
                 />
@@ -178,7 +185,7 @@ const BrandSelection = () => {
             <div className="flex flex-col items-center">
               <div className="h-28 flex items-center justify-center mb-4">
                 <LazyImage
-                  src="https://www.Plusway.com/temp/images/search_v3/part_search.jpg"
+                  src="https://www.plusway.in/temp/images/search_v3/part_search.jpg"
                   alt="Select Part"
                   className="max-h-full object-contain opacity-80"
                 />

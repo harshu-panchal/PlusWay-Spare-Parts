@@ -29,13 +29,14 @@ git push origin main
 
 In the Vercel project settings, add the following environment variable:
 
-| Name | Value | Description |
-|------|-------|-------------|
+| Name           | Value                          | Description                     |
+| -------------- | ------------------------------ | ------------------------------- |
 | `VITE_API_URL` | `https://your-backend-api.com` | Your production backend API URL |
 
-**Example**: If your backend is at `https://api.plusway.com`, set:
+**Example**: If your backend is at `https://api.plusway.in`, set:
+
 ```
-VITE_API_URL=https://api.plusway.com
+VITE_API_URL=https://api.plusway.in
 ```
 
 > [!IMPORTANT]
@@ -44,6 +45,7 @@ VITE_API_URL=https://api.plusway.com
 ### 4. Deploy
 
 Click **"Deploy"** and Vercel will:
+
 - Install dependencies
 - Build your application
 - Deploy to a production URL
@@ -147,6 +149,7 @@ Visit `http://localhost:4173` to test the production build locally.
 ## Automatic Deployments
 
 Vercel automatically deploys:
+
 - **Production**: Commits to `main` branch
 - **Preview**: Commits to other branches and pull requests
 
