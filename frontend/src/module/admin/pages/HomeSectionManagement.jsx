@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { API_ENDPOINTS, API_BASE_URL } from "../../../config/api";
-import { Plus, Edit2, Trash2, Save, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Edit2, Trash2, Save, X } from "lucide-react";
 
 const HomeSectionManagement = () => {
     const [sections, setSections] = useState([]);
@@ -28,10 +28,13 @@ const HomeSectionManagement = () => {
                 axios.get(API_ENDPOINTS.ADMIN_HOME_SECTIONS, {
                     headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
                 }),
-                axios.get(`${API_BASE_URL}/api/customer/categories`), // Reusing public endpoint for ease
+                axios.get(`${API_BASE_URL}/api/customer/categories?all=true`),
             ]);
             setSections(sectionsRes.data);
-            setCategories(categoriesRes.data.filter(c => !c.parent)); // Only parent categories or all? Let's show all
+            const allCategories = Array.isArray(categoriesRes.data)
+                ? categoriesRes.data
+                : categoriesRes.data?.categories || [];
+            setCategories(allCategories);
             setLoading(false);
         } catch (error) {
             console.error("Error fetching data:", error);

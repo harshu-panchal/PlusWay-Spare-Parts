@@ -28,6 +28,7 @@ const ProductListing = () => {
   const selectedCategory = categories.find((c) => c._id === categoryId);
 
   const [sortBy, setSortBy] = useState("relevance");
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
   // Chunked products fetcher. The hook handles page state + appending.
   const fetchProductsPage = useCallback(
@@ -131,6 +132,53 @@ const ProductListing = () => {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
+          {/* Filters - Mobile */}
+          <div className="lg:hidden">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setIsMobileFiltersOpen((prev) => !prev)}
+                className="w-full p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                <span className="font-black text-secondary uppercase text-sm tracking-widest">
+                  Filters
+                </span>
+                <Filter size={16} className="text-gray-500" />
+              </button>
+
+              {isMobileFiltersOpen && (
+                <div className="p-4 max-h-64 overflow-y-auto">
+                  <div className="space-y-3">
+                    <h3 className="font-bold text-gray-900 text-sm">Models</h3>
+                    {loadingModels ? (
+                      <p className="text-sm text-gray-500">Loading filters...</p>
+                    ) : (
+                      <div className="space-y-2">
+                        <Link
+                          to={`/products${categoryId ? `?category=${categoryId}` : ''}${keyword ? (categoryId ? '&' : '?') + `keyword=${keyword}` : ''}`}
+                          className={`block text-sm ${!modelId ? "font-bold text-primary" : "text-gray-600 hover:text-primary"}`}>
+                          All Models
+                        </Link>
+                        {models.map((model) => {
+                          let url = `/products?model=${model._id}`;
+                          if (categoryId) url += `&category=${categoryId}`;
+                          if (keyword) url += `&keyword=${keyword}`;
+                          return (
+                            <Link
+                              key={model._id}
+                              to={url}
+                              className={`block text-sm ${modelId === model._id ? "font-bold text-primary" : "text-gray-600 hover:text-primary"}`}>
+                              {model.name}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Filters Sidebar - Desktop */}
           <aside className="hidden lg:block w-80 shrink-0">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-4">
