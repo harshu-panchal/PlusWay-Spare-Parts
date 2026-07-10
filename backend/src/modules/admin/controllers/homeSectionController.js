@@ -1,19 +1,42 @@
 import HomeSection from '../../../models/HomeSection.js';
 
+const DISPLAY_TYPE_MODEL = {
+    brands: 'Brand',
+    categories: 'Category',
+    models: 'Model',
+    products: 'Product',
+};
+
+const populateSection = async (section) => {
+    const model = DISPLAY_TYPE_MODEL[section.displayType] || 'Category';
+
+    if (section.displayType === 'models') {
+        return section.populate({
+            path: 'categories',
+            model: 'Model',
+            populate: { path: 'brand', select: 'name logo' },
+        });
+    }
+
+    return section.populate({ path: 'categories', model });
+};
+
 // @route   POST /api/admin/home-sections
 // @access  Private/Admin
 export const createHomeSection = async (req, res) => {
     try {
-        const { title, categories, order, isActive, productsPerRow } = req.body;
+        const { title, displayType, categories, order, isActive, productsPerRow } = req.body;
         const section = new HomeSection({
             title,
+            displayType: displayType || 'categories',
             categories,
             order,
             isActive,
             productsPerRow: productsPerRow || 4,
         });
         const createdSection = await section.save();
-        res.status(201).json(createdSection);
+        const populated = await populateSection(createdSection);
+        res.status(201).json(populated);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -23,8 +46,11 @@ export const createHomeSection = async (req, res) => {
 // @access  Private/Admin
 export const getHomeSections = async (req, res) => {
     try {
-        const sections = await HomeSection.find({}).populate('categories').sort({ order: 1 });
-        res.json(sections);
+        const sections = await HomeSection.find({}).sort({ order: 1 });
+        const populatedSections = await Promise.all(
+            sections.map((section) => populateSection(section)),
+        );
+        res.json(populatedSections);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -34,30 +60,34 @@ export const getHomeSections = async (req, res) => {
 // @access  Public
 export const getActiveHomeSections = async (req, res) => {
     try {
-        const sections = await HomeSection.find({ isActive: true }).populate('categories').sort({ order: 1 });
-        res.json(sections);
+        const sections = await HomeSection.find({ isActive: true }).sort({ order: 1 });
+        const populatedSections = await Promise.all(
+            sections.map((section) => populateSection(section)),
+        );
+        res.json(populatedSections);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
 
-
 // @route   PUT /api/admin/home-sections/:id
 // @access  Private/Admin
 export const updateHomeSection = async (req, res) => {
     try {
-        const { title, categories, order, isActive, productsPerRow } = req.body;
+        const { title, displayType, categories, order, isActive, productsPerRow } = req.body;
         const section = await HomeSection.findById(req.params.id);
 
         if (section) {
             section.title = title;
+            section.displayType = displayType || section.displayType || 'categories';
             section.categories = categories;
             section.order = order ?? section.order;
             section.isActive = isActive ?? section.isActive;
             section.productsPerRow = productsPerRow ?? section.productsPerRow;
 
             const updatedSection = await section.save();
-            res.json(updatedSection);
+            const populated = await populateSection(updatedSection);
+            res.json(populated);
         } else {
             res.status(404).json({ message: 'Section not found' });
         }

@@ -27,6 +27,7 @@ const ModelSelection = lazy(() => import("./module/customer/pages/ModelSelection
 const ProductTypeSelection = lazy(() => import("./module/customer/pages/ProductTypeSelection"));
 const CategoryRedirect = lazy(() => import("./module/customer/pages/CategoryRedirect"));
 const ProductListing = lazy(() => import("./module/customer/pages/ProductListing"));
+const HomeSectionCategories = lazy(() => import("./module/customer/pages/HomeSectionCategories"));
 const ProductDetail = lazy(() => import("./module/customer/pages/ProductDetail"));
 const OrderDetails = lazy(() => import("./module/customer/pages/OrderDetails"));
 const Cart = lazy(() => import("./module/customer/pages/Cart"));
@@ -124,6 +125,7 @@ const App = () => {
               <Route path="brand/:brandId/models" element={<ModelSelection />} />
               <Route path="model/:modelId/products" element={<ProductTypeSelection />} />
               <Route path="products" element={<ProductListing />} />
+              <Route path="section/:sectionId" element={<HomeSectionCategories />} />
               <Route path="product/:id" element={<ProductDetail />} />
               <Route path=":slug.html" element={<ProductDetail />} />
               <Route path="cart" element={<Cart />} />

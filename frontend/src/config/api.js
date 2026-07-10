@@ -3,8 +3,11 @@
  * Centralized configuration for API endpoints
  */
 
-// Get API base URL from environment variable, fallback to localhost for development
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+// In dev, use Vite proxy (`/api`) when VITE_API_URL is not set.
+// In production, set VITE_API_URL to your deployed backend URL.
+export const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.DEV ? "" : "http://localhost:5001");
 
 /**
  * Helper function to construct full API URLs

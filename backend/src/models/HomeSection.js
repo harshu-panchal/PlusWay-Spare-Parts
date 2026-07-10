@@ -5,6 +5,11 @@ const homeSectionSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    displayType: {
+        type: String,
+        enum: ['brands', 'categories', 'models', 'products'],
+        default: 'categories',
+    },
     categories: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Category',

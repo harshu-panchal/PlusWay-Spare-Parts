@@ -2,9 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ChevronRight,
-  Zap,
-  ShieldCheck,
-  Truck,
   ChevronLeft,
 } from "lucide-react";
 
@@ -21,25 +18,6 @@ const STATIC_TEXTS = [
   "No Sub Banner",
   "Recently Viewed",
 ];
-
-const CategoryCard = ({ category }) => {
-  return (
-    <Link
-      to={`/products?category=${category._id}`}
-      className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:border-primary transition-all group flex flex-col items-center">
-      <div className="w-24 h-24 sm:w-28 sm:h-28 mb-3 overflow-hidden relative flex-shrink-0">
-        <LazyImage
-          src={category.image}
-          alt={category.name}
-          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
-        />
-      </div>
-      <h3 className="text-center font-bold text-[11px] text-secondary uppercase leading-tight group-hover:text-primary tracking-tight">
-        {category.name}
-      </h3>
-    </Link>
-  );
-};
 
 const BrandGrid = ({ brands, t }) => (
   <div className="bg-white p-0 md:p-8 rounded shadow-sm border border-gray-100 mb-12">
@@ -152,54 +130,24 @@ const Home = () => {
 
       {/* Dynamic Home Sections */}
       {Array.isArray(homeSections) &&
-        homeSections.map((section) => {
-          const getGridColsClass = (num) => {
-            const n = num || 4; // default
-            switch (n) {
-              case 2:
-                return "lg:grid-cols-2";
-              case 3:
-                return "lg:grid-cols-3";
-              case 4:
-                return "lg:grid-cols-4";
-              case 5:
-                return "lg:grid-cols-5";
-              case 6:
-                return "lg:grid-cols-6";
-              case 7:
-                return "lg:grid-cols-7";
-              case 8:
-                return "lg:grid-cols-8";
-              case 9:
-                return "lg:grid-cols-9";
-              case 10:
-                return "lg:grid-cols-10";
-              default:
-                return "lg:grid-cols-4";
-            }
-          };
-          const sectionCategories = Array.isArray(section.categories)
-            ? section.categories
-            : [];
-
-          return (
-            <div
-              key={section._id}
-              className="max-w-7xl mx-auto px-[2%] md:px-4 mb-12">
-              <div className="bg-gray-50 px-4 py-3 border-b-2 border-primary mb-6">
-                <h2 className="text-sm font-black text-secondary uppercase tracking-widest">
+        homeSections.map((section) => (
+          <div
+            key={section._id}
+            className="max-w-7xl mx-auto px-[2%] md:px-4 mb-6">
+            <div className="bg-gray-50 px-4 py-3 border-b-2 border-primary">
+              <Link
+                to={`/section/${section._id}`}
+                className="inline-flex items-center gap-2 group">
+                <h2 className="text-sm font-black text-secondary uppercase tracking-widest group-hover:text-primary transition-colors">
                   {section.title}
                 </h2>
-              </div>
-              <div
-                className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 ${getGridColsClass(section.productsPerRow)} gap-4`}>
-                {sectionCategories.map((cat) => (
-                  <CategoryCard key={cat._id} category={cat} />
-                ))}
-              </div>
+                <span className="text-xs font-bold text-gray-400 group-hover:text-primary transition-colors">
+                  View all
+                </span>
+              </Link>
             </div>
-          );
-        })}
+          </div>
+        ))}
 
       {/* Brands Selection */}
       <div className="max-w-7xl mx-auto px-[2%] md:px-4">
