@@ -132,7 +132,8 @@ const ProductListing = () => {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Filters - Mobile */}
+          {/* Filters - Mobile (hidden when viewing a specific model) */}
+          {!modelId && (
           <div className="lg:hidden">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <button
@@ -178,8 +179,10 @@ const ProductListing = () => {
               )}
             </div>
           </div>
+          )}
 
-          {/* Filters Sidebar - Desktop */}
+          {/* Filters Sidebar - Desktop (hidden when viewing a specific model) */}
+          {!modelId && (
           <aside className="hidden lg:block w-80 shrink-0">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-4">
               <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
@@ -216,6 +219,7 @@ const ProductListing = () => {
               </div>
             </div>
           </aside>
+          )}
 
           {/* Main Content */}
           <div className="flex-1">
