@@ -350,15 +350,15 @@ const Header = () => {
       </div>
 
       {/* Main Header */}
-      <div className="max-w-7xl mx-auto px-[2%] md:px-4 py-4 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-[2%] md:px-4 py-2 md:py-4 flex items-center gap-2 md:gap-4">
         {/* Logo */}
-        <Link to="/" className="flex-shrink-0">
-          <div className="h-10 md:h-12 flex items-center bg-secondary px-4 rounded text-white font-black italic tracking-tighter text-xl">
+        <Link to="/" className="shrink-0">
+          <div className="h-8 md:h-12 flex items-center bg-secondary px-3 md:px-4 rounded text-white font-black italic tracking-tighter text-base md:text-xl">
             PLUSWAY
           </div>
         </Link>
 
-        {/* Search Bar */}
+        {/* Search Bar — desktop */}
         <div
           className="flex-1 max-w-2xl relative hidden md:block group"
           ref={searchDropdownRef}>
@@ -389,8 +389,42 @@ const Header = () => {
           )}
         </div>
 
+        {/* Search Bar — mobile (inline) */}
+        <div
+          className="flex-1 min-w-0 relative md:hidden"
+          ref={mobileSearchDropdownRef}>
+          <input
+            type="text"
+            placeholder="Search..."
+            className="w-full pl-8 pr-9 py-1.5 border border-gray-300 rounded focus:outline-none focus:border-primary transition-all text-xs font-medium bg-white"
+            value={searchQuery}
+            onChange={handleSearchChange}
+            onKeyDown={handleSearch}
+          />
+          <Search
+            size={14}
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+          />
+          <button
+            onClick={handleSearch}
+            className="absolute right-0 top-0 h-full px-2.5 bg-gray-50 border-l border-gray-300 rounded-r hover:bg-gray-100 transition-colors">
+            <Search size={14} className="text-gray-500" />
+          </button>
+
+          {isSearchDropdownOpen && searchQuery.trim().length >= 2 && (
+            <div className="absolute left-0 top-full mt-1 w-full bg-white rounded shadow-xl border border-gray-200 max-h-60 overflow-y-auto z-[60]">
+              <SearchDropdown
+                results={searchResults}
+                loading={isSearchLoading}
+                onSelectModel={handleSelectModel}
+                onSelectProduct={handleSelectProduct}
+              />
+            </div>
+          )}
+        </div>
+
         {/* Actions */}
-        <div className="flex items-center gap-4 md:gap-8">
+        <div className="flex items-center gap-2 md:gap-8 shrink-0">
           {/* Account Dropdown */}
           <div className="relative group/account hidden md:block">
             <div
@@ -521,55 +555,15 @@ const Header = () => {
             </div>
           </Link>
 
-          <Link
-            to="/enquiry"
-            className="md:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary text-white text-[11px] font-black uppercase tracking-wider hover:bg-primary/90 transition-colors">
-            <Send size={14} /> Enquiry
-          </Link>
-
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen(true)}
             aria-label="Open menu"
             aria-expanded={isMobileMenuOpen}
             aria-controls="mobile-nav-drawer"
-            className="md:hidden text-secondary p-1 -mr-1 rounded hover:bg-gray-100 transition-colors">
-            <Menu size={28} />
+            className="md:hidden text-secondary p-0.5 rounded hover:bg-gray-100 transition-colors">
+            <Menu size={22} />
           </button>
-        </div>
-      </div>
-
-      {/* Mobile Search Bar */}
-      <div className="md:hidden px-[2%] pb-3" ref={mobileSearchDropdownRef}>
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search plusway.in"
-            className="w-full pl-10 pr-12 py-2.5 border border-gray-300 rounded focus:outline-none focus:border-primary transition-all text-sm font-medium bg-white"
-            value={searchQuery}
-            onChange={handleSearchChange}
-            onKeyDown={handleSearch}
-          />
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-          />
-          <button
-            onClick={handleSearch}
-            className="absolute right-0 top-0 h-full px-4 bg-gray-50 border-l border-gray-300 rounded-r hover:bg-gray-100 transition-colors">
-            <Send size={16} className="text-gray-500" />
-          </button>
-
-          {isSearchDropdownOpen && searchQuery.trim().length >= 2 && (
-            <div className="absolute left-0 top-full mt-1 w-full bg-white rounded shadow-xl border border-gray-200 max-h-60 overflow-y-auto z-[60]">
-              <SearchDropdown
-                results={searchResults}
-                loading={isSearchLoading}
-                onSelectModel={handleSelectModel}
-                onSelectProduct={handleSelectProduct}
-              />
-            </div>
-          )}
         </div>
       </div>
 
@@ -794,21 +788,30 @@ const Header = () => {
         )}
       </aside>
 
-      {/* Navigation Drawer Trigger Style */}
-      <div className="bg-secondary text-white hidden md:block border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-[2%] md:px-4 flex items-center h-10">
+      {/* Category navigation bar */}
+      <div className="bg-secondary text-white border-b border-white/10">
+        <div className="max-w-7xl mx-auto md:px-4 flex items-center h-8 md:h-10 min-w-0">
           {/* "All Categories" dropdown trigger */}
-          <div ref={categoriesMenuRef} className="relative h-full">
+          <div ref={categoriesMenuRef} className="relative h-full shrink-0">
             <button
               type="button"
               onClick={() => setIsCategoriesMenuOpen((o) => !o)}
               aria-haspopup="true"
               aria-expanded={isCategoriesMenuOpen}
-              className="flex items-center gap-2 bg-primary hover:bg-primary/90 h-full px-6 font-black text-xs uppercase tracking-widest transition-colors">
-              <Menu size={16} /> All Categories
+              aria-label="All Categories"
+              className="flex items-center gap-1 md:gap-2 bg-primary hover:bg-primary/90 h-full px-2.5 md:px-6 font-black text-[9px] md:text-xs uppercase tracking-wider md:tracking-widest transition-colors">
+              <Menu size={14} className="md:hidden" />
+              <Menu size={16} className="hidden md:block" />
+              <span className="hidden md:inline">All Categories</span>
+              <ChevronDown
+                size={12}
+                className={`md:hidden transition-transform ${
+                  isCategoriesMenuOpen ? "rotate-180" : ""
+                }`}
+              />
               <ChevronDown
                 size={14}
-                className={`transition-transform ${
+                className={`hidden md:block transition-transform ${
                   isCategoriesMenuOpen ? "rotate-180" : ""
                 }`}
               />
@@ -853,10 +856,10 @@ const Header = () => {
             )}
           </div>
 
-          <div className="flex gap-8 px-8 items-center h-full text-[11px] font-black uppercase tracking-widest overflow-x-auto no-scrollbar whitespace-nowrap">
+          <div className="flex-1 min-w-0 flex gap-3 md:gap-8 px-2 md:px-8 items-center h-full text-[9px] md:text-[11px] font-black uppercase tracking-wide md:tracking-widest overflow-x-auto no-scrollbar whitespace-nowrap">
             <Link
               to="/brand-selection"
-              className="hover:text-primary transition-colors">
+              className="hover:text-primary transition-colors shrink-0">
               Brands
             </Link>
             {Array.isArray(categories) &&
@@ -864,7 +867,7 @@ const Header = () => {
                 <Link
                   key={category._id}
                   to={`/products?category=${category._id}`}
-                  className="hover:text-primary transition-colors">
+                  className="hover:text-primary transition-colors shrink-0">
                   {category.name}
                 </Link>
               ))}
@@ -872,8 +875,11 @@ const Header = () => {
 
           <Link
             to="/enquiry"
-            className="ml-auto flex items-center gap-1.5 bg-primary hover:bg-primary/90 h-full px-6 font-black text-[11px] uppercase tracking-widest transition-colors shrink-0">
-            <Send size={14} /> Enquiry
+            aria-label="Register"
+            className="flex items-center gap-1 bg-primary hover:bg-primary/90 h-full px-2.5 md:px-6 font-black text-[9px] md:text-[11px] uppercase tracking-wider md:tracking-widest transition-colors shrink-0">
+            <Send size={12} className="md:hidden" />
+            <Send size={14} className="hidden md:block" />
+            <span className="hidden md:inline">Register</span>
           </Link>
         </div>
       </div>
