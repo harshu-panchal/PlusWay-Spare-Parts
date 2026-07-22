@@ -56,7 +56,7 @@ const LeadForm = () => {
           <div className="flex items-center gap-3 mb-4">
             <UserPlus className="w-10 h-10" />
             <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tight">
-              Enquiry Form
+              Registration
             </h1>
           </div>
           <p className="text-lg md:text-xl text-white/90 max-w-2xl">
