@@ -34,12 +34,12 @@ const getGridColsClass = (num) => {
   }
 };
 
-const SectionItemCard = ({ item, displayType }) => {
+const SectionItemCard = ({ item, displayType, filterDeviceType }) => {
   switch (displayType) {
     case "brands":
       return (
         <Link
-          to={`/brand/${item._id}/models`}
+          to={filterDeviceType ? `/products?brand=${item._id}&deviceType=${encodeURIComponent(filterDeviceType)}` : `/brand/${item._id}/models`}
           className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:border-primary transition-all group flex flex-col items-center">
           <div className="w-24 h-24 sm:w-28 sm:h-28 mb-3 overflow-hidden relative shrink-0 flex items-center justify-center">
             <LazyImage
@@ -188,6 +188,7 @@ const HomeSectionCategories = () => {
                 key={item._id}
                 item={item}
                 displayType={displayType}
+                filterDeviceType={section.filterDeviceType}
               />
             ))}
           </div>

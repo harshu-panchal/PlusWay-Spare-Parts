@@ -85,6 +85,11 @@ const productSchema = new mongoose.Schema({
   productType: {
     type: String, // e.g., "LCD with Touch Screen", "Battery"
   },
+  deviceType: {
+    type: String,
+    enum: ['Mobile', 'Tablet', 'Smartwatch', 'Accessories', 'Other'],
+    default: 'Mobile',
+  },
   rating: {
     type: Number,
     default: 0,
@@ -119,6 +124,10 @@ const productSchema = new mongoose.Schema({
     countryOfOrigin: String,
     packer: String,
   },
+  variantType: {
+    type: String,
+    default: "Color",
+  },
   colors: [{
     type: String,
   }],
@@ -142,6 +151,7 @@ productSchema.index({ category: 1 });
 productSchema.index({ brand: 1 });
 productSchema.index({ model: 1 });
 productSchema.index({ productType: 1 });
+productSchema.index({ deviceType: 1 });
 productSchema.index({ countInStock: 1 }); // Useful for filtering out-of-stock items if needed
 
 const Product = mongoose.model('Product', productSchema);

@@ -80,6 +80,7 @@ export const getProducts = asyncHandler(async (req, res) => {
         // OR if the user sends 'productType=LCD...'
     }
     if (req.query.productType) filters.productType = req.query.productType;
+    if (req.query.deviceType) filters.deviceType = req.query.deviceType;
 
 
 

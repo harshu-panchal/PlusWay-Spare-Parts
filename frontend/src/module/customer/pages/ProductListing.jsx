@@ -18,6 +18,8 @@ const ProductListing = () => {
   // Accept both ?category= (used by header / category links) and ?type= (legacy)
   const categoryId = queryParams.get("category") || queryParams.get("type");
   const keyword = queryParams.get("keyword");
+  const brandId = queryParams.get("brand");
+  const deviceType = queryParams.get("deviceType");
 
   const [models, setModels] = useState([]);
   const [brands, setBrands] = useState([]);
@@ -37,6 +39,8 @@ const ProductListing = () => {
       if (modelId) url += `model=${modelId}&`;
       if (categoryId) url += `category=${categoryId}&`;
       if (keyword) url += `keyword=${keyword}&`;
+      if (brandId) url += `brand=${brandId}&`;
+      if (deviceType) url += `deviceType=${encodeURIComponent(deviceType)}&`;
       url += `sort=${sortBy}&_t=${Date.now()}`;
 
       const { data } = await axios.get(url);
@@ -48,7 +52,7 @@ const ProductListing = () => {
         total: data.total || items.length,
       };
     },
-    [modelId, categoryId, keyword, sortBy],
+    [modelId, categoryId, keyword, sortBy, brandId, deviceType],
   );
 
   const {
@@ -61,13 +65,13 @@ const ProductListing = () => {
   } = useInfiniteScroll({
     fetchPage: fetchProductsPage,
     // Any change to these filters resets the list and re-fetches page 1.
-    resetKey: `${modelId || ""}|${categoryId || ""}|${keyword || ""}|${sortBy}`,
+    resetKey: `${modelId || ""}|${categoryId || ""}|${keyword || ""}|${brandId || ""}|${deviceType || ""}|${sortBy}`,
   });
 
   // Whenever the filter/sort changes, jump back to the top of the listing.
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [modelId, categoryId, keyword, sortBy]);
+  }, [modelId, categoryId, keyword, sortBy, brandId, deviceType]);
 
   const [loadingModels, setLoadingModels] = useState(true);
 

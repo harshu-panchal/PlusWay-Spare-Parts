@@ -48,6 +48,7 @@ export const getProducts = async (req, res) => {
   const search = req.query.search || "";
   const category = req.query.category;
   const brand = req.query.brand;
+  const deviceType = req.query.deviceType;
 
   let filter = {};
 
@@ -75,6 +76,10 @@ export const getProducts = async (req, res) => {
 
   if (brand && brand !== "All") {
     filter.brand = brand;
+  }
+
+  if (deviceType && deviceType !== "All") {
+    filter.deviceType = deviceType;
   }
 
   const count = await Product.countDocuments(filter);
@@ -122,6 +127,8 @@ export const createProduct = async (req, res) => {
     model,
     category,
     productType,
+    deviceType,
+    variantType,
     countInStock,
     details,
     colors,
@@ -158,6 +165,8 @@ export const createProduct = async (req, res) => {
     model: model || undefined,
     category,
     productType,
+    deviceType,
+    variantType: variantType || "Color",
     // Product-level stock = sum of variant stocks when variants are provided
     countInStock: countInStock !== undefined ? countInStock
       : (colorVariants?.length ? colorVariants.reduce((sum, v) => sum + (Number(v.countInStock) || 0), 0) : 0),
@@ -242,7 +251,21 @@ export const updateProduct = async (req, res) => {
     if (req.body.code) product.code = req.body.code;
     // If explicitly empty string, maybe unset it? unique sparse index doesn't like "".
     if (req.body.code === "") product.code = undefined;
-    product.description = req.body.description || product.description;
+    if (req.body.description !== undefined) product.description = req.body.description;
+    if (req.body.price !== undefined) product.price = req.body.price;
+    if (req.body.wholesalePrice !== undefined) product.wholesalePrice = req.body.wholesalePrice;
+    if (req.body.wholesaleMinQty !== undefined) product.wholesaleMinQty = req.body.wholesaleMinQty;
+    if (req.body.mrp !== undefined) product.mrp = req.body.mrp;
+    if (req.body.cashback !== undefined) product.cashback = req.body.cashback;
+    if (req.body.images) product.images = req.body.images;
+    if (req.body.videoUrl !== undefined) product.videoUrl = req.body.videoUrl;
+    if (req.body.brand) product.brand = req.body.brand;
+    if (req.body.model) product.model = req.body.model;
+    if (req.body.category) product.category = req.body.category;
+    if (req.body.productType !== undefined) product.productType = req.body.productType;
+    if (req.body.deviceType !== undefined) product.deviceType = req.body.deviceType;
+    if (req.body.variantType !== undefined) product.variantType = req.body.variantType;
+    if (req.body.countInStock !== undefined) product.countInStock = req.body.countInStock;
 
     const incomingVariants = req.body.colorVariants;
     const hasVariants = Array.isArray(incomingVariants) && incomingVariants.filter(v => v.colorName?.trim()).length > 0;
@@ -555,6 +578,8 @@ export const bulkCreateProducts = async (req, res) => {
             if (row.description) existingProduct.description = String(row.description).split("\n").map(p => p.trim()).filter(Boolean);
             if (row.videoUrl !== undefined && row.videoUrl !== "") existingProduct.videoUrl = String(row.videoUrl).trim();
             if (row.productType) existingProduct.productType = String(row.productType).trim();
+            if (row.deviceType) existingProduct.deviceType = String(row.deviceType).trim();
+            if (row.variantType) existingProduct.variantType = String(row.variantType).trim();
           }
 
           await existingProduct.save();
@@ -641,6 +666,8 @@ export const bulkCreateProducts = async (req, res) => {
           model: modelId,
           category: categoryId,
           productType: row.productType ? String(row.productType).trim() : undefined,
+          deviceType: row.deviceType ? String(row.deviceType).trim() : undefined,
+          variantType: row.variantType ? String(row.variantType).trim() : "Color",
           price: firstVariant?.price ?? (row.price ? Number(row.price) : 0),
           mrp: firstVariant?.mrp ?? (row.mrp ? Number(row.mrp) : 0),
           wholesalePrice: firstVariant?.wholesalePrice ?? (row.wholesalePrice ? Number(row.wholesalePrice) : 0),
@@ -967,6 +994,8 @@ const BULK_PRODUCT_COLUMNS = [
   { header: "model", key: "model", width: 26 },
   { header: "category", key: "category", width: 18 },
   { header: "productType", key: "productType", width: 22 },
+  { header: "deviceType", key: "deviceType", width: 18 },
+  { header: "variantType", key: "variantType", width: 18 },
   { header: "videoUrl", key: "videoUrl", width: 40 },
   { header: "specs", key: "specs", width: 50 },
   { header: "inTheBox", key: "inTheBox", width: 30 },
@@ -1036,6 +1065,7 @@ const applyExcelSheetDropdowns = ({ ws, columns, brands, categories, models, val
   const brandColLetter = _colLetter(findCol("brand"));
   const modelColLetter = _colLetter(findCol("model"));
   const categoryColLetter = _colLetter(findCol("category"));
+  const deviceTypeColLetter = _colLetter(findCol("deviceType"));
 
   const brandEnd = Math.max(2, brands.length + 1);
   const categoryEnd = Math.max(2, categories.length + 1);
@@ -1066,6 +1096,16 @@ const applyExcelSheetDropdowns = ({ ws, columns, brands, categories, models, val
       errorTitle: "Invalid Category",
       error: "Please select a Category from the dropdown list (or leave blank to keep current).",
     };
+    if (deviceTypeColLetter) {
+      ws.getCell(`${deviceTypeColLetter}${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: ['"Mobile,Tablet,Smartwatch,Accessories,Other"'],
+        showErrorMessage: true,
+        errorTitle: "Invalid Device Type",
+        error: "Please select a valid Device Type.",
+      };
+    }
   }
 };
 
@@ -1168,6 +1208,8 @@ const EXPORT_BACKUP_COLUMNS = [
   { header: "descriptionPoints", key: "descriptionPoints", width: 40 },
   // Extras the bulk-create parser also reads (kept for true round-trip fidelity).
   { header: "productType", key: "productType", width: 22 },
+  { header: "deviceType", key: "deviceType", width: 18 },
+  { header: "variantType", key: "variantType", width: 18 },
   { header: "cashback", key: "cashback", width: 12 },
   { header: "colors", key: "colors", width: 22 },
   { header: "warrantyPeriod", key: "warrantyPeriod", width: 18 },
@@ -1265,6 +1307,8 @@ export const exportProductsBackup = async (req, res) => {
         highlights: _joinArr(p.details?.highlights, "|"),
         descriptionPoints: _joinArr(p.details?.descriptionPoints, "|"),
         productType: p.productType || "",
+        deviceType: p.deviceType || "",
+        variantType: p.variantType || "Color",
         cashback: p.cashback ?? "",
         colors: _joinArr(p.colors, ","),
         warrantyPeriod: p.details?.warranty?.period || "",
@@ -1507,6 +1551,8 @@ const PRODUCT_LEVEL_COLUMN_KEYS = new Set([
   "model",
   "category",
   "productType",
+  "deviceType",
+  "variantType",
   "videoUrl",
   "specs",
   "inTheBox",
@@ -1819,6 +1865,8 @@ export const bulkUpdateProductsBySku = async (req, res) => {
           }
 
           setStringField("productType", row.productType);
+          setStringField("deviceType", row.deviceType);
+          setStringField("variantType", row.variantType);
           setStringField("videoUrl", row.videoUrl);
 
           if (!isBlank(row.images)) {

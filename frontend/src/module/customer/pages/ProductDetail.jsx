@@ -400,7 +400,7 @@ const ProductDetail = () => {
             {displayColors && displayColors.length > 0 && (
               <div className="mb-6">
                 <p className="text-sm font-bold text-gray-700 mb-3">
-                  Color:{" "}
+                  {product.variantType || "Color"}:{" "}
                   <span className="text-primary">
                     {selectedColor || displayColors[0]}
                   </span>

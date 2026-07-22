@@ -117,6 +117,8 @@ const ProductManagement = () => {
     brand: "",
     model: "",
     code: "",
+    deviceType: "Mobile",
+    variantType: "Color",
     countInStock: 0,
     description: [""],
     images: [],
@@ -144,6 +146,8 @@ const ProductManagement = () => {
         category: product.category?._id || product.category || "",
         brand: product.brand?._id || product.brand || "",
         model: product.model?._id || product.model || "",
+        deviceType: product.deviceType || "Mobile",
+        variantType: product.variantType || "Color",
         description: Array.isArray(product.description) && product.description.length > 0 ? product.description : [product.description || ""],
         colorVariants: (product.colorVariants || []).map(v => ({
           colorName: v.colorName || "",
@@ -950,27 +954,27 @@ const ProductManagement = () => {
                 />
               </div>
 
-              {/* Color Variants */}
+              {/* Variants */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
-                    Color Variants
+                    {formData.variantType || "Color"} Variants
                   </label>
                   <button
                     type="button"
                     onClick={handleAddColorVariant}
                     className="text-blue-600 text-xs font-bold hover:underline">
-                    + Add Color Variant
+                    + Add {formData.variantType || "Color"} Variant
                   </button>
                 </div>
                 <p className="text-xs text-gray-400">Each variant can have its own price, stock, SKU and images. Leave pricing blank to inherit product-level pricing.</p>
                 <div className="space-y-5">
                   {formData.colorVariants?.map((variant, index) => (
                     <div key={index} className="p-4 border border-blue-100 rounded-xl bg-blue-50/30 space-y-4">
-                      {/* Row 1: Color name + SKU + remove */}
+                      {/* Row 1: Variant name + SKU + remove */}
                       <div className="flex gap-2 items-center">
                         <div className="flex-1 space-y-1">
-                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Color Name *</label>
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{formData.variantType || "Color"} Value *</label>
                           <input
                             type="text"
                             placeholder="e.g. Midnight Black"
@@ -1098,7 +1102,7 @@ const ProductManagement = () => {
                     </div>
                   ))}
                   {(!formData.colorVariants || formData.colorVariants.length === 0) && (
-                    <p className="text-xs text-gray-400 italic">No color variants added.</p>
+                    <p className="text-xs text-gray-400 italic">No variants added.</p>
                   )}
                 </div>
               </div>
@@ -1159,6 +1163,37 @@ const ProductManagement = () => {
                         </option>
                       ))}
                     </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                      Device Type
+                    </label>
+                    <select
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all appearance-none"
+                      value={formData.deviceType || "Mobile"}
+                      onChange={(e) =>
+                        setFormData({ ...formData, deviceType: e.target.value })
+                      }>
+                      <option value="Mobile">Mobile</option>
+                      <option value="Tablet">Tablet</option>
+                      <option value="Smartwatch">Smartwatch</option>
+                      <option value="Accessories">Accessories</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
+                      Variant Type
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                      placeholder="e.g. Color, Size, Quality"
+                      value={formData.variantType || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, variantType: e.target.value })
+                      }
+                    />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">

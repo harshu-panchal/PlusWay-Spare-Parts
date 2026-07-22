@@ -123,6 +123,10 @@ const ProductDetail = () => {
                 <BadgeInfo size={16} className="text-gray-400" />
                 <span>Type: {product.productType || "N/A"}</span>
               </div>
+              <div className="flex items-center gap-2 text-gray-700">
+                <Smartphone size={16} className="text-gray-400" />
+                <span>Device Type: {product.deviceType || "N/A"}</span>
+              </div>
             </div>
             {product.description && (
               <div className="text-sm text-gray-600 mt-4 leading-relaxed space-y-2">
@@ -170,10 +174,10 @@ const ProductDetail = () => {
                 {product.colors?.length ? product.colors.join(", ") : "N/A"}
               </div>
 
-              {/* Color Variants with per-variant pricing/stock */}
+              {/* Variants with per-variant pricing/stock */}
               {product.colorVariants?.length > 0 && (
                 <div className="mt-4">
-                  <p className="font-semibold mb-3">Color Variants:</p>
+                  <p className="font-semibold mb-3">{product.variantType || "Color"} Variants:</p>
                   <div className="space-y-3">
                     {product.colorVariants.map((v, i) => (
                       <div key={i} className="border border-gray-100 rounded-lg p-3 bg-gray-50">

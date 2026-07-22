@@ -25,7 +25,7 @@ const populateSection = async (section) => {
 // @access  Private/Admin
 export const createHomeSection = async (req, res) => {
     try {
-        const { title, displayType, categories, order, isActive, productsPerRow } = req.body;
+        const { title, displayType, categories, order, isActive, productsPerRow, filterDeviceType } = req.body;
         const section = new HomeSection({
             title,
             displayType: displayType || 'categories',
@@ -33,6 +33,7 @@ export const createHomeSection = async (req, res) => {
             order,
             isActive,
             productsPerRow: productsPerRow || 4,
+            filterDeviceType: filterDeviceType || '',
         });
         const createdSection = await section.save();
         const populated = await populateSection(createdSection);
@@ -74,7 +75,7 @@ export const getActiveHomeSections = async (req, res) => {
 // @access  Private/Admin
 export const updateHomeSection = async (req, res) => {
     try {
-        const { title, displayType, categories, order, isActive, productsPerRow } = req.body;
+        const { title, displayType, categories, order, isActive, productsPerRow, filterDeviceType } = req.body;
         const section = await HomeSection.findById(req.params.id);
 
         if (section) {
@@ -84,6 +85,9 @@ export const updateHomeSection = async (req, res) => {
             section.order = order ?? section.order;
             section.isActive = isActive ?? section.isActive;
             section.productsPerRow = productsPerRow ?? section.productsPerRow;
+            if (filterDeviceType !== undefined) {
+                section.filterDeviceType = filterDeviceType;
+            }
 
             const updatedSection = await section.save();
             const populated = await populateSection(updatedSection);

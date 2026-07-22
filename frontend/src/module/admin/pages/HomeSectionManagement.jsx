@@ -17,6 +17,7 @@ const defaultFormData = {
   isActive: true,
   order: 0,
   productsPerRow: 4,
+  filterDeviceType: "",
 };
 
 const HomeSectionManagement = () => {
@@ -217,6 +218,7 @@ const HomeSectionManagement = () => {
         isActive: section.isActive,
         order: section.order,
         productsPerRow: section.productsPerRow || 4,
+        filterDeviceType: section.filterDeviceType || "",
       });
     } else {
       setEditingSection(null);
@@ -367,20 +369,39 @@ const HomeSectionManagement = () => {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Display Type
-                </label>
-                <select
-                  value={formData.displayType}
-                  onChange={(e) => handleDisplayTypeChange(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
-                  {DISPLAY_TYPES.map((type) => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
-                </select>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    Display Type
+                  </label>
+                  <select
+                    value={formData.displayType}
+                    onChange={(e) => handleDisplayTypeChange(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
+                    {DISPLAY_TYPES.map((type) => (
+                      <option key={type.value} value={type.value}>
+                        {type.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    Filter Downstream by Device Type (Optional)
+                  </label>
+                  <select
+                    value={formData.filterDeviceType}
+                    onChange={(e) => setFormData({ ...formData, filterDeviceType: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
+                    <option value="">None (Default)</option>
+                    <option value="Mobile">Mobile</option>
+                    <option value="Tablet">Tablet</option>
+                    <option value="Smartwatch">Smartwatch</option>
+                    <option value="Accessories">Accessories</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
