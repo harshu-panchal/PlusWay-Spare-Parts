@@ -43,7 +43,7 @@ const ProductDetail = () => {
   const [selectedImage, setSelectedImage] = useState("");
   const [activeTab, setActiveTab] = useState("Description");
   const [sidebarInfo, setSidebarInfo] = useState({
-    needHelp: { title: "Need help?", description: "Call us on 9599197756 & select ext. 2 to speak to our sales team specialist." },
+    needHelp: { title: "Need help?", description: "Call us on 9870162128 to speak to our support & sales specialist." },
     freeShipping: { title: "Free Shipping", description: "All India Free Shipping with Express Delivery" },
     guarantee: { title: "Plusway Guarantee", description: "100% Refund if you do not get your shipment within time" },
     paymentProtection: { title: "Payment Protection", description: "Secure Payments & Easy Returns" }
@@ -639,7 +639,7 @@ const ProductDetail = () => {
                   {sidebarInfo.needHelp?.title || "Need help?"}
                 </h4>
                 <p className="text-[10px] text-gray-500 font-bold leading-tight">
-                  {sidebarInfo.needHelp?.description || "Call us on 9599197756 & select ext. 2 to speak to our sales team specialist."}
+                  {sidebarInfo.needHelp?.description || "Call us on 9870162128 to speak to our support & sales specialist."}
                 </p>
               </div>
               <hr className="border-gray-100" />

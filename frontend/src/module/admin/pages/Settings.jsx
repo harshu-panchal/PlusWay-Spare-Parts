@@ -138,7 +138,7 @@ const Settings = () => {
                     <input
                       type="text"
                       className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                      defaultValue="+91 9599197756"
+                      defaultValue="+91 9870162128"
                     />
                   </div>
                 </div>
@@ -170,7 +170,7 @@ const Settings = () => {
                     <input
                       type="email"
                       className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                      defaultValue="support@plusway.in"
+                      defaultValue="plusway9@gmail.com"
                     />
                   </div>
                 </div>

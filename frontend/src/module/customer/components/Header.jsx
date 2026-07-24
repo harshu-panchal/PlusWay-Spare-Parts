@@ -324,7 +324,7 @@ const Header = () => {
           <div className="flex items-center gap-4 text-gray-600 font-medium">
             <span className="flex items-center gap-1">
               <Phone size={12} className="text-primary" /> Support: +91
-              9599197756
+              9870162128
             </span>
           </div>
           <div className="flex gap-4 text-gray-600 font-medium uppercase tracking-wider items-center">
@@ -769,9 +769,9 @@ const Header = () => {
               Support
             </p>
             <a
-              href="tel:+919599197756"
+              href="tel:+919870162128"
               className="flex items-center gap-2 text-sm font-bold text-secondary hover:text-primary transition-colors">
-              <Phone size={14} className="text-primary" /> +91 9599197756
+              <Phone size={14} className="text-primary" /> +91 9870162128
             </a>
           </div>
         </div>

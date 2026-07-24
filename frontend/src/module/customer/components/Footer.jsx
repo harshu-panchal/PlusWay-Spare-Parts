@@ -147,6 +147,15 @@ const Footer = () => {
               </li>
               <li>
                 <Link
+                  to="/privacy-policy"
+                  className={
+                    "hover:text-primary transition-colors cursor-pointer"
+                  }>
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link
                   to="/warranty"
                   className={
                     "hover:text-primary transition-colors cursor-pointer"

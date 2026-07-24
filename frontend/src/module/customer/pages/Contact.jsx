@@ -44,13 +44,13 @@ const Contact = () => {
     {
       icon: Mail,
       title: "Email Us",
-      details: "support@plusway.in",
+      details: "plusway9@gmail.com",
       description: "Send us an email anytime",
     },
     {
       icon: Phone,
       title: "Call Us",
-      details: "+91 9599197756",
+      details: "+91 9870162128",
       description: "Mon-Sat: 9:00 AM - 7:00 PM",
     },
     {

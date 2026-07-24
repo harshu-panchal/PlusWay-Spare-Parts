@@ -224,7 +224,7 @@ const RefundPolicy = () => {
                     If you haven't received your refund after 7 business days,
                     please check your bank account and contact your credit card
                     company. If you still haven't received it, contact us at
-                    support@plusway.in.
+                    plusway9@gmail.com.
                   </p>
                 </div>
               </div>
