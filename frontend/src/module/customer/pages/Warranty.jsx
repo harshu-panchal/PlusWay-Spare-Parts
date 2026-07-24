@@ -242,12 +242,12 @@ const Warranty = () => {
                 <div>
                   <p className="text-gray-500 font-bold mb-1">Email</p>
                   <p className="text-gray-800 font-medium">
-                    warranty@plusway.in
+                    plusway9@gmail.com
                   </p>
                 </div>
                 <div>
                   <p className="text-gray-500 font-bold mb-1">Phone</p>
-                  <p className="text-gray-800 font-medium">+91 9599197756</p>
+                  <p className="text-gray-800 font-medium">+91 9870162128</p>
                 </div>
                 <div>
                   <p className="text-gray-500 font-bold mb-1">Hours</p>
