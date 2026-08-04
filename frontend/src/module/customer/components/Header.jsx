@@ -895,10 +895,10 @@ const Header = () => {
           <Link
             to="/enquiry"
             aria-label="Register"
-            className="flex items-center gap-1 bg-primary hover:bg-primary/90 h-full px-2.5 md:px-6 font-black text-[9px] md:text-[11px] uppercase tracking-wider md:tracking-widest transition-colors shrink-0">
+            className="flex items-center gap-1 bg-primary hover:bg-primary/90 h-full px-2 md:px-6 font-black text-[9px] md:text-[11px] uppercase tracking-wider md:tracking-widest transition-colors shrink-0">
             <Send size={12} className="md:hidden" />
             <Send size={14} className="hidden md:block" />
-            <span className="hidden md:inline">Register</span>
+            <span>Register</span>
           </Link>
         </div>
       </div>

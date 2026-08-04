@@ -548,31 +548,6 @@ const ProductTypeSelection = ({ defaultDeviceType }) => {
                                     <ChevronDown size={14} className="absolute right-2 text-gray-400 pointer-events-none" />
                                 </div>
 
-                                {/* View Switcher */}
-                                <div className="flex items-center bg-gray-100 p-1 rounded-xl border border-gray-200">
-                                    <button
-                                        onClick={() => setViewMode('grouped')}
-                                        title="Group by Category"
-                                        className={`p-1.5 rounded-lg transition-all ${
-                                            viewMode === 'grouped'
-                                                ? 'bg-white text-primary shadow-sm'
-                                                : 'text-gray-500 hover:text-gray-700'
-                                        }`}
-                                    >
-                                        <Layers size={16} />
-                                    </button>
-                                    <button
-                                        onClick={() => setViewMode('grid')}
-                                        title="Grid View"
-                                        className={`p-1.5 rounded-lg transition-all ${
-                                            viewMode === 'grid'
-                                                ? 'bg-white text-primary shadow-sm'
-                                                : 'text-gray-500 hover:text-gray-700'
-                                        }`}
-                                    >
-                                        <Grid size={16} />
-                                    </button>
-                                </div>
                             </div>
                         </div>
 
