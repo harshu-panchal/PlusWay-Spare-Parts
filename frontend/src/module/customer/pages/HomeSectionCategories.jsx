@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useParams, useSearchParams, Navigate } from "react-router-dom";
 import { ChevronRight, Smartphone, Package } from "lucide-react";
 import axios from "axios";
 
@@ -231,94 +231,11 @@ const HomeSectionCategories = () => {
     : null;
   const selectedBrandName = selectedBrand?.name || "Brand";
 
-  // Step 2: User selected a brand from Brands Page -> Render Models Page
+  // Step 2: User selected a brand from Brands Page -> Redirect to dedicated /brand/:brandId/models route
   if (isBrandsFlow && brandId) {
-    const isModelStep = isMobileSection || isSparePartsSection;
-    return (
-      <div className="min-h-screen bg-[#f4f4f4] pb-12">
-        <div className="max-w-7xl mx-auto px-[2%] md:px-4 py-6">
-          <div className="flex items-center gap-2 text-xs text-gray-500 mb-6 overflow-x-auto whitespace-nowrap pb-2">
-            <Link to="/" className="hover:text-primary">
-              Home
-            </Link>
-            <ChevronRight size={12} />
-            <Link to={`/section/${sectionId}`} className="hover:text-primary uppercase">
-              {section.title}
-            </Link>
-            <ChevronRight size={12} />
-            <span className="uppercase text-secondary font-bold">
-              {selectedBrandName}
-            </span>
-          </div>
-
-          <div className="bg-gray-50 px-4 py-3 border-b-2 border-primary mb-6 flex items-center justify-between">
-            <h1 className="text-sm font-black text-secondary uppercase tracking-widest">
-              {isMobileSection
-                ? `Select Mobile Phone Model for ${selectedBrandName}`
-                : isSparePartsSection
-                ? `Select Model for ${selectedBrandName} Spare Parts`
-                : `${section.title} - ${selectedBrandName}`}
-            </h1>
-            <Link
-              to={`/section/${sectionId}`}
-              className="text-xs font-bold text-primary hover:underline">
-              ← Select Another Brand
-            </Link>
-          </div>
-
-          {itemsLoading ? (
-            <div className="py-16 text-center text-gray-500 font-bold">
-              Loading {isModelStep ? "models" : "items"}...
-            </div>
-          ) : itemsList.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center text-gray-500 font-semibold">
-              No {isModelStep ? "models" : "items"} found for {selectedBrandName}.
-            </div>
-          ) : isModelStep ? (
-            /* Render Models Grid (Step 2) */
-            <div
-              className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 ${getGridColsClass(section.productsPerRow)} gap-4`}>
-              {itemsList.map((model) => (
-                <Link
-                  key={model._id}
-                  to={isMobileSection ? `/model/${model._id}/mobile-phones` : `/model/${model._id}/spare-parts`}
-                  className="bg-white rounded-2xl border border-gray-200/70 shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-300 group flex flex-col overflow-hidden">
-                  <div className="w-full aspect-[4/5] p-6 bg-[#f8fafc] flex items-center justify-center relative overflow-hidden">
-                    {model.image ? (
-                      <LazyImage
-                        src={model.image}
-                        alt={model.name}
-                        className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <Smartphone size={40} className="text-gray-300 group-hover:text-primary transition-colors" />
-                    )}
-                  </div>
-                  <div className="w-full bg-white py-3.5 px-3 border-t border-gray-100 flex flex-col items-center justify-center shrink-0">
-                    <h2 className="text-center font-bold text-xs md:text-sm text-slate-900 uppercase tracking-tight leading-tight group-hover:text-primary transition-colors line-clamp-2">
-                      {model.name}
-                    </h2>
-                    {model.released && (
-                      <p className="text-[10px] font-medium text-gray-400 mt-1">
-                        {formatReleasedDate(model.released)}
-                      </p>
-                    )}
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            /* Render Products Grid */
-            <div
-              className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 ${getGridColsClass(section.productsPerRow)} gap-4`}>
-              {itemsList.map((product) => (
-                <ProductCard key={product._id} product={product} />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    );
+    const devType = isMobileSection ? 'Mobile' : isSparePartsSection ? 'Spare Parts' : '';
+    const targetUrl = `/brand/${brandId}/models${devType ? `?deviceType=${encodeURIComponent(devType)}` : ''}`;
+    return <Navigate to={targetUrl} replace />;
   }
 
   // Step 1: Brands Flow (Shows Brands Page for Section)
@@ -347,25 +264,32 @@ const HomeSectionCategories = () => {
           ) : (
             <div
               className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 ${getGridColsClass(section.productsPerRow)} gap-4`}>
-              {brandsList.map((brand) => (
-                <Link
-                  key={brand._id}
-                  to={`?brandId=${brand._id}`}
-                  className="bg-white rounded-2xl border border-gray-200/70 shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-300 group flex flex-col overflow-hidden">
-                  <div className="w-full aspect-[4/5] p-6 bg-[#f8fafc] flex items-center justify-center relative overflow-hidden">
-                    <LazyImage
-                      src={brand.logo}
-                      alt={brand.name}
-                      className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-500"
-                    />
-                  </div>
-                  <div className="w-full bg-white py-3.5 px-3 border-t border-gray-100 flex flex-col items-center justify-center shrink-0">
-                    <h2 className="text-center font-bold text-xs md:text-sm text-slate-900 uppercase tracking-tight leading-tight group-hover:text-primary transition-colors line-clamp-2">
-                      {brand.name}
-                    </h2>
-                  </div>
-                </Link>
-              ))}
+              {brandsList.map((brand) => {
+                const brandRoute = isMobileSection
+                  ? `/brand/${brand._id}/models?deviceType=Mobile`
+                  : isSparePartsSection
+                  ? `/brand/${brand._id}/models?deviceType=Spare%20Parts`
+                  : `/brand/${brand._id}/models`;
+                return (
+                  <Link
+                    key={brand._id}
+                    to={brandRoute}
+                    className="bg-white rounded-2xl border border-gray-200/70 shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-300 group flex flex-col overflow-hidden">
+                    <div className="w-full aspect-[4/5] p-6 bg-[#f8fafc] flex items-center justify-center relative overflow-hidden">
+                      <LazyImage
+                        src={brand.logo}
+                        alt={brand.name}
+                        className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                      />
+                    </div>
+                    <div className="w-full bg-white py-3.5 px-3 border-t border-gray-100 flex flex-col items-center justify-center shrink-0">
+                      <h2 className="text-center font-bold text-xs md:text-sm text-slate-900 uppercase tracking-tight leading-tight group-hover:text-primary transition-colors line-clamp-2">
+                        {brand.name}
+                      </h2>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>

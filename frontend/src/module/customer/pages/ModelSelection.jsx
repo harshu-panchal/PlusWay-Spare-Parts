@@ -120,7 +120,13 @@ const ModelSelection = () => {
                     {displayModels.map((model) => (
                         <Link
                             key={model._id}
-                            to={`/model/${model._id}/products${deviceTypeParam ? `?deviceType=${encodeURIComponent(deviceTypeParam)}` : ''}`}
+                            to={
+                                deviceTypeParam?.toLowerCase() === 'mobile'
+                                    ? `/model/${model._id}/mobile-phones`
+                                    : (deviceTypeParam?.toLowerCase() === 'spare parts' || deviceTypeParam?.toLowerCase() === 'spare')
+                                    ? `/model/${model._id}/spare-parts`
+                                    : `/model/${model._id}/products${deviceTypeParam ? `?deviceType=${encodeURIComponent(deviceTypeParam)}` : ''}`
+                            }
                             className="bg-white rounded-2xl border border-gray-200/70 shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-300 group flex flex-col overflow-hidden"
                         >
                             <div className="w-full aspect-[4/5] p-6 bg-[#f8fafc] flex items-center justify-center relative overflow-hidden">
