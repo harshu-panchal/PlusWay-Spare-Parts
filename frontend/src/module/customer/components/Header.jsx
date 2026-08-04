@@ -28,6 +28,13 @@ import axios from "axios";
 
 const EMPTY_SEARCH_RESULTS = { models: [], products: [] };
 
+const FEATURED_NAV_ITEMS = [
+  { name: "Mobile", defaultPath: "/brand-selection", forceDefault: true },
+  { name: "Spare Parts", defaultPath: "/section/697bb8dac051a68bc83e4dc8", forceDefault: true },
+  { name: "Accessories", defaultPath: "/products?keyword=Accessories" },
+  { name: "Tools", defaultPath: "/products?keyword=Tools" },
+];
+
 const SearchDropdown = ({
   results,
   loading,
@@ -862,15 +869,27 @@ const Header = () => {
               className="hover:text-primary transition-colors shrink-0">
               Brands
             </Link>
-            {Array.isArray(categories) &&
-              categories.map((category) => (
+            {FEATURED_NAV_ITEMS.map((item) => {
+              const matchedCat =
+                !item.forceDefault && Array.isArray(categories)
+                  ? categories.find(
+                      (c) =>
+                        c.name?.toLowerCase().trim() ===
+                        item.name.toLowerCase().trim()
+                    )
+                  : null;
+              const targetPath = matchedCat
+                ? `/products?category=${matchedCat._id}`
+                : item.defaultPath;
+              return (
                 <Link
-                  key={category._id}
-                  to={`/products?category=${category._id}`}
+                  key={item.name}
+                  to={targetPath}
                   className="hover:text-primary transition-colors shrink-0">
-                  {category.name}
+                  {item.name}
                 </Link>
-              ))}
+              );
+            })}
           </div>
 
           <Link

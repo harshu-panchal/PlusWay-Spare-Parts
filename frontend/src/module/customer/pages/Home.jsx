@@ -14,10 +14,24 @@ import { usePageTranslation } from "../../../hooks/usePageTranslation";
 // Static texts for translation
 const STATIC_TEXTS = [
   "Select Mobile Phone Brand",
-  "No Promo Banner",
-  "No Sub Banner",
   "Recently Viewed",
 ];
+
+const BannerWrapper = ({ banner, children }) => {
+  if (!banner?.link) return children;
+  if (banner.link.startsWith("http://") || banner.link.startsWith("https://")) {
+    return (
+      <a href={banner.link} target="_blank" rel="noopener noreferrer" className="block w-full">
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link to={banner.link} className="block w-full">
+      {children}
+    </Link>
+  );
+};
 
 const BrandGrid = ({ brands, t }) => (
   <div className="bg-white p-0 md:p-8 rounded shadow-sm border border-gray-100 mb-12">
@@ -47,6 +61,8 @@ const Home = () => {
   const [homeSections, setHomeSections] = useState([]);
   const [banners, setBanners] = useState({ main: [], sub: [] });
   const [recentlyViewed, setRecentlyViewed] = useState([]);
+  const [currentMainIndex, setCurrentMainIndex] = useState(0);
+  const [currentSubIndex, setCurrentSubIndex] = useState(0);
 
   useEffect(() => {
     const history = JSON.parse(localStorage.getItem("recentlyViewed") || "[]");
@@ -80,53 +96,89 @@ const Home = () => {
 
     fetchData();
   }, []);
+
+  const activeMainBanner = banners.main[currentMainIndex] || banners.main[0];
+  const activeSubBanner = banners.sub[currentSubIndex] || banners.sub[0];
+
   return (
     <div className="bg-[#fcfcfc] pb-12">
       {/* Main Promotional Banner */}
-      {/* Main Promotional Banner */}
-      <div className="max-w-7xl mx-auto px-0 md:px-4 py-4">
-        <div className="w-full rounded shadow-sm overflow-hidden bg-white">
-          {banners.main.length > 0 ? (
-            <LazyImage
-              src={banners.main[0].image}
-              alt="Promotion"
-              className="w-full h-auto"
-            />
-          ) : (
-            <div className="h-[300px] bg-gray-100 flex items-center justify-center text-gray-400 font-bold uppercase tracking-widest">
-              {t("No Promo Banner")}
-            </div>
-          )}
+      {banners.main.length > 0 && activeMainBanner && (
+        <div className="max-w-7xl mx-auto px-0 md:px-4 py-4">
+          <div className="relative group w-full rounded shadow-sm overflow-hidden bg-white">
+            <BannerWrapper banner={activeMainBanner}>
+              <LazyImage
+                src={activeMainBanner.image}
+                alt="Promotion"
+                className="w-full h-auto"
+              />
+            </BannerWrapper>
+            {banners.main.length > 1 && (
+              <>
+                <button
+                  onClick={() =>
+                    setCurrentMainIndex((prev) =>
+                      prev === 0 ? banners.main.length - 1 : prev - 1
+                    )
+                  }
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full transition-colors z-10">
+                  <ChevronLeft size={24} />
+                </button>
+                <button
+                  onClick={() =>
+                    setCurrentMainIndex((prev) =>
+                      prev === banners.main.length - 1 ? 0 : prev + 1
+                    )
+                  }
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full transition-colors z-10">
+                  <ChevronRight size={24} />
+                </button>
+              </>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Sub-Banner / Search Visual */}
-      {/* Sub-Banner / Search Visual */}
-      <div className="max-w-7xl mx-auto px-[2%] md:px-4 mb-12">
-        <div className="relative group">
-          {banners.sub.length > 0 ? (
-            <LazyImage
-              src={banners.sub[0].image}
-              alt="Search Banner"
-              className="w-full h-auto rounded shadow-sm"
-            />
-          ) : (
-            <div className="h-[200px] bg-gray-100 rounded shadow-sm flex items-center justify-center text-gray-400 font-bold uppercase tracking-widest">
-              {t("No Sub Banner")}
-            </div>
-          )}
-          <div className="absolute inset-y-0 left-0 flex items-center">
-            <button className="bg-black/10 p-2 text-white hover:bg-black/30 transition-colors rounded-r">
-              <ChevronLeft size={24} />
-            </button>
-          </div>
-          <div className="absolute inset-y-0 right-0 flex items-center">
-            <button className="bg-black/10 p-2 text-white hover:bg-black/30 transition-colors rounded-l">
-              <ChevronRight size={24} />
-            </button>
+      {banners.sub.length > 0 && activeSubBanner && (
+        <div className="max-w-7xl mx-auto px-[2%] md:px-4 mb-12">
+          <div className="relative group">
+            <BannerWrapper banner={activeSubBanner}>
+              <LazyImage
+                src={activeSubBanner.image}
+                alt="Search Banner"
+                className="w-full h-auto rounded shadow-sm"
+              />
+            </BannerWrapper>
+            {banners.sub.length > 1 && (
+              <>
+                <div className="absolute inset-y-0 left-0 flex items-center z-10">
+                  <button
+                    onClick={() =>
+                      setCurrentSubIndex((prev) =>
+                        prev === 0 ? banners.sub.length - 1 : prev - 1
+                      )
+                    }
+                    className="bg-black/10 p-2 text-white hover:bg-black/30 transition-colors rounded-r">
+                    <ChevronLeft size={24} />
+                  </button>
+                </div>
+                <div className="absolute inset-y-0 right-0 flex items-center z-10">
+                  <button
+                    onClick={() =>
+                      setCurrentSubIndex((prev) =>
+                        prev === banners.sub.length - 1 ? 0 : prev + 1
+                      )
+                    }
+                    className="bg-black/10 p-2 text-white hover:bg-black/30 transition-colors rounded-l">
+                    <ChevronRight size={24} />
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
-      </div>
+      )}
 
       {/* Dynamic Home Sections */}
       {Array.isArray(homeSections) &&

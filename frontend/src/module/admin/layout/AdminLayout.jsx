@@ -103,7 +103,7 @@ const AdminLayout = () => {
             </div>
             {isSidebarOpen && (
               <span className="text-lg font-bold text-white tracking-tight whitespace-nowrap">
-                PlusWay<span className="text-blue-500">Admin</span>
+                PlusWay
               </span>
             )}
           </div>

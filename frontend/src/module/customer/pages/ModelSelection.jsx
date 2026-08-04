@@ -118,23 +118,22 @@ const ModelSelection = () => {
                         <Link
                             key={model._id}
                             to={`/model/${model._id}/products`}
-                            className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 border border-transparent hover:border-primary/30 group overflow-hidden relative flex flex-col"
+                            className="bg-white rounded-2xl border border-gray-200/70 shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-300 group flex flex-col overflow-hidden"
                         >
-                            <div className="w-full aspect-[4/5] bg-gray-50 flex items-center justify-center p-6 relative overflow-hidden">
+                            <div className="w-full aspect-[4/5] p-6 bg-[#f8fafc] flex items-center justify-center relative overflow-hidden">
                                 {model.image ? (
                                     <LazyImage
                                         src={model.image}
                                         alt={model.name}
-                                        className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
+                                        className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-500"
                                     />
                                 ) : (
-                                    <Smartphone size={32} className="text-gray-200 group-hover:text-primary transition-colors" />
+                                    <Smartphone size={32} className="text-gray-300 group-hover:text-primary transition-colors" />
                                 )}
-                                <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
 
-                            <div className="p-3 text-center flex-1 flex flex-col justify-center bg-white relative z-10">
-                                <h3 className="font-bold text-secondary text-sm group-hover:text-primary transition-colors uppercase tracking-tight leading-tight line-clamp-2">
+                            <div className="w-full bg-white py-3.5 px-3 border-t border-gray-100 flex flex-col items-center justify-center shrink-0">
+                                <h3 className="text-center font-bold text-xs md:text-sm text-slate-900 uppercase tracking-tight leading-tight group-hover:text-primary transition-colors line-clamp-2">
                                     {model.name}
                                 </h3>
                             </div>
