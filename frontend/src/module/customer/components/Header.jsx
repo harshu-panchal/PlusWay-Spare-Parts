@@ -29,10 +29,10 @@ import axios from "axios";
 const EMPTY_SEARCH_RESULTS = { models: [], products: [] };
 
 const FEATURED_NAV_ITEMS = [
-  { name: "Mobile", defaultPath: "/brand-selection", forceDefault: true },
-  { name: "Spare Parts", defaultPath: "/section/697bb8dac051a68bc83e4dc8", forceDefault: true },
-  { name: "Accessories", defaultPath: "/products?keyword=Accessories" },
-  { name: "Tools", defaultPath: "/products?keyword=Tools" },
+  { name: "Mobile", defaultPath: "/brand-selection?deviceType=Mobile", forceDefault: true },
+  { name: "Spare Parts", defaultPath: "/section/697bb8dac051a68bc83e4dc8?deviceType=Spare%20Parts", forceDefault: true },
+  { name: "Accessories", defaultPath: "/products?keyword=Accessories&deviceType=Accessories" },
+  { name: "Tools", defaultPath: "/products?keyword=Tools&deviceType=Tools" },
 ];
 
 const SearchDropdown = ({

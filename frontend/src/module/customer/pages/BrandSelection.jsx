@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useLocation, useSearchParams, Link } from "react-router-dom";
 import { Search, ChevronRight } from "lucide-react";
 
 import axios from "axios";
@@ -7,6 +6,9 @@ import { API_ENDPOINTS } from "../../../config/api";
 import LazyImage from "../../../components/LazyImage";
 
 const BrandSelection = () => {
+  const [searchParams] = useSearchParams();
+  const deviceTypeParam = searchParams.get("deviceType") || searchParams.get("type") || "Mobile";
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLetter, setSelectedLetter] = useState(null);
   const [brands, setBrands] = useState([]);
@@ -85,7 +87,7 @@ const BrandSelection = () => {
             {filteredBrands.map((brand) => (
               <Link
                 key={brand._id}
-                to={`/brand/${brand._id}/models`}
+                to={`/brand/${brand._id}/models?deviceType=${encodeURIComponent(deviceTypeParam)}`}
                 className="bg-white p-6 flex items-center justify-center h-40 hover:bg-gray-50 transition-colors group relative flex-col gap-2">
                 <LazyImage
                   src={brand.logo}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 
 import { ChevronRight, Search, Smartphone } from 'lucide-react';
 
@@ -10,6 +10,9 @@ import { releasedToYearMonth } from '../../../utils/formatReleasedDate';
 
 const ModelSelection = () => {
     const { brandId } = useParams();
+    const [searchParams] = useSearchParams();
+    const deviceTypeParam = searchParams.get('deviceType') || searchParams.get('type');
+
     const [models, setModels] = useState([]);
     const [brand, setBrand] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -117,7 +120,7 @@ const ModelSelection = () => {
                     {displayModels.map((model) => (
                         <Link
                             key={model._id}
-                            to={`/model/${model._id}/products`}
+                            to={`/model/${model._id}/products${deviceTypeParam ? `?deviceType=${encodeURIComponent(deviceTypeParam)}` : ''}`}
                             className="bg-white rounded-2xl border border-gray-200/70 shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-300 group flex flex-col overflow-hidden"
                         >
                             <div className="w-full aspect-[4/5] p-6 bg-[#f8fafc] flex items-center justify-center relative overflow-hidden">

@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Smartphone, Package } from "lucide-react";
 import axios from "axios";
 
-import { API_ENDPOINTS } from "../../../config/api";
+import { API_ENDPOINTS, API_BASE_URL } from "../../../config/api";
 import LazyImage from "../../../components/LazyImage";
 import ProductCard from "../components/ProductCard";
 import { formatReleasedDate } from "../../../utils/formatReleasedDate";
@@ -61,11 +61,15 @@ const SectionItemCard = ({ item, displayType, filterDeviceType }) => {
           to={`/model/${item._id}/products`}
           className="bg-white rounded-2xl border border-gray-200/70 shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-300 group flex flex-col overflow-hidden">
           <div className="w-full aspect-[4/5] p-6 bg-[#f8fafc] flex items-center justify-center relative overflow-hidden">
-            <LazyImage
-              src={item.image || item.brand?.logo}
-              alt={item.name}
-              className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-500"
-            />
+            {item.image || item.brand?.logo ? (
+              <LazyImage
+                src={item.image || item.brand?.logo}
+                alt={item.name}
+                className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-500"
+              />
+            ) : (
+              <Smartphone size={36} className="text-gray-300 group-hover:text-primary transition-colors" />
+            )}
           </div>
           <div className="w-full bg-white py-3.5 px-3 border-t border-gray-100 flex flex-col items-center justify-center shrink-0">
             <h2 className="text-center font-bold text-xs md:text-sm text-slate-900 uppercase tracking-tight leading-tight group-hover:text-primary transition-colors line-clamp-2">
@@ -112,8 +116,10 @@ const HomeSectionCategories = () => {
   const [section, setSection] = useState(null);
   const [loading, setLoading] = useState(true);
   const [allBrands, setAllBrands] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  
+  // Data state for step 2
+  const [itemsList, setItemsList] = useState([]);
+  const [itemsLoading, setItemsLoading] = useState(false);
 
   useEffect(() => {
     const fetchSection = async () => {
@@ -141,28 +147,46 @@ const HomeSectionCategories = () => {
     fetchSection();
   }, [sectionId]);
 
+  const titleLower = (section?.title || "").toLowerCase();
+  const isMobileSection = titleLower.includes("mobile") || titleLower.includes("phone");
+  const isSparePartsSection = titleLower.includes("spare");
+
+  // Step 2 Data Fetching (Models for both Mobile and Spare Parts Sections)
   useEffect(() => {
-    if (!brandId) return;
-    const fetchCategories = async () => {
+    if (!brandId || !section) return;
+
+    const fetchStepTwoData = async () => {
       try {
-        setCategoriesLoading(true);
-        const { data } = await axios.get(
-          `${API_ENDPOINTS.CUSTOMER_CATEGORIES}?all=true`
-        );
-        setCategories(data.categories || (Array.isArray(data) ? data : []));
+        setItemsLoading(true);
+        if (isMobileSection || isSparePartsSection) {
+          // Display Models for selected brand (Step 2: Brands Page -> Models Page)
+          const { data } = await axios.get(`${API_ENDPOINTS.MODELS}?all=true`);
+          const models = data.models || data || [];
+          const filteredModels = models.filter(
+            m => m.brand?._id === brandId || m.brand === brandId
+          );
+          setItemsList(filteredModels);
+        } else {
+          // Generic section -> Fetch products for this brand
+          const { data } = await axios.get(`${API_BASE_URL}/api/customer/products?brand=${brandId}&pageSize=50`);
+          setItemsList(data.products || data || []);
+        }
       } catch (error) {
-        console.error("Error fetching categories:", error);
+        console.error("Error fetching step 2 items:", error);
+        setItemsList([]);
       } finally {
-        setCategoriesLoading(false);
+        setItemsLoading(false);
       }
     };
 
-    fetchCategories();
-  }, [brandId]);
+    fetchStepTwoData();
+  }, [brandId, section, isMobileSection, isSparePartsSection]);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center font-bold text-gray-600">
+        Loading section...
+      </div>
     );
   }
 
@@ -190,8 +214,8 @@ const HomeSectionCategories = () => {
   const isBrandsFlow =
     displayType === "brands" ||
     sectionId === "697bb8dac051a68bc83e4dc8" ||
-    section.title?.toLowerCase().includes("spare parts") ||
-    section.title?.toLowerCase().includes("spare");
+    isMobileSection ||
+    isSparePartsSection;
 
   const sectionCategories = Array.isArray(section.categories) ? section.categories : [];
   const brandsList =
@@ -207,8 +231,9 @@ const HomeSectionCategories = () => {
     : null;
   const selectedBrandName = selectedBrand?.name || "Brand";
 
-  // Step 2: User selected a brand, now show categories for that brand
+  // Step 2: User selected a brand from Brands Page -> Render Models Page
   if (isBrandsFlow && brandId) {
+    const isModelStep = isMobileSection || isSparePartsSection;
     return (
       <div className="min-h-screen bg-[#f4f4f4] pb-12">
         <div className="max-w-7xl mx-auto px-[2%] md:px-4 py-6">
@@ -228,42 +253,66 @@ const HomeSectionCategories = () => {
 
           <div className="bg-gray-50 px-4 py-3 border-b-2 border-primary mb-6 flex items-center justify-between">
             <h1 className="text-sm font-black text-secondary uppercase tracking-widest">
-              Select Category for {selectedBrandName}
+              {isMobileSection
+                ? `Select Mobile Phone Model for ${selectedBrandName}`
+                : isSparePartsSection
+                ? `Select Model for ${selectedBrandName} Spare Parts`
+                : `${section.title} - ${selectedBrandName}`}
             </h1>
             <Link
               to={`/section/${sectionId}`}
               className="text-xs font-bold text-primary hover:underline">
-              ← Change Brand
+              ← Select Another Brand
             </Link>
           </div>
 
-          {categoriesLoading ? (
-            <div className="py-12 text-center text-gray-500">Loading categories...</div>
-          ) : categories.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center text-gray-500 font-semibold">
-              No categories available.
+          {itemsLoading ? (
+            <div className="py-16 text-center text-gray-500 font-bold">
+              Loading {isModelStep ? "models" : "items"}...
             </div>
-          ) : (
+          ) : itemsList.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center text-gray-500 font-semibold">
+              No {isModelStep ? "models" : "items"} found for {selectedBrandName}.
+            </div>
+          ) : isModelStep ? (
+            /* Render Models Grid (Step 2) */
             <div
               className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 ${getGridColsClass(section.productsPerRow)} gap-4`}>
-              {categories.map((category) => (
+              {itemsList.map((model) => (
                 <Link
-                  key={category._id}
-                  to={`/products?brand=${brandId}&category=${category._id}`}
+                  key={model._id}
+                  to={isMobileSection ? `/model/${model._id}/mobile-phones` : `/model/${model._id}/spare-parts`}
                   className="bg-white rounded-2xl border border-gray-200/70 shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-300 group flex flex-col overflow-hidden">
                   <div className="w-full aspect-[4/5] p-6 bg-[#f8fafc] flex items-center justify-center relative overflow-hidden">
-                    <LazyImage
-                      src={category.image}
-                      alt={category.name}
-                      className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-500"
-                    />
+                    {model.image ? (
+                      <LazyImage
+                        src={model.image}
+                        alt={model.name}
+                        className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <Smartphone size={40} className="text-gray-300 group-hover:text-primary transition-colors" />
+                    )}
                   </div>
                   <div className="w-full bg-white py-3.5 px-3 border-t border-gray-100 flex flex-col items-center justify-center shrink-0">
                     <h2 className="text-center font-bold text-xs md:text-sm text-slate-900 uppercase tracking-tight leading-tight group-hover:text-primary transition-colors line-clamp-2">
-                      {category.name}
+                      {model.name}
                     </h2>
+                    {model.released && (
+                      <p className="text-[10px] font-medium text-gray-400 mt-1">
+                        {formatReleasedDate(model.released)}
+                      </p>
+                    )}
                   </div>
                 </Link>
+              ))}
+            </div>
+          ) : (
+            /* Render Products Grid */
+            <div
+              className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 ${getGridColsClass(section.productsPerRow)} gap-4`}>
+              {itemsList.map((product) => (
+                <ProductCard key={product._id} product={product} />
               ))}
             </div>
           )}
@@ -272,7 +321,7 @@ const HomeSectionCategories = () => {
     );
   }
 
-  // Step 1: Brands flow (Shows Brands)
+  // Step 1: Brands Flow (Shows Brands Page for Section)
   if (isBrandsFlow) {
     return (
       <div className="min-h-screen bg-[#f4f4f4] pb-12">
@@ -287,7 +336,7 @@ const HomeSectionCategories = () => {
 
           <div className="bg-gray-50 px-4 py-3 border-b-2 border-primary mb-6">
             <h1 className="text-sm font-black text-secondary uppercase tracking-widest">
-              {section.title} Brands
+              Select {section.title} Brand
             </h1>
           </div>
 
@@ -324,7 +373,7 @@ const HomeSectionCategories = () => {
     );
   }
 
-  // Fallback for non-brands section (categories / models / products)
+  // Fallback for generic section
   const typeLabel =
     displayType === "models"
       ? "Models"

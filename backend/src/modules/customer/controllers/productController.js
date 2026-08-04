@@ -80,7 +80,23 @@ export const getProducts = asyncHandler(async (req, res) => {
         // OR if the user sends 'productType=LCD...'
     }
     if (req.query.productType) filters.productType = req.query.productType;
-    if (req.query.deviceType) filters.deviceType = req.query.deviceType;
+    if (req.query.deviceType) {
+        filters.deviceType = { $regex: new RegExp(`^${escapeRegex(req.query.deviceType.trim())}$`, 'i') };
+    }
+
+    if (req.query.minPrice || req.query.maxPrice) {
+        filters.price = {};
+        if (req.query.minPrice && !isNaN(Number(req.query.minPrice))) {
+            filters.price.$gte = Number(req.query.minPrice);
+        }
+        if (req.query.maxPrice && !isNaN(Number(req.query.maxPrice))) {
+            filters.price.$lte = Number(req.query.maxPrice);
+        }
+    }
+
+    if (req.query.inStock === 'true' || req.query.inStock === true) {
+        filters.stock = { $gt: 0 };
+    }
 
 
 

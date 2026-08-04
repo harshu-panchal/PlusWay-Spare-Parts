@@ -124,6 +124,10 @@ const App = () => {
               <Route path="category/:slug" element={<CategoryRedirect />} />
               <Route path="brand/:brandId/models" element={<ModelSelection />} />
               <Route path="model/:modelId/products" element={<ProductTypeSelection />} />
+              <Route path="model/:modelId/mobile-phones" element={<ProductTypeSelection defaultDeviceType="Mobile" />} />
+              <Route path="model/:modelId/mobiles" element={<ProductTypeSelection defaultDeviceType="Mobile" />} />
+              <Route path="model/:modelId/spare-parts" element={<ProductTypeSelection defaultDeviceType="Spare Parts" />} />
+              <Route path="model/:modelId/parts" element={<ProductTypeSelection defaultDeviceType="Spare Parts" />} />
               <Route path="products" element={<ProductListing />} />
               <Route path="section/:sectionId" element={<HomeSectionCategories />} />
               <Route path="product/:id" element={<ProductDetail />} />
