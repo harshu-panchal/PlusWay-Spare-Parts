@@ -88,7 +88,11 @@ const BrandSelection = () => {
             {filteredBrands.map((brand) => (
               <Link
                 key={brand._id}
-                to={`/brand/${brand._id}/models?deviceType=${encodeURIComponent(deviceTypeParam)}`}
+                to={
+                  deviceTypeParam?.toLowerCase() === "mobile"
+                    ? `/products?brand=${brand._id}&deviceType=Mobile`
+                    : `/brand/${brand._id}/models?deviceType=${encodeURIComponent(deviceTypeParam)}`
+                }
                 className="bg-white p-6 flex items-center justify-center h-40 hover:bg-gray-50 transition-colors group relative flex-col gap-2">
                 <LazyImage
                   src={brand.logo}

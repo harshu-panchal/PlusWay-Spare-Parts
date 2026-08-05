@@ -22,10 +22,12 @@ const ProductListing = () => {
 
   const [models, setModels] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [brands, setBrands] = useState([]);
 
-  // Derived state for the selected model / category
+  // Derived state for the selected model / category / brand
   const selectedModel = models.find((m) => m._id === modelId);
   const selectedCategory = categories.find((c) => c._id === categoryId);
+  const selectedBrand = brands.find((b) => b._id === brandId);
 
   const [sortBy, setSortBy] = useState("relevance");
 
@@ -70,19 +72,21 @@ const ProductListing = () => {
     window.scrollTo(0, 0);
   }, [modelId, categoryId, keyword, sortBy, brandId, deviceType]);
 
-  // Fetch models & categories for breadcrumbs / model banner labels
+  // Fetch models, categories & brands for breadcrumbs / banner labels
   useEffect(() => {
     const fetchMeta = async () => {
       try {
-        const [modelRes, categoryRes] = await Promise.all([
+        const [modelRes, categoryRes, brandRes] = await Promise.all([
           axios.get(`${API_ENDPOINTS.MODELS}?all=true`),
           axios.get(`${API_ENDPOINTS.CUSTOMER_CATEGORIES}?all=true`),
+          axios.get(`${API_ENDPOINTS.BRANDS}?all=true`),
         ]);
         setModels(modelRes.data.models || modelRes.data || []);
         setCategories(
           categoryRes.data.categories ||
             (Array.isArray(categoryRes.data) ? categoryRes.data : []),
         );
+        setBrands(brandRes.data.brands || brandRes.data || []);
       } catch (err) {
         console.error("Error fetching listing meta", err);
       }
@@ -114,12 +118,24 @@ const ProductListing = () => {
             Home
           </Link>
           <ChevronRight size={12} />
+          {selectedBrand && (
+            <>
+              <Link
+                to={`/brand-selection${deviceType ? `?deviceType=${encodeURIComponent(deviceType)}` : ""}`}
+                className="hover:text-primary uppercase">
+                Brands
+              </Link>
+              <ChevronRight size={12} />
+            </>
+          )}
           <span className="uppercase">
             {modelId
               ? selectedModel?.name || "All Models"
-              : selectedCategory
-                ? selectedCategory.name
-                : "Products"}
+              : selectedBrand
+                ? selectedBrand.name
+                : selectedCategory
+                  ? selectedCategory.name
+                  : "Products"}
           </span>
         </div>
 
@@ -170,6 +186,38 @@ const ProductListing = () => {
           );
         })()}
 
+        {/* Brand Banner - Shown when brand is selected without a specific model */}
+        {!selectedModel && selectedBrand && (
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8 flex flex-col md:flex-row items-center gap-6">
+            <div className="w-32 h-32 md:w-40 md:h-40 bg-gray-50 flex items-center justify-center p-4 rounded-xl shrink-0">
+              {selectedBrand.logo ? (
+                <LazyImage
+                  src={selectedBrand.logo}
+                  alt={selectedBrand.name}
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <div className="text-center">
+                  <span className="text-orange-500 font-black italic text-xl">
+                    PLUSWAY
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className="flex-1 text-center md:text-left space-y-2">
+              <h1 className="text-2xl md:text-3xl font-black text-secondary uppercase italic tracking-tighter leading-none">
+                {selectedBrand.name}{" "}
+                <span className="text-primary block md:inline">
+                  {deviceType ? deviceType.toUpperCase() : "PRODUCTS"}
+                </span>
+              </h1>
+              <p className="text-xs text-gray-500 font-bold pt-1">
+                Explore all {selectedBrand.name} {deviceType || "products"} available on PlusWay
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-6 flex justify-between items-center">
           {selectedModel ? (
             <div className="flex items-center gap-2 border-l-4 border-primary pl-3">
@@ -177,6 +225,13 @@ const ProductListing = () => {
                 SPARE PARTS
               </h2>
             </div>
+          ) : selectedBrand ? (
+            <h1 className="text-lg font-black text-secondary uppercase italic tracking-tighter">
+              {selectedBrand.name} {deviceType || "Products"}{" "}
+              <span className="text-primary tracking-normal not-italic lowercase font-medium ml-2">
+                ({total} items)
+              </span>
+            </h1>
           ) : selectedCategory ? (
             <h1 className="text-lg font-black text-secondary uppercase italic tracking-tighter">
               {selectedCategory.name}{" "}

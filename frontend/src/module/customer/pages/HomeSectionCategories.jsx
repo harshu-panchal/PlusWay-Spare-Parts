@@ -231,9 +231,12 @@ const HomeSectionCategories = () => {
     : null;
   const selectedBrandName = selectedBrand?.name || "Brand";
 
-  // Step 2: User selected a brand from Brands Page -> Redirect to dedicated /brand/:brandId/models route
+  // Step 2: User selected a brand from Brands Page -> Redirect to dedicated route
   if (isBrandsFlow && brandId) {
-    const devType = isMobileSection ? 'Mobile' : isSparePartsSection ? 'Spare Parts' : '';
+    if (isMobileSection) {
+      return <Navigate to={`/products?brand=${brandId}&deviceType=Mobile`} replace />;
+    }
+    const devType = isSparePartsSection ? 'Spare Parts' : '';
     const targetUrl = `/brand/${brandId}/models${devType ? `?deviceType=${encodeURIComponent(devType)}` : ''}`;
     return <Navigate to={targetUrl} replace />;
   }
@@ -266,7 +269,7 @@ const HomeSectionCategories = () => {
               className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 ${getGridColsClass(section.productsPerRow)} gap-4`}>
               {brandsList.map((brand) => {
                 const brandRoute = isMobileSection
-                  ? `/brand/${brand._id}/models?deviceType=Mobile`
+                  ? `/products?brand=${brand._id}&deviceType=Mobile`
                   : isSparePartsSection
                   ? `/brand/${brand._id}/models?deviceType=Spare%20Parts`
                   : `/brand/${brand._id}/models`;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { useParams, Link, useSearchParams, Navigate } from 'react-router-dom';
 
 import { ChevronRight, Search, Smartphone } from 'lucide-react';
 
@@ -12,6 +12,10 @@ const ModelSelection = () => {
     const { brandId } = useParams();
     const [searchParams] = useSearchParams();
     const deviceTypeParam = searchParams.get('deviceType') || searchParams.get('type');
+
+    if (deviceTypeParam?.toLowerCase() === 'mobile') {
+        return <Navigate to={brandId ? `/products?brand=${brandId}&deviceType=Mobile` : `/products?deviceType=Mobile`} replace />;
+    }
 
     const [models, setModels] = useState([]);
     const [brand, setBrand] = useState(null);

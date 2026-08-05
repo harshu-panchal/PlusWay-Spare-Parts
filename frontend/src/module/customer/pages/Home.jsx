@@ -42,7 +42,7 @@ const BrandGrid = ({ brands, t }) => (
       {brands.map((brand) => (
         <Link
           key={brand._id}
-          to={`/brand/${brand._id}/models`}
+          to={`/products?brand=${brand._id}&deviceType=Mobile`}
           className="flex items-center justify-center p-6 bg-white hover:bg-gray-50 transition-colors aspect-square overflow-hidden">
           <LazyImage
             src={brand.logo}
