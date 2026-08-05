@@ -145,6 +145,7 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [categories, setCategories] = useState([]);
+  const [homeSections, setHomeSections] = useState([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCategoriesMenuOpen, setIsCategoriesMenuOpen] = useState(false);
   const [searchResults, setSearchResults] = useState(EMPTY_SEARCH_RESULTS);
@@ -160,18 +161,49 @@ const Header = () => {
   const userInfo = JSON.parse(localStorage.getItem("userInfo"));
 
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchHeaderData = async () => {
       try {
-        const { data } = await axios.get(
-          `${API_ENDPOINTS.CUSTOMER_CATEGORIES}?all=true`,
+        const [catRes, sectionRes] = await Promise.all([
+          axios.get(`${API_ENDPOINTS.CUSTOMER_CATEGORIES}?all=true`),
+          axios.get(API_ENDPOINTS.HOME_SECTIONS),
+        ]);
+        setCategories(
+          catRes.data.categories || (Array.isArray(catRes.data) ? catRes.data : []),
         );
-        setCategories(data.categories || (Array.isArray(data) ? data : []));
+        setHomeSections(
+          Array.isArray(sectionRes.data) ? sectionRes.data : [],
+        );
       } catch (error) {
-        console.error("Error fetching categories:", error);
+        console.error("Error fetching header metadata:", error);
       }
     };
-    fetchCategories();
+    fetchHeaderData();
   }, []);
+
+  const getFeaturedItemPath = (item) => {
+    const nameLower = item.name.toLowerCase().trim();
+    const matchedSection = Array.isArray(homeSections)
+      ? homeSections.find((s) => {
+          const titleLower = (s.title || "").toLowerCase().trim();
+          return titleLower.includes(nameLower) || nameLower.includes(titleLower);
+        })
+      : null;
+
+    if (matchedSection) {
+      return `/section/${matchedSection._id}`;
+    }
+
+    const matchedCat =
+      !item.forceDefault && Array.isArray(categories)
+        ? categories.find(
+            (c) => c.name?.toLowerCase().trim() === nameLower,
+          )
+        : null;
+
+    return matchedCat
+      ? `/products?category=${matchedCat._id}`
+      : item.defaultPath;
+  };
 
   // Body scroll-lock + ESC-to-close while the mobile drawer is open.
   useEffect(() => {
@@ -852,17 +884,7 @@ const Header = () => {
 
           <div className="flex-1 min-w-0 flex gap-3 md:gap-8 px-2 md:px-8 items-center h-full text-[9px] md:text-[11px] font-black uppercase tracking-wide md:tracking-widest overflow-x-auto no-scrollbar whitespace-nowrap">
             {FEATURED_NAV_ITEMS.map((item) => {
-              const matchedCat =
-                !item.forceDefault && Array.isArray(categories)
-                  ? categories.find(
-                      (c) =>
-                        c.name?.toLowerCase().trim() ===
-                        item.name.toLowerCase().trim()
-                    )
-                  : null;
-              const targetPath = matchedCat
-                ? `/products?category=${matchedCat._id}`
-                : item.defaultPath;
+              const targetPath = getFeaturedItemPath(item);
               return (
                 <Link
                   key={item.name}
