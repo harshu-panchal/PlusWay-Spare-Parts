@@ -689,19 +689,6 @@ const Header = () => {
           {/* Primary nav */}
           <nav className="py-2">
             <p className="px-4 pt-2 pb-1 text-[10px] uppercase font-black tracking-widest text-gray-400">
-              Shop
-            </p>
-            <Link
-              to="/brand-selection"
-              onClick={closeMobileMenu}
-              className="flex items-center justify-between px-4 py-3 text-sm font-bold text-secondary hover:bg-gray-50 transition-colors border-b border-gray-50">
-              <span className="flex items-center gap-3">
-                <Tag size={16} className="text-primary" /> Brands
-              </span>
-              <ChevronRight size={16} className="text-gray-300" />
-            </Link>
-
-            <p className="px-4 pt-4 pb-1 text-[10px] uppercase font-black tracking-widest text-gray-400">
               Categories
             </p>
             {Array.isArray(categories) && categories.length > 0 ? (
@@ -864,11 +851,6 @@ const Header = () => {
           </div>
 
           <div className="flex-1 min-w-0 flex gap-3 md:gap-8 px-2 md:px-8 items-center h-full text-[9px] md:text-[11px] font-black uppercase tracking-wide md:tracking-widest overflow-x-auto no-scrollbar whitespace-nowrap">
-            <Link
-              to="/brand-selection"
-              className="hover:text-primary transition-colors shrink-0">
-              Brands
-            </Link>
             {FEATURED_NAV_ITEMS.map((item) => {
               const matchedCat =
                 !item.forceDefault && Array.isArray(categories)

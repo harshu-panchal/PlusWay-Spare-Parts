@@ -265,8 +265,7 @@ const HomeSectionCategories = () => {
               No brands available for this section.
             </div>
           ) : (
-            <div
-              className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 ${getGridColsClass(section.productsPerRow)} gap-4`}>
+            <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 gap-px bg-gray-200 border border-gray-200 mb-12">
               {brandsList.map((brand) => {
                 const brandRoute = isMobileSection
                   ? `/products?brand=${brand._id}&deviceType=Mobile`
@@ -277,19 +276,15 @@ const HomeSectionCategories = () => {
                   <Link
                     key={brand._id}
                     to={brandRoute}
-                    className="bg-white rounded-2xl border border-gray-200/70 shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-300 group flex flex-col overflow-hidden">
-                    <div className="w-full aspect-[4/5] p-6 bg-[#f8fafc] flex items-center justify-center relative overflow-hidden">
-                      <LazyImage
-                        src={brand.logo}
-                        alt={brand.name}
-                        className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-500"
-                      />
-                    </div>
-                    <div className="w-full bg-white py-3.5 px-3 border-t border-gray-100 flex flex-col items-center justify-center shrink-0">
-                      <h2 className="text-center font-bold text-xs md:text-sm text-slate-900 uppercase tracking-tight leading-tight group-hover:text-primary transition-colors line-clamp-2">
-                        {brand.name}
-                      </h2>
-                    </div>
+                    className="bg-white p-6 flex items-center justify-center h-40 hover:bg-gray-50 transition-colors group relative flex-col gap-2">
+                    <LazyImage
+                      src={brand.logo}
+                      alt={brand.name}
+                      className="max-w-full max-h-[80px] object-contain transition-all duration-300 transform group-hover:scale-110"
+                    />
+                    <span className="text-xs font-bold text-gray-400 group-hover:text-primary transition-colors">
+                      {brand.name}
+                    </span>
                   </Link>
                 );
               })}
