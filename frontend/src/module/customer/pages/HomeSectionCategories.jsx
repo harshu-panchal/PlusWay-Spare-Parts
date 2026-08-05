@@ -116,6 +116,7 @@ const HomeSectionCategories = () => {
   const [section, setSection] = useState(null);
   const [loading, setLoading] = useState(true);
   const [allBrands, setAllBrands] = useState([]);
+  const [allCategories, setAllCategories] = useState([]);
   
   // Data state for step 2
   const [itemsList, setItemsList] = useState([]);
@@ -125,9 +126,10 @@ const HomeSectionCategories = () => {
     const fetchSection = async () => {
       try {
         setLoading(true);
-        const [sectionsRes, brandsRes] = await Promise.all([
+        const [sectionsRes, brandsRes, categoriesRes] = await Promise.all([
           axios.get(API_ENDPOINTS.HOME_SECTIONS),
           axios.get(`${API_ENDPOINTS.BRANDS}?all=true`),
+          axios.get(`${API_ENDPOINTS.CUSTOMER_CATEGORIES}?all=true`),
         ]);
 
         const sections = Array.isArray(sectionsRes.data) ? sectionsRes.data : [];
@@ -136,6 +138,9 @@ const HomeSectionCategories = () => {
 
         const fetchedBrands = brandsRes.data?.brands || brandsRes.data || [];
         setAllBrands(Array.isArray(fetchedBrands) ? fetchedBrands : []);
+
+        const fetchedCats = categoriesRes.data?.categories || categoriesRes.data || [];
+        setAllCategories(Array.isArray(fetchedCats) ? fetchedCats : []);
       } catch (error) {
         console.error("Error fetching section data:", error);
         setSection(null);
@@ -150,6 +155,7 @@ const HomeSectionCategories = () => {
   const titleLower = (section?.title || "").toLowerCase();
   const isMobileSection = titleLower.includes("mobile") || titleLower.includes("phone");
   const isSparePartsSection = titleLower.includes("spare");
+  const isAccessoriesSection = titleLower.includes("accessori") || titleLower.includes("accessory") || sectionId === "697c5e03d1ffb9d52de9a3bb";
 
   // Step 2 Data Fetching (Models for both Mobile and Spare Parts Sections)
   useEffect(() => {
@@ -217,7 +223,29 @@ const HomeSectionCategories = () => {
     isMobileSection ||
     isSparePartsSection;
 
-  const sectionCategories = Array.isArray(section.categories) ? section.categories : [];
+  let sectionCategories = Array.isArray(section.categories) ? [...section.categories] : [];
+
+  if (isAccessoriesSection && Array.isArray(allCategories) && allCategories.length > 0) {
+    const extraAccessories = allCategories.filter((c) => c.showInAccessories);
+    const existingIds = new Set(sectionCategories.map((c) => (c._id || c).toString()));
+    extraAccessories.forEach((c) => {
+      const cId = (c._id || c).toString();
+      if (!existingIds.has(cId)) {
+        sectionCategories.push(c);
+        existingIds.add(cId);
+      }
+    });
+  } else if (isSparePartsSection && Array.isArray(allCategories) && allCategories.length > 0) {
+    const extraSpareParts = allCategories.filter((c) => c.showInMobileSpareParts);
+    const existingIds = new Set(sectionCategories.map((c) => (c._id || c).toString()));
+    extraSpareParts.forEach((c) => {
+      const cId = (c._id || c).toString();
+      if (!existingIds.has(cId)) {
+        sectionCategories.push(c);
+        existingIds.add(cId);
+      }
+    });
+  }
   const brandsList =
     isBrandsFlow
       ? sectionCategories.length > 0 && displayType === "brands"
