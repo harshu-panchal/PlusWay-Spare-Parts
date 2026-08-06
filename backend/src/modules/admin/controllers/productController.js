@@ -79,7 +79,7 @@ export const getProducts = async (req, res) => {
   }
 
   if (deviceType && deviceType !== "All") {
-    filter.deviceType = deviceType;
+    filter.deviceType = { $in: [deviceType] };
   }
 
   const count = await Product.countDocuments(filter);
@@ -165,7 +165,7 @@ export const createProduct = async (req, res) => {
     model: model || undefined,
     category,
     productType,
-    deviceType,
+    deviceType: Array.isArray(deviceType) ? deviceType.filter(Boolean) : (typeof deviceType === "string" && deviceType.trim() ? deviceType.split(",").map(s => s.trim()).filter(Boolean) : ["Mobile"]),
     variantType: variantType || "Color",
     // Product-level stock = sum of variant stocks when variants are provided
     countInStock: countInStock !== undefined ? countInStock
@@ -263,7 +263,15 @@ export const updateProduct = async (req, res) => {
     if (req.body.model) product.model = req.body.model;
     if (req.body.category) product.category = req.body.category;
     if (req.body.productType !== undefined) product.productType = req.body.productType;
-    if (req.body.deviceType !== undefined) product.deviceType = req.body.deviceType;
+    if (req.body.deviceType !== undefined) {
+      if (Array.isArray(req.body.deviceType)) {
+        product.deviceType = req.body.deviceType.filter(Boolean);
+      } else if (typeof req.body.deviceType === "string" && req.body.deviceType.trim()) {
+        product.deviceType = req.body.deviceType.split(",").map(s => s.trim()).filter(Boolean);
+      } else {
+        product.deviceType = [];
+      }
+    }
     if (req.body.variantType !== undefined) product.variantType = req.body.variantType;
     if (req.body.countInStock !== undefined) product.countInStock = req.body.countInStock;
 
@@ -578,7 +586,7 @@ export const bulkCreateProducts = async (req, res) => {
             if (row.description) existingProduct.description = String(row.description).split("\n").map(p => p.trim()).filter(Boolean);
             if (row.videoUrl !== undefined && row.videoUrl !== "") existingProduct.videoUrl = String(row.videoUrl).trim();
             if (row.productType) existingProduct.productType = String(row.productType).trim();
-            if (row.deviceType) existingProduct.deviceType = String(row.deviceType).trim();
+            if (row.deviceType) existingProduct.deviceType = typeof row.deviceType === "string" ? row.deviceType.split(",").map(s => s.trim()).filter(Boolean) : (Array.isArray(row.deviceType) ? row.deviceType : []);
             if (row.variantType) existingProduct.variantType = String(row.variantType).trim();
           }
 
@@ -666,7 +674,7 @@ export const bulkCreateProducts = async (req, res) => {
           model: modelId,
           category: categoryId,
           productType: row.productType ? String(row.productType).trim() : undefined,
-          deviceType: row.deviceType ? String(row.deviceType).trim() : undefined,
+          deviceType: row.deviceType ? (typeof row.deviceType === "string" ? row.deviceType.split(",").map(s => s.trim()).filter(Boolean) : (Array.isArray(row.deviceType) ? row.deviceType : ["Mobile"])) : ["Mobile"],
           variantType: row.variantType ? String(row.variantType).trim() : "Color",
           price: firstVariant?.price ?? (row.price ? Number(row.price) : 0),
           mrp: firstVariant?.mrp ?? (row.mrp ? Number(row.mrp) : 0),
@@ -1307,7 +1315,7 @@ export const exportProductsBackup = async (req, res) => {
         highlights: _joinArr(p.details?.highlights, "|"),
         descriptionPoints: _joinArr(p.details?.descriptionPoints, "|"),
         productType: p.productType || "",
-        deviceType: p.deviceType || "",
+        deviceType: Array.isArray(p.deviceType) ? p.deviceType.join(", ") : (p.deviceType || ""),
         variantType: p.variantType || "Color",
         cashback: p.cashback ?? "",
         colors: _joinArr(p.colors, ","),

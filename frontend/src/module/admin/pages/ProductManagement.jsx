@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import {
@@ -34,6 +34,7 @@ const ProductManagement = () => {
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
   const [models, setModels] = useState([]);
+  const [homeSections, setHomeSections] = useState([]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
@@ -82,11 +83,12 @@ const ProductManagement = () => {
       if (brandFilter && brandFilter !== "All")
         queryParams += `&brand=${encodeURIComponent(brandFilter)}`;
 
-      const [prodRes, catRes, brandRes, modelRes] = await Promise.all([
+      const [prodRes, catRes, brandRes, modelRes, sectionRes] = await Promise.all([
         axios.get(`${API_ENDPOINTS.ADMIN_PRODUCTS}${queryParams}`, config),
         axios.get(`${API_ENDPOINTS.ADMIN_CATEGORIES}?all=true`, config),
         axios.get(`${API_ENDPOINTS.ADMIN_BRANDS}?all=true`, config),
         axios.get(`${API_ENDPOINTS.ADMIN_MODELS}?all=true`, config),
+        axios.get(API_ENDPOINTS.ADMIN_HOME_SECTIONS, config).catch(() => ({ data: [] })),
       ]);
 
       const productData = prodRes.data;
@@ -96,6 +98,7 @@ const ProductManagement = () => {
       setCategories(catRes.data.categories || catRes.data || []);
       setBrands(brandRes.data.brands || brandRes.data || []);
       setModels(modelRes.data.models || modelRes.data || []);
+      setHomeSections(sectionRes.data || []);
 
       setLoading(false);
     } catch (err) {
@@ -117,7 +120,7 @@ const ProductManagement = () => {
     brand: "",
     model: "",
     code: "",
-    deviceType: "Mobile",
+    deviceType: ["Mobile"],
     variantType: "Color",
     countInStock: 0,
     description: [""],
@@ -138,6 +141,23 @@ const ProductManagement = () => {
 
   const [formData, setFormData] = useState(initialFormState);
 
+  const dynamicDeviceTypes = useMemo(() => {
+    const sectionTitles = (homeSections || []).map((s) => s.title?.trim()).filter(Boolean);
+    const filterTypes = (homeSections || []).map((s) => s.filterDeviceType?.trim()).filter(Boolean);
+
+    // Derived strictly from admin-created Home Sections
+    const sectionBasedTypes = [...sectionTitles, ...filterTypes].filter(Boolean);
+
+    // Include current product's selected types if editing so existing selections remain accessible
+    const currentTypes = Array.isArray(formData?.deviceType)
+      ? formData.deviceType
+      : (formData?.deviceType ? [formData.deviceType] : []);
+
+    const combined = [...sectionBasedTypes, ...currentTypes].filter(Boolean);
+    const set = new Set(combined.length > 0 ? combined : ["Mobile"]);
+    return Array.from(set);
+  }, [homeSections, formData?.deviceType]);
+
   const handleOpenModal = (product = null) => {
     if (product) {
       setEditingProduct(product);
@@ -146,7 +166,9 @@ const ProductManagement = () => {
         category: product.category?._id || product.category || "",
         brand: product.brand?._id || product.brand || "",
         model: product.model?._id || product.model || "",
-        deviceType: product.deviceType || "Mobile",
+        deviceType: Array.isArray(product.deviceType) 
+          ? (product.deviceType.length ? product.deviceType : ["Mobile"]) 
+          : (product.deviceType ? [product.deviceType] : ["Mobile"]),
         variantType: product.variantType || "Color",
         description: Array.isArray(product.description) && product.description.length > 0 ? product.description : [product.description || ""],
         colorVariants: (product.colorVariants || []).map(v => ({
@@ -816,12 +838,26 @@ const ProductManagement = () => {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-gray-50 border border-gray-200 text-gray-700">
-                      {product.category?.name ||
-                        categories.find((c) => c._id === product.category)
-                          ?.name ||
-                        "Display"}
-                    </span>
+                    <div className="flex flex-col gap-1 items-start">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-gray-50 border border-gray-200 text-gray-700">
+                        {product.category?.name ||
+                          categories.find((c) => c._id === product.category)
+                            ?.name ||
+                          "Display"}
+                      </span>
+                      <div className="flex flex-wrap gap-1">
+                        {(Array.isArray(product.deviceType)
+                          ? product.deviceType
+                          : [product.deviceType || "Mobile"]
+                        ).map((dt) => (
+                          <span
+                            key={dt}
+                            className="text-[9px] bg-blue-50 text-blue-700 font-bold px-1.5 py-0.5 rounded border border-blue-100">
+                            {dt}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-col">
@@ -1164,22 +1200,46 @@ const ProductManagement = () => {
                       ))}
                     </select>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
-                      Device Type
+                  <div className="space-y-2 col-span-1 md:col-span-2">
+                    <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider block">
+                      Device Types (Select Multiple)
                     </label>
-                    <select
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all appearance-none"
-                      value={formData.deviceType || "Mobile"}
-                      onChange={(e) =>
-                        setFormData({ ...formData, deviceType: e.target.value })
-                      }>
-                      <option value="Mobile">Mobile</option>
-                      <option value="Tablet">Tablet</option>
-                      <option value="Smartwatch">Smartwatch</option>
-                      <option value="Accessories">Accessories</option>
-                      <option value="Other">Other</option>
-                    </select>
+                    <div className="flex flex-wrap gap-2 p-3 bg-gray-50 border border-gray-200 rounded-xl min-h-[52px] items-center">
+                      {dynamicDeviceTypes.map((typeOption) => {
+                        const currentTypes = Array.isArray(formData.deviceType)
+                          ? formData.deviceType
+                          : (formData.deviceType ? [formData.deviceType] : []);
+                        const selected = currentTypes.includes(typeOption);
+                        return (
+                          <button
+                            key={typeOption}
+                            type="button"
+                            onClick={() => {
+                              if (selected) {
+                                setFormData({
+                                  ...formData,
+                                  deviceType: currentTypes.filter((t) => t !== typeOption),
+                                });
+                              } else {
+                                setFormData({
+                                  ...formData,
+                                  deviceType: [...currentTypes, typeOption],
+                                });
+                              }
+                            }}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 border ${
+                              selected
+                                ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                                : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
+                            }`}>
+                            <span className={`w-3.5 h-3.5 rounded flex items-center justify-center text-[10px] ${selected ? "bg-white text-blue-600 font-extrabold" : "border border-gray-300"}`}>
+                              {selected ? "✓" : ""}
+                            </span>
+                            {typeOption}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">

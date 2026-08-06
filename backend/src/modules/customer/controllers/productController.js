@@ -80,8 +80,8 @@ export const getProducts = asyncHandler(async (req, res) => {
         // OR if the user sends 'productType=LCD...'
     }
     if (req.query.productType) filters.productType = req.query.productType;
-    if (req.query.deviceType) {
-        filters.deviceType = { $regex: new RegExp(`^${escapeRegex(req.query.deviceType.trim())}$`, 'i') };
+    if (req.query.deviceType && req.query.deviceType.toLowerCase() !== "all") {
+        filters.deviceType = { $in: [new RegExp(`^${escapeRegex(req.query.deviceType.trim())}$`, 'i')] };
     }
 
     if (req.query.minPrice || req.query.maxPrice) {

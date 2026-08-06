@@ -86,9 +86,8 @@ const productSchema = new mongoose.Schema({
     type: String, // e.g., "LCD with Touch Screen", "Battery"
   },
   deviceType: {
-    type: String,
-    enum: ['Mobile', 'Tablet', 'Smartwatch', 'Accessories', 'Other'],
-    default: 'Mobile',
+    type: [String],
+    default: ['Mobile'],
   },
   rating: {
     type: Number,

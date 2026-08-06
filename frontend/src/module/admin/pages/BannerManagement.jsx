@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Plus, Trash, ExternalLink, Image as ImageIcon } from "lucide-react";
+import { Plus, Trash, Pencil, ExternalLink, Image as ImageIcon } from "lucide-react";
 import axios from "axios";
 import ImageUpload from "../../../components/ImageUpload";
 import { API_ENDPOINTS } from "../../../config/api";
@@ -7,6 +7,7 @@ import { API_ENDPOINTS } from "../../../config/api";
 const BannerManagement = () => {
     const [banners, setBanners] = useState([]);
     const [showModal, setShowModal] = useState(false);
+    const [editingBanner, setEditingBanner] = useState(null);
     const [formData, setFormData] = useState({
         image: "",
         type: "main",
@@ -35,20 +36,53 @@ const BannerManagement = () => {
         fetchBanners();
     }, []);
 
+    const handleOpenAddModal = () => {
+        setEditingBanner(null);
+        setFormData({ image: "", type: "main", link: "", isActive: true });
+        setShowModal(true);
+    };
+
+    const handleEdit = (banner) => {
+        setEditingBanner(banner);
+        setFormData({
+            image: banner.image || "",
+            type: banner.type || "main",
+            link: banner.link || "",
+            isActive: banner.isActive ?? true,
+        });
+        setShowModal(true);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         try {
-            await axios.post(API_ENDPOINTS.ADMIN_BANNERS, formData, {
+            const token = JSON.parse(localStorage.getItem("adminInfo"))?.token;
+            const config = {
                 headers: {
-                    Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo")).token}`,
+                    Authorization: `Bearer ${token}`,
                 },
-            });
+            };
+
+            if (editingBanner) {
+                await axios.put(
+                    API_ENDPOINTS.ADMIN_BANNER_DETAIL(editingBanner._id),
+                    formData,
+                    config
+                );
+            } else {
+                await axios.post(
+                    API_ENDPOINTS.ADMIN_BANNERS,
+                    formData,
+                    config
+                );
+            }
             setShowModal(false);
+            setEditingBanner(null);
             setFormData({ image: "", type: "main", link: "", isActive: true });
             fetchBanners();
         } catch (error) {
-            alert("Error creating banner");
+            alert(editingBanner ? "Error updating banner" : "Error creating banner");
         } finally {
             setLoading(false);
         }
@@ -94,7 +128,7 @@ const BannerManagement = () => {
                     <p className="text-sm text-gray-400">Manage homepage banners</p>
                 </div>
                 <button
-                    onClick={() => setShowModal(true)}
+                    onClick={handleOpenAddModal}
                     className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
                     <Plus size={20} />
                     Add Banner
@@ -112,10 +146,17 @@ const BannerManagement = () => {
                                 alt="Banner"
                                 className="w-full h-full object-cover"
                             />
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                                <button
+                                    onClick={() => handleEdit(banner)}
+                                    className="p-2.5 bg-white rounded-full text-blue-600 hover:bg-blue-50 transition-colors shadow-md"
+                                    title="Edit Banner">
+                                    <Pencil size={18} />
+                                </button>
                                 <button
                                     onClick={() => handleDelete(banner._id)}
-                                    className="p-2 bg-white rounded-full text-red-500 hover:bg-red-50 transition-colors">
+                                    className="p-2.5 bg-white rounded-full text-red-500 hover:bg-red-50 transition-colors shadow-md"
+                                    title="Delete Banner">
                                     <Trash size={18} />
                                 </button>
                             </div>
@@ -160,7 +201,7 @@ const BannerManagement = () => {
                     <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden">
                         <div className="p-6 border-b border-gray-100">
                             <h3 className="text-lg font-bold text-secondary">
-                                Add New Banner
+                                {editingBanner ? "Edit Banner" : "Add New Banner"}
                             </h3>
                         </div>
                         <div className="p-6">
@@ -237,7 +278,13 @@ const BannerManagement = () => {
                                         type="submit"
                                         disabled={loading}
                                         className="flex-1 py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-colors shadow-lg shadow-primary/30">
-                                        {loading ? "Creating..." : "Create Banner"}
+                                        {loading
+                                            ? editingBanner
+                                                ? "Updating..."
+                                                : "Creating..."
+                                            : editingBanner
+                                                ? "Update Banner"
+                                                : "Create Banner"}
                                     </button>
                                 </div>
                             </form>

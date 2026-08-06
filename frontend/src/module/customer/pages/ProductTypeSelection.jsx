@@ -160,8 +160,10 @@ const ProductTypeSelection = ({ defaultDeviceType }) => {
                 const catName = (product.category?.name || "").toLowerCase().trim();
                 const prodName = (product.name || "").toLowerCase().trim();
                 const prodType = (product.productType || "").toLowerCase().trim();
-                const devType = (product.deviceType || "").toLowerCase().trim();
-                return catName.includes("mobile") || catName.includes("phone") || prodType.includes("phone") || devType === "mobile" || prodName.includes("test mobile");
+                const devTypes = Array.isArray(product.deviceType)
+                  ? product.deviceType.map((d) => String(d).toLowerCase().trim())
+                  : [String(product.deviceType || "").toLowerCase().trim()];
+                return catName.includes("mobile") || catName.includes("phone") || prodType.includes("phone") || devTypes.includes("mobile") || prodName.includes("test mobile");
             });
         }
         if (isSparePartsPath) {

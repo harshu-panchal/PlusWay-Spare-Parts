@@ -28,7 +28,6 @@ const homeSectionSchema = new mongoose.Schema({
     },
     filterDeviceType: {
         type: String,
-        enum: ['Mobile', 'Tablet', 'Smartwatch', 'Accessories', 'Other', ''],
         default: '',
     },
 }, {

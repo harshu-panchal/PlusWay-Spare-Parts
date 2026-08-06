@@ -16,6 +16,8 @@ import translationRoutes from "./routes/translationRoutes.js";
 import fcmTokenRoutes from "./routes/fcmTokenRoutes.js";
 import settingRoutes from "./routes/settingRoutes.js";
 
+import Product from "./models/Product.js";
+
 // Define __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,8 +25,20 @@ const __dirname = path.dirname(__filename);
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, "../.env") });
 
-// Connect to Database
-connectDB();
+// Connect to Database & Run One-Shot Migration
+connectDB().then(async () => {
+  try {
+    const result = await Product.updateMany(
+      { $or: [{ deviceType: "Mobile" }, { deviceType: ["Mobile"] }, { deviceType: { $exists: false } }] },
+      { $set: { deviceType: ["Spare Parts"] } }
+    );
+    if (result.modifiedCount > 0) {
+      console.log(`[Migration] Updated ${result.modifiedCount} existing products to deviceType: ["Spare Parts"]`);
+    }
+  } catch (err) {
+    console.error("[Migration Error]:", err.message);
+  }
+});
 
 const app = express();
 

@@ -20,7 +20,8 @@
     "import:alcatel_1t7": "node import_alcatel_1t7.js",
     "build:scraped_alcatel_3_2025": "node build_alcatel_3_2025_scraped_data.js",
     "import:alcatel_3_2025": "node import_alcatel_3_2025.js",
-    "update:wholesale": "node update_wholesale_pricing.js"
+    "update:wholesale": "node update_wholesale_pricing.js",
+    "migrate:device-types": "node scripts/migrate_device_type_to_spare_parts.js"
   },
   "engines": {
     "node": ">=18.0.0"

@@ -49,6 +49,7 @@ const bulkUploadHistorySchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    suppressReservedKeysWarning: true,
   }
 );
 

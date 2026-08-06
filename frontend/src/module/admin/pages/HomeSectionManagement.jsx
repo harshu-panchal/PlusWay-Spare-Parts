@@ -395,11 +395,18 @@ const HomeSectionManagement = () => {
                     onChange={(e) => setFormData({ ...formData, filterDeviceType: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
                     <option value="">None (Default)</option>
-                    <option value="Mobile">Mobile</option>
-                    <option value="Tablet">Tablet</option>
-                    <option value="Smartwatch">Smartwatch</option>
-                    <option value="Accessories">Accessories</option>
-                    <option value="Other">Other</option>
+                    {Array.from(
+                      new Set(
+                        [
+                          ...sections.map((s) => s.title?.trim()).filter(Boolean),
+                          formData.filterDeviceType,
+                        ].filter(Boolean),
+                      ),
+                    ).map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
