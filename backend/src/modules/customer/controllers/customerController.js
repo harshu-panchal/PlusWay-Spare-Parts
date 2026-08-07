@@ -94,3 +94,28 @@ export const updateCustomerProfile = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+
+// @desc    Soft delete customer account
+// @route   DELETE /api/customer/account
+// @access  Private
+export const deleteCustomerAccount = async (req, res) => {
+  try {
+    const customer = await Customer.findById(req.user._id);
+
+    if (customer) {
+      customer.isDeleted = true;
+      customer.deletedAt = new Date();
+      customer.status = "Deleted";
+      customer.fcmTokens = [];
+      customer.fcmTokenMobile = [];
+
+      await customer.save();
+
+      res.json({ message: "Account deleted successfully" });
+    } else {
+      res.status(404).json({ message: "Customer not found" });
+    }
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};

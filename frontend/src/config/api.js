@@ -28,6 +28,7 @@ export const API_ENDPOINTS = {
     CUSTOMER_LOGIN: `${API_BASE_URL}/api/customer/login`,
     CUSTOMER_REGISTER: `${API_BASE_URL}/api/customer/register`,
     CUSTOMER_PROFILE: `${API_BASE_URL}/api/customer/profile`,
+    DELETE_ACCOUNT: `${API_BASE_URL}/api/customer/account`,
     CUSTOMER_SEND_OTP: `${API_BASE_URL}/api/customer/send-otp`,
     CUSTOMER_VERIFY_OTP: `${API_BASE_URL}/api/customer/verify-otp`,
 

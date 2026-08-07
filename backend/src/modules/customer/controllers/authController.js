@@ -23,7 +23,12 @@ export const sendOtp = asyncHandler(async (req, res) => {
   // Check if customer exists based on type
   const customerExists = await Customer.findOne({ mobile });
 
-  if (type === 'register' && customerExists) {
+  if (type === 'login' && customerExists && customerExists.isDeleted) {
+    res.status(400);
+    throw new Error('Account has been deleted. Please contact support.');
+  }
+
+  if (type === 'register' && customerExists && !customerExists.isDeleted) {
     res.status(400);
     throw new Error('Customer already exists');
   }
@@ -56,6 +61,10 @@ export const verifyOtp = asyncHandler(async (req, res) => {
     const customer = await Customer.findOne({ mobile });
 
     if (customer) {
+      if (customer.isDeleted) {
+        res.status(400);
+        throw new Error('Account has been deleted');
+      }
       res.status(200).json({
         success: true,
         message: 'Login successful',

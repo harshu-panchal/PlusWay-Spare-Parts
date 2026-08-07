@@ -1,10 +1,23 @@
 import React, { useState } from "react";
-import { User, Mail, Smartphone, Lock, ShieldCheck, Bell } from "lucide-react";
+import {
+  User,
+  Mail,
+  Smartphone,
+  Lock,
+  ShieldCheck,
+  Bell,
+  Trash2,
+  AlertTriangle,
+  X,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import ProfileSidebar from "../components/ProfileSidebar";
 import axios from "axios";
 import { API_ENDPOINTS } from "../../../config/api";
+import { removeFCMToken } from "../../../services/pushNotificationService";
 
 const Settings = () => {
+  const navigate = useNavigate();
   const userInfo = JSON.parse(localStorage.getItem("userInfo"));
   const [formData, setFormData] = useState({
     name: userInfo?.name || "",
@@ -13,6 +26,10 @@ const Settings = () => {
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -24,7 +41,7 @@ const Settings = () => {
     setMessage({ type: "", text: "" });
 
     try {
-      const token = userInfo?.token;
+      const token = localStorage.getItem("token");
       const { data } = await axios.put(
         API_ENDPOINTS.CUSTOMER_PROFILE,
         {
@@ -60,6 +77,30 @@ const Settings = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleteLoading(true);
+    setDeleteError("");
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(API_ENDPOINTS.DELETE_ACCOUNT, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      removeFCMToken();
+      localStorage.removeItem("userInfo");
+      localStorage.removeItem("token");
+
+      navigate("/login");
+    } catch (err) {
+      setDeleteError(
+        err.response?.data?.message || "Failed to delete account. Please try again."
+      );
+      setDeleteLoading(false);
     }
   };
 
@@ -225,9 +266,91 @@ const Settings = () => {
                 </button>
               </div>
             </div>
+
+            {/* Danger Zone / Delete Account */}
+            <div className="bg-white p-8 rounded-[32px] shadow-sm border border-red-100">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center text-red-500 shadow-sm">
+                  <Trash2 size={20} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-secondary uppercase italic tracking-tighter">
+                    Danger <span className="text-red-500 italic">Zone</span>
+                  </h2>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                    Deactivate or soft delete your account
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-6 bg-red-50/50 rounded-2xl border border-red-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-sm font-black text-red-600 uppercase tracking-wider mb-1">
+                    Delete Customer Account
+                  </h3>
+                  <p className="text-xs font-medium text-gray-600 max-w-md">
+                    Deactivating your account will soft-delete your user profile and immediately log you out.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteModalOpen(true)}
+                  className="bg-red-600 hover:bg-red-700 text-white font-black text-[10px] py-3.5 px-6 rounded-xl uppercase tracking-[0.2em] shadow-md transition-all shrink-0 flex items-center gap-2">
+                  <Trash2 size={14} />
+                  Delete Account
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Delete Account Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl border border-gray-100 relative">
+            <button
+              onClick={() => setIsDeleteModalOpen(false)}
+              className="absolute right-6 top-6 text-gray-400 hover:text-secondary transition-colors">
+              <X size={20} />
+            </button>
+
+            <div className="w-14 h-14 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+              <AlertTriangle size={32} />
+            </div>
+
+            <h3 className="text-xl font-black text-secondary uppercase italic tracking-tighter text-center mb-2">
+              Delete Account?
+            </h3>
+            <p className="text-sm text-gray-500 text-center mb-6 font-medium">
+              Are you sure you want to delete your account? Your profile will be soft-deleted and you will be logged out immediately.
+            </p>
+
+            {deleteError && (
+              <div className="mb-4 p-3 bg-red-50 text-red-700 text-xs font-bold rounded-xl border border-red-200 text-center">
+                {deleteError}
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                disabled={deleteLoading}
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-all">
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleteLoading}
+                onClick={handleDeleteAccount}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-black py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-red-600/20 transition-all flex items-center justify-center gap-2">
+                {deleteLoading ? "Deleting..." : "Yes, Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

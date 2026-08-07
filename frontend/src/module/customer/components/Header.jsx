@@ -31,8 +31,8 @@ const EMPTY_SEARCH_RESULTS = { models: [], products: [] };
 const FEATURED_NAV_ITEMS = [
   { name: "Mobile", defaultPath: "/brand-selection?deviceType=Mobile", forceDefault: true },
   { name: "Spare Parts", defaultPath: "/section/697bb8dac051a68bc83e4dc8?deviceType=Spare%20Parts", forceDefault: true },
-  { name: "Accessories", defaultPath: "/products?keyword=Accessories&deviceType=Accessories" },
-  { name: "Tools", defaultPath: "/products?keyword=Tools&deviceType=Tools" },
+  { name: "Accessories", defaultPath: "/products?deviceType=Accessories", forceDefault: true },
+  { name: "Tools", defaultPath: "/products?deviceType=Tools", forceDefault: true },
 ];
 
 const SearchDropdown = ({

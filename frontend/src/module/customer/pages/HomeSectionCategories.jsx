@@ -121,6 +121,7 @@ const HomeSectionCategories = () => {
   // Data state for step 2
   const [itemsList, setItemsList] = useState([]);
   const [itemsLoading, setItemsLoading] = useState(false);
+  const [deviceTypeProducts, setDeviceTypeProducts] = useState([]);
 
   useEffect(() => {
     const fetchSection = async () => {
@@ -156,6 +157,27 @@ const HomeSectionCategories = () => {
   const isMobileSection = titleLower.includes("mobile") || titleLower.includes("phone");
   const isSparePartsSection = titleLower.includes("spare");
   const isAccessoriesSection = titleLower.includes("accessori") || titleLower.includes("accessory") || sectionId === "697c5e03d1ffb9d52de9a3bb";
+  const isToolsSection = titleLower.includes("tool") || (section?.filterDeviceType || "").toLowerCase().includes("tool");
+
+  // Fetch deviceType products automatically if section requires it (e.g., Tools) and categories list is empty
+  useEffect(() => {
+    if (!section) return;
+    const explicitCats = Array.isArray(section.categories) ? section.categories : [];
+    const filterDevType = section.filterDeviceType || (isToolsSection ? "Tools" : null);
+
+    if ((section.displayType === "products" && explicitCats.length === 0) || isToolsSection || filterDevType) {
+      const fetchDevTypeProducts = async () => {
+        try {
+          const devTypeToQuery = filterDevType || section.title || "Tools";
+          const { data } = await axios.get(`${API_BASE_URL}/api/customer/products?deviceType=${encodeURIComponent(devTypeToQuery)}&pageSize=100`);
+          setDeviceTypeProducts(data.products || []);
+        } catch (err) {
+          console.error("Error fetching section deviceType products:", err);
+        }
+      };
+      fetchDevTypeProducts();
+    }
+  }, [section, isToolsSection]);
 
   // Step 2 Data Fetching (Models for both Mobile and Spare Parts Sections)
   useEffect(() => {
@@ -216,7 +238,7 @@ const HomeSectionCategories = () => {
     );
   }
 
-  const displayType = section.displayType || "categories";
+  let displayType = section.displayType || "categories";
   const isBrandsFlow =
     displayType === "brands" ||
     sectionId === "697bb8dac051a68bc83e4dc8" ||
@@ -224,6 +246,11 @@ const HomeSectionCategories = () => {
     isSparePartsSection;
 
   let sectionCategories = Array.isArray(section.categories) ? [...section.categories] : [];
+
+  if (sectionCategories.length === 0 && deviceTypeProducts.length > 0) {
+    sectionCategories = deviceTypeProducts;
+    displayType = "products";
+  }
 
   if (isAccessoriesSection && Array.isArray(allCategories) && allCategories.length > 0) {
     const extraAccessories = allCategories.filter((c) => c.showInAccessories);

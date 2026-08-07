@@ -10,6 +10,7 @@ import {
   registerCustomer,
   authCustomer,
   updateCustomerProfile,
+  deleteCustomerAccount,
 } from "../controllers/customerController.js";
 import { sendOtp, verifyOtp } from "../controllers/authController.js";
 import { otpLimiter } from "../../../middleware/rateLimiter.js";
@@ -57,6 +58,8 @@ router.post("/login", authCustomer);
 
 // Profile routes (Protected)
 router.put("/profile", protect, updateCustomerProfile);
+router.delete("/profile", protect, deleteCustomerAccount);
+router.delete("/account", protect, deleteCustomerAccount);
 
 // Address routes (Protected)
 router.route("/addresses").get(protect, getAddresses).post(protect, addAddress);

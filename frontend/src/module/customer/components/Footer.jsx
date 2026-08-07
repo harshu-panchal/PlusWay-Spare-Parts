@@ -41,7 +41,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link
-                  to="/login"
+                  to="/signup"
                   className="text-gray-500 hover:text-primary transition-colors text-[13px] font-bold">
                   Create account
                 </Link>
@@ -188,7 +188,7 @@ const Footer = () => {
         {/* Copyright Section */}
         <div className="mt-16 pt-8 border-t border-gray-100 flex flex-col items-center gap-4">
           <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.2em] text-center">
-            © 2004 - 2026 plusway.in. By Elcotek
+            © plusway.in
           </p>
           <div className="flex gap-4 opacity-50 grayscale hover:grayscale-0 transition-all duration-500 text-[10px] font-bold text-gray-400">
             VISA | MASTERCARD | UPI | NET BANKING

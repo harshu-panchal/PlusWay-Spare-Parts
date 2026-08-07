@@ -43,13 +43,17 @@ const MobileDirectory = () => {
                             </p>
                             <div className="flex flex-col sm:flex-row gap-4">
                                 <a
-                                    href="#"
+                                    href="https://play.google.com/store/apps/details?id=com.plusway.user"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     className="bg-white text-secondary px-8 py-3 rounded font-black uppercase text-sm tracking-widest hover:bg-gray-100 transition-colors text-center"
                                 >
                                     Download for Android
                                 </a>
                                 <a
-                                    href="#"
+                                    href="https://apps.apple.com/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     className="bg-transparent border-2 border-white text-white px-8 py-3 rounded font-black uppercase text-sm tracking-widest hover:bg-white/10 transition-colors text-center"
                                 >
                                     Download for iOS

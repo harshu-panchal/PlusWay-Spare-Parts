@@ -135,7 +135,9 @@ const ProductListing = () => {
                 ? selectedBrand.name
                 : selectedCategory
                   ? selectedCategory.name
-                  : "Products"}
+                  : deviceType
+                    ? deviceType
+                    : "Products"}
           </span>
         </div>
 
@@ -241,7 +243,7 @@ const ProductListing = () => {
             </h1>
           ) : (
             <h1 className="text-lg font-black text-secondary uppercase italic tracking-tighter">
-              Products{" "}
+              {deviceType ? `${deviceType} Products` : "Products"}{" "}
               <span className="text-primary tracking-normal not-italic lowercase font-medium ml-2">
                 ({total} items)
               </span>

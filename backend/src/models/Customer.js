@@ -48,8 +48,16 @@ const customerSchema = new mongoose.Schema(
     ],
     status: {
       type: String,
-      enum: ["Active", "Inactive", "Blocked"],
+      enum: ["Active", "Inactive", "Blocked", "Deleted"],
       default: "Active",
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
     },
     // FCM Tokens for Push Notifications
     fcmTokens: {

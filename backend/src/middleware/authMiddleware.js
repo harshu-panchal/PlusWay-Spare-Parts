@@ -24,6 +24,11 @@ export const protect = async (req, res, next) => {
         return;
       }
 
+      if (decoded.role === "customer" && req.user.isDeleted) {
+        res.status(401).json({ message: "Not authorized, account has been deleted" });
+        return;
+      }
+
       next();
     } catch (error) {
       console.error(error);
