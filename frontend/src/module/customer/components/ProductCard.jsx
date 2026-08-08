@@ -3,11 +3,17 @@ import { Link } from 'react-router-dom';
 import { Star, ShoppingCart } from 'lucide-react';
 import LazyImage from '../../../components/LazyImage';
 import { useCart } from '../context/CartContext';
+import { useCountryPricing } from '../../../contexts/CountryPricingContext';
 
 const ProductCard = ({ product }) => {
     const { addToCart } = useCart();
-    const savingsPercent = product.mrp > product.price
-        ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
+    const { getPriceForCountry, formatPrice } = useCountryPricing();
+
+    // Get country-aware pricing (auto-converted from INR or manual override)
+    const pricing = getPriceForCountry(product);
+
+    const savingsPercent = pricing.mrp > pricing.price
+        ? Math.round(((pricing.mrp - pricing.price) / pricing.mrp) * 100)
         : 0;
 
     return (
@@ -40,21 +46,29 @@ const ProductCard = ({ product }) => {
                 <div className="mt-auto">
                     <div className="flex flex-col mb-3">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-sm md:text-lg font-black text-secondary tracking-tighter">₹{product.price.toLocaleString()}</span>
-                            {product.wholesalePrice > 0 && (
+                            <span className="text-sm md:text-lg font-black text-secondary tracking-tighter">
+                                {pricing.currencySymbol}{formatPrice(pricing.price)}
+                            </span>
+                            {pricing.wholesalePrice > 0 && (
                                 <span className="text-[10px] md:text-xs font-black text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded tracking-tight">
-                                    Wholesale: ₹{product.wholesalePrice.toLocaleString()} <span className="text-[8px] opacity-70">({product.wholesaleMinQty}+)</span>
+                                    Wholesale: {pricing.currencySymbol}{formatPrice(pricing.wholesalePrice)} <span className="text-[8px] opacity-70">({pricing.wholesaleMinQty}+)</span>
                                 </span>
                             )}
                         </div>
                         <div className="flex items-center gap-2">
-                            {product.mrp > product.price && (
-                                <span className="text-[9px] md:text-[11px] text-gray-400 line-through">₹{product.mrp.toLocaleString()}</span>
+                            {pricing.mrp > pricing.price && (
+                                <span className="text-[9px] md:text-[11px] text-gray-400 line-through">{pricing.currencySymbol}{formatPrice(pricing.mrp)}</span>
                             )}
-                            {product.mrp > product.price && (
-                                <span className="text-[9px] font-black text-accent uppercase tracking-widest leading-none">Save ₹{(product.mrp - product.price).toLocaleString()}</span>
+                            {pricing.mrp > pricing.price && (
+                                <span className="text-[9px] font-black text-accent uppercase tracking-widest leading-none">Save {pricing.currencySymbol}{formatPrice(pricing.mrp - pricing.price)}</span>
                             )}
                         </div>
+                        {/* Show country label for non-Indian users */}
+                        {pricing.currencyCode !== "INR" && (
+                            <span className="text-[9px] text-gray-400 mt-0.5">
+                                🌍 {pricing.countryName} ({pricing.currencyCode})
+                            </span>
+                        )}
                     </div>
 
                     <button

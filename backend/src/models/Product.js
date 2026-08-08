@@ -1,5 +1,20 @@
 import mongoose from 'mongoose';
 
+// Per-country manual price override.
+// Admin enters prices in the local currency of each country.
+// If no override exists for a detected country, the system auto-converts
+// the base INR price using live exchange rates from open.er-api.com.
+const countryPricingSchema = new mongoose.Schema({
+  countryCode:     { type: String, required: true },  // ISO 3166-1 alpha-2, e.g. "AE"
+  countryName:     { type: String, required: true },  // e.g. "United Arab Emirates"
+  currencyCode:    { type: String, required: true },  // e.g. "AED"
+  currencySymbol:  { type: String, required: true },  // e.g. "د.إ"
+  price:           { type: Number, required: true },  // selling price in local currency
+  wholesalePrice:  { type: Number, default: 0 },
+  wholesaleMinQty: { type: Number, default: 10 },
+  mrp:             { type: Number, required: true },
+}, { _id: false });
+
 const reviewSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
@@ -60,6 +75,9 @@ const productSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  // Per-country manual price overrides. If empty, prices are auto-converted
+  // from the base INR price using live exchange rates.
+  countryPricing: [countryPricingSchema],
   reviews: [reviewSchema],
   images: [{
     type: String,
@@ -139,6 +157,8 @@ const productSchema = new mongoose.Schema({
     wholesalePrice: { type: Number },
     wholesaleMinQty: { type: Number },
     countInStock: { type: Number, default: 0 },
+    // Per-country pricing overrides at variant level
+    countryPricing: [countryPricingSchema],
   }],
 }, {
   timestamps: true,

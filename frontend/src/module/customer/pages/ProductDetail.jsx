@@ -8,6 +8,7 @@ import {
   modelSpecificCategories,
 } from "../data/mockData";
 import { useCart } from "../context/CartContext";
+import { useCountryPricing } from "../../../contexts/CountryPricingContext";
 import {
   ChevronRight,
   ChevronLeft,
@@ -68,13 +69,22 @@ const ProductDetail = () => {
     return null;
   }, [product, selectedColor]);
 
-  // Effective pricing — use variant's own values if set, else fall back to product level
-  const effectivePrice = selectedVariant?.price != null ? selectedVariant.price : product?.price;
-  const effectiveMrp = selectedVariant?.mrp != null ? selectedVariant.mrp : product?.mrp;
-  const effectiveWholesalePrice = selectedVariant?.wholesalePrice != null ? selectedVariant.wholesalePrice : product?.wholesalePrice;
-  const effectiveWholesaleMinQty = selectedVariant?.wholesaleMinQty != null ? selectedVariant.wholesaleMinQty : (product?.wholesaleMinQty || 10);
-  const effectiveCountInStock = selectedVariant?.countInStock != null ? selectedVariant.countInStock : product?.countInStock;
-  const effectiveSku = selectedVariant?.sku || product?.code;
+  // Country-aware pricing — auto-converts from INR or uses manual override if set by admin
+  const { getPriceForCountry, formatPrice } = useCountryPricing();
+  const pricing = React.useMemo(
+    () => (product ? getPriceForCountry(product, selectedVariant) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [product, selectedVariant, getPriceForCountry]
+  );
+
+  // Keep these helpers for backward compatibility with the rest of the component
+  const effectivePrice           = pricing?.price           ?? 0;
+  const effectiveMrp             = pricing?.mrp             ?? 0;
+  const effectiveWholesalePrice  = pricing?.wholesalePrice  ?? 0;
+  const effectiveWholesaleMinQty = pricing?.wholesaleMinQty ?? (product?.wholesaleMinQty || 10);
+  const effectiveCurrencySymbol  = pricing?.currencySymbol  ?? "₹";
+  const effectiveCountInStock    = selectedVariant?.countInStock != null ? selectedVariant.countInStock : product?.countInStock;
+  const effectiveSku             = selectedVariant?.sku || product?.code;
 
   const displayImages = React.useMemo(() => {
     if (!product) return [];
@@ -456,20 +466,17 @@ const ProductDetail = () => {
                 <div className="flex items-baseline gap-2 text-sm text-gray-500">
                   <span>List price:</span>
                   <span className="line-through">
-                    {effectiveMrp?.toLocaleString()}.00 Rs.
+                    {effectiveCurrencySymbol}{formatPrice(effectiveMrp)}
                   </span>
                 </div>
                 <div className="bg-[#f8f9fa] p-4 border-l-4 border-secondary flex flex-col gap-2 rounded-r-2xl">
                   <div className="flex items-baseline gap-2">
                     <span className="text-4xl font-black text-secondary italic tracking-tighter">
-                      {(quantity >= effectiveWholesaleMinQty
-                        ? effectiveWholesalePrice
-                        : effectivePrice
-                      )?.toLocaleString()}
-                      .00
-                    </span>
-                    <span className="text-xl font-bold text-secondary tracking-tight">
-                      Rs.
+                      {effectiveCurrencySymbol}{formatPrice(
+                        quantity >= effectiveWholesaleMinQty
+                          ? effectiveWholesalePrice
+                          : effectivePrice
+                      )}
                     </span>
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-2">
                       Current Unit Price
@@ -486,7 +493,7 @@ const ProductDetail = () => {
                             Wholesale Pricing
                           </span>
                           <span className="text-sm font-black text-secondary">
-                            ₹{effectiveWholesalePrice?.toLocaleString()}{" "}
+                            {effectiveCurrencySymbol}{formatPrice(effectiveWholesalePrice)}{" "}
                             <span className="text-[10px] font-bold text-gray-400">
                               for {effectiveWholesaleMinQty}+ pieces
                             </span>
@@ -500,10 +507,8 @@ const ProductDetail = () => {
                           <span
                             className="text-[10px] font-bold text-blue-600 cursor-help"
                             title={`Buy ${effectiveWholesaleMinQty} or more to get this price`}>
-                            Save ₹
-                            {(
-                              effectivePrice - effectiveWholesalePrice
-                            )?.toLocaleString()}{" "}
+                            Save {effectiveCurrencySymbol}
+                            {formatPrice(effectivePrice - effectiveWholesalePrice)}{" "}
                             per unit!
                           </span>
                         )}
@@ -516,18 +521,29 @@ const ProductDetail = () => {
               <div className="text-sm text-red-600 font-bold flex flex-col">
                 <span>
                   You save:{" "}
-                  {(
+                  {effectiveCurrencySymbol}{formatPrice(
                     effectiveMrp -
                     (quantity >= effectiveWholesaleMinQty
                       ? effectiveWholesalePrice
                       : effectivePrice)
-                  )?.toLocaleString()}
-                  .00 Rs.
+                  )}
                 </span>
                 <span className="text-[10px] uppercase tracking-widest opacity-70">
                   Total Savings on MRP
                 </span>
               </div>
+
+              {/* Country pricing info — shown only for non-Indian users */}
+              {pricing?.currencyCode && pricing.currencyCode !== "INR" && (
+                <div className="flex items-center gap-2 text-[11px] text-gray-500 bg-gray-50 border border-gray-100 px-3 py-2 rounded-lg">
+                  <span>🌍</span>
+                  <span>
+                    Prices shown in <strong>{pricing.countryName}</strong> ({pricing.currencyCode})
+                    {pricing.isConverted && <span className="ml-1 text-gray-400">· auto-converted from INR</span>}
+                    {pricing.isOverride && <span className="ml-1 text-emerald-600 font-bold">· local price</span>}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-4 mb-4 text-sm text-secondary font-black">
@@ -543,12 +559,12 @@ const ProductDetail = () => {
                   Total Amount Payable
                 </p>
                 <p className="text-2xl font-black text-secondary tracking-tighter">
-                  ₹
-                  {(
+                  {effectiveCurrencySymbol}
+                  {formatPrice(
                     (quantity >= effectiveWholesaleMinQty
                       ? effectiveWholesalePrice
                       : effectivePrice) * quantity
-                  )?.toLocaleString()}
+                  )}
                 </p>
               </div>
               <div className="text-right">

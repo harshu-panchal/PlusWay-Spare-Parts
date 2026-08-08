@@ -44,6 +44,7 @@ import { getActiveBanners } from "../../admin/controllers/bannerController.js";
 import { globalSearch } from "../controllers/searchController.js";
 import { createLead } from "../controllers/leadController.js";
 import { protect } from "../../../middleware/authMiddleware.js";
+import { getCountry, getExchangeRatesHandler } from "../controllers/geoController.js";
 
 const router = express.Router();
 
@@ -70,6 +71,10 @@ router
   .delete(protect, deleteAddress);
 
 router.put("/addresses/:id/default", protect, setDefaultAddress);
+
+// Geo / Exchange Rate routes (Public)
+router.get("/geo/country", getCountry);
+router.get("/exchange-rates", getExchangeRatesHandler);
 
 // Product & Content routes
 router.get("/search", globalSearch);

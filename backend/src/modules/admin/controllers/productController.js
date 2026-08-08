@@ -133,6 +133,7 @@ export const createProduct = async (req, res) => {
     details,
     colors,
     colorVariants,
+    countryPricing,
   } = req.body;
 
   const generatedSlug =
@@ -173,6 +174,8 @@ export const createProduct = async (req, res) => {
     details,
     colors,
     colorVariants,
+    // Per-country manual price overrides (optional)
+    countryPricing: Array.isArray(countryPricing) ? countryPricing : [],
   };
 
   if (code) {
@@ -257,6 +260,10 @@ export const updateProduct = async (req, res) => {
     if (req.body.wholesaleMinQty !== undefined) product.wholesaleMinQty = req.body.wholesaleMinQty;
     if (req.body.mrp !== undefined) product.mrp = req.body.mrp;
     if (req.body.cashback !== undefined) product.cashback = req.body.cashback;
+    // Update product-level countryPricing (full replacement)
+    if (req.body.countryPricing !== undefined) {
+      product.countryPricing = Array.isArray(req.body.countryPricing) ? req.body.countryPricing : [];
+    }
     if (req.body.images) product.images = req.body.images;
     if (req.body.videoUrl !== undefined) product.videoUrl = req.body.videoUrl;
     if (req.body.brand) product.brand = req.body.brand;
@@ -318,6 +325,7 @@ export const updateProduct = async (req, res) => {
       ? req.body.colorVariants.map(v => ({
           ...v,
           sku: v.sku && v.sku.trim() ? v.sku.trim() : genVariantSku(v.colorName),
+          countryPricing: Array.isArray(v.countryPricing) ? v.countryPricing : [],
         }))
       : product.colorVariants;
 
@@ -628,7 +636,8 @@ export const bulkCreateProducts = async (req, res) => {
           let parsed = [];
           if (raw.includes(";")) {
             parsed = raw.split("||").map((variantStr) => {
-              const parts = variantStr.split(";").map((p) => p.trim());
+              const [variantFieldsStr, countryPricingStr] = variantStr.split("~");
+              const parts = variantFieldsStr.split(";").map((p) => p.trim());
               return {
                 colorName: parts[0] || "",
                 sku: parts[1] && parts[1].trim() ? parts[1].trim() : "",
@@ -638,6 +647,7 @@ export const bulkCreateProducts = async (req, res) => {
                 wholesaleMinQty: parts[5] ? Number(parts[5]) : undefined,
                 countInStock: parts[6] ? Number(parts[6]) : 0,
                 images: parts[7] ? parts[7].split(",").map((u) => u.trim()).filter(Boolean) : [],
+                countryPricing: countryPricingStr ? _parseCountryPricing(countryPricingStr) : [],
               };
             });
           } else {
@@ -703,6 +713,8 @@ export const bulkCreateProducts = async (req, res) => {
             countryOfOrigin: row.countryOfOrigin ? String(row.countryOfOrigin).trim() : "",
             packer: row.packer ? String(row.packer).trim() : "",
           },
+          // Parse optional countryPricing column (backward compatible — column may not exist)
+          countryPricing: _parseCountryPricing(row.countryPricing),
         };
 
         if (codeStr) {
@@ -837,6 +849,7 @@ export const downloadProductTemplate = async (req, res) => {
       { header: "packer", key: "packer", example: "Elcotek India Pvt Ltd, New Delhi", example2: "" },
       { header: "highlights", key: "highlights", example: "Super AMOLED|Fast Charging|5G Ready", example2: "Long Life|Safe Chemistry" },
       { header: "descriptionPoints", key: "descriptionPoints", example: "100% Original Part|Quality Tested", example2: "Safe and reliable" },
+      { header: "countryPricing", key: "countryPricing", example: "AE|United Arab Emirates|AED|د.إ|80|65|10|100||US|United States|USD|$|25|20|10|30", example2: "" },
     ];
 
     ws.columns = columns.map(c => ({
@@ -952,6 +965,9 @@ export const downloadProductTemplate = async (req, res) => {
       ["specs", "key:value pairs, pipe-separated -> Color:Black|RAM:8GB"],
       ["highlights / descriptionPoints", "Pipe-separated -> Fast Charging|5G Ready"],
       ["SKU (top-level)", "Leave blank to auto-generate (e.g. PW-123456)."],
+      ["countryPricing (Optional)", "Format: countryCode|countryName|currencyCode|currencySymbol|price|wholesalePrice|wholesaleMinQty|mrp"],
+      ["", "Separate multiple countries with ||. Example: AE|United Arab Emirates|AED|د.إ|80|65|10|100||US|United States|USD|$|25|20|10|30"],
+      ["", "If left blank, prices are auto-converted from INR using live exchange rates."],
       ["Max file size", "10 MB"],
     ];
     instructionRows.forEach((r) => instr.addRow(r));
@@ -1018,6 +1034,10 @@ const BULK_PRODUCT_COLUMNS = [
   { header: "countryOfOrigin", key: "countryOfOrigin", width: 18 },
   { header: "packer", key: "packer", width: 30 },
   { header: "colors", key: "colors", width: 22 },
+  // Country pricing: pipe-delimited per-country records, joined by ||
+  // Format per record: countryCode|countryName|currencyCode|currencySymbol|price|wholesalePrice|wholesaleMinQty|mrp
+  // Example: AE|United Arab Emirates|AED|د.إ|80|65|10|100||US|United States|USD|$|25|20|10|30
+  { header: "countryPricing", key: "countryPricing", width: 100 },
 ];
 
 const _colLetter = (n) => {
@@ -1152,11 +1172,7 @@ const _buildRowArrayFor = (columns, rowObj) =>
 // format consumed by `bulkCreateProducts`:
 //   colorName;sku;price;mrp;wholesalePrice;wholesaleMinQty;countInStock;img1,img2
 // Multiple variants are joined by "||". A trailing "||" is intentionally
-// appended so the parser's rich-format detection
-//   (raw.includes("||") || (raw.includes(";") && !raw.includes(":")))
-// always picks the rich branch — without it a single-variant row whose only
-// image URL contains "://" would be misread as the legacy "name:images"
-// format and stripped of price/stock/sku data on restore.
+// appended so the parser's rich-format detection always picks the rich branch.
 const _serializeVariantsForCreate = (variants) => {
   if (!Array.isArray(variants) || variants.length === 0) return "";
   const parts = variants.map((v) => {
@@ -1170,9 +1186,54 @@ const _serializeVariantsForCreate = (variants) => {
       v.countInStock !== undefined && v.countInStock !== null ? v.countInStock : 0,
       (v.images || []).join(","),
     ];
-    return fields.join(";");
+    let str = fields.join(";");
+    if (Array.isArray(v.countryPricing) && v.countryPricing.length > 0) {
+      str += "~" + _serializeCountryPricing(v.countryPricing);
+    }
+    return str;
   });
   return parts.join("||") + "||";
+};
+
+/**
+ * Serialize a countryPricing array into the Excel cell format.
+ * Format per entry: countryCode|countryName|currencyCode|currencySymbol|price|wholesalePrice|wholesaleMinQty|mrp
+ * Multiple entries joined by ||
+ */
+const _serializeCountryPricing = (countryPricing) => {
+  if (!Array.isArray(countryPricing) || countryPricing.length === 0) return "";
+  return countryPricing.map(cp => [
+    cp.countryCode || "",
+    cp.countryName || "",
+    cp.currencyCode || "",
+    cp.currencySymbol || "",
+    cp.price !== undefined && cp.price !== null ? cp.price : "",
+    cp.wholesalePrice !== undefined && cp.wholesalePrice !== null ? cp.wholesalePrice : "",
+    cp.wholesaleMinQty !== undefined && cp.wholesaleMinQty !== null ? cp.wholesaleMinQty : 10,
+    cp.mrp !== undefined && cp.mrp !== null ? cp.mrp : "",
+  ].join("|")).join("||");
+};
+
+/**
+ * Parse a countryPricing cell string back into an array of objects.
+ * Handles both the full format and gracefully skips malformed entries.
+ */
+const _parseCountryPricing = (raw) => {
+  if (!raw || String(raw).trim() === "") return [];
+  return String(raw).split("||").map(entry => {
+    const parts = entry.split("|").map(p => p.trim());
+    if (parts.length < 8 || !parts[0]) return null;
+    return {
+      countryCode:    parts[0],
+      countryName:    parts[1] || parts[0],
+      currencyCode:   parts[2] || "INR",
+      currencySymbol: parts[3] || "₹",
+      price:          parts[4] !== "" ? Number(parts[4]) : 0,
+      wholesalePrice: parts[5] !== "" ? Number(parts[5]) : 0,
+      wholesaleMinQty:parts[6] !== "" ? Number(parts[6]) : 10,
+      mrp:            parts[7] !== "" ? Number(parts[7]) : 0,
+    };
+  }).filter(Boolean);
 };
 
 // Column schema for the products BACKUP EXPORT — mirrors the bulk-CREATE
@@ -1225,6 +1286,8 @@ const EXPORT_BACKUP_COLUMNS = [
   // Read-only metadata — surfaced in the export for audit/sort visibility.
   // Ignored by the bulk-upload parser on round-trip.
   { header: "uploadedDate", key: "uploadedDate", width: 14 },
+  // Country pricing column — same format as BULK_PRODUCT_COLUMNS
+  { header: "countryPricing", key: "countryPricing", width: 100 },
 ];
 
 // @desc    Export all products as a FULL BACKUP file in the SAME format as
@@ -1322,6 +1385,7 @@ export const exportProductsBackup = async (req, res) => {
         warrantyPeriod: p.details?.warranty?.period || "",
         warrantyPolicy: p.details?.warranty?.policy || "",
         uploadedDate: _formatDDMMYYYY(p.createdAt),
+        countryPricing: _serializeCountryPricing(p.countryPricing),
       };
       const pRow = ws.addRow(_buildRowArrayFor(EXPORT_BACKUP_COLUMNS, rowObj));
       pRow.alignment = { vertical: "top", wrapText: false };
@@ -1362,6 +1426,7 @@ export const exportProductsBackup = async (req, res) => {
       ["specs", "Pipe-separated key:value pairs:  Color:Black|RAM:8GB|Storage:256GB"],
       ["highlights / descriptionPoints", "Pipe-separated bullets:  Fast Charging|5G Ready"],
       ["colors", "Comma-separated:  Black,White,Gold"],
+      ["countryPricing", "Per-country pricing overrides: countryCode|countryName|currencyCode|currencySymbol|price|wholesalePrice|wholesaleMinQty|mrp (joined by ||)"],
       ["description", "Use Alt+Enter (Excel) for paragraph breaks; stored as \\n in the cell. Each paragraph becomes one entry in the product's description array."],
       ["", ""],
       ["IMPORTANT — Restore vs Update", "This file is for RESTORE (re-uploading after a wipe). Each row CREATES a new product. If a product with the same name already exists, that row FAILS with \"already exists\". To edit existing products instead, use Admin → Products → Update (Bulk Update Products)."],
@@ -1548,6 +1613,7 @@ const VARIANT_COLUMN_KEYS = new Set([
   "wholesaleMinQty",
   "countInStock",
   "images",
+  "countryPricing",
 ]);
 
 // Product-level only column keys (apply to top-level Product fields).
@@ -1714,6 +1780,7 @@ export const downloadBulkUpdateTemplate = async (req, res) => {
       ["specs", "Pipe-separated key:value pairs replace the existing specs list:  Color:Black|RAM:8GB|Storage:256GB"],
       ["highlights / descriptionPoints", "Pipe-separated bullets:  Fast Charging|5G Ready"],
       ["colors", "Comma-separated:  Black,White,Gold"],
+      ["countryPricing", "Per-country pricing overrides: countryCode|countryName|currencyCode|currencySymbol|price|wholesalePrice|wholesaleMinQty|mrp (joined by ||)"],
       ["description", "Use \\n inside the cell for paragraph breaks (Alt+Enter in Excel)."],
       ["", ""],
       ["Things you CANNOT change here", "SKU itself, slug, reviews, rating, numReviews. Use the per-product edit page for those."],
@@ -1923,6 +1990,11 @@ export const bulkUpdateProductsBySku = async (req, res) => {
             $set["details.packer"] = isClearToken(row.packer) ? "" : String(row.packer).trim();
           }
 
+          // countryPricing — full replacement (all entries in the cell replace what's in DB)
+          if (!isBlank(row.countryPricing)) {
+            $set["countryPricing"] = isClearToken(row.countryPricing) ? [] : _parseCountryPricing(row.countryPricing);
+          }
+
           // colorName on a product-level row is meaningless — warn rather than error.
           if (!isBlank(row.colorName)) {
             rowWarnings.push(`colorName ignored — provide a variant SKU to update a variant's color name`);
@@ -2019,6 +2091,10 @@ export const bulkUpdateProductsBySku = async (req, res) => {
 
         if (!isBlank(row.images)) {
           $set[`${base}.images`] = isClearToken(row.images) ? [] : parseImageList(row.images);
+        }
+
+        if (!isBlank(row.countryPricing)) {
+          $set[`${base}.countryPricing`] = isClearToken(row.countryPricing) ? [] : _parseCountryPricing(row.countryPricing);
         }
 
         // Mirror to top-level when updating the first variant (matches existing bulkUpdatePrices).

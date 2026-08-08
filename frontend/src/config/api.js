@@ -38,6 +38,10 @@ export const API_ENDPOINTS = {
     CREATE_REVIEW: (id) => `${API_BASE_URL}/api/customer/products/${id}/reviews`,
     SEARCH: `${API_BASE_URL}/api/customer/search`,
 
+    // Geo & Currency (for location-based pricing)
+    GEO_COUNTRY:    `${API_BASE_URL}/api/customer/geo/country`,
+    EXCHANGE_RATES: `${API_BASE_URL}/api/customer/exchange-rates`,
+
     // Brands & Models
     BRANDS: `${API_BASE_URL}/api/customer/brands`,
     MODELS: `${API_BASE_URL}/api/customer/models`,

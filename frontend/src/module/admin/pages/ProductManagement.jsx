@@ -25,6 +25,7 @@ import SortableImageGrid from "../../../components/SortableImageGrid";
 import BulkUploadModal from "../../../components/BulkUploadModal";
 import { API_ENDPOINTS } from "../../../config/api";
 import Pagination from "../../../components/Pagination";
+import { COUNTRIES_LIST, getCountryByCode } from "../../../data/countriesList";
 
 const ProductManagement = () => {
   const navigate = useNavigate();
@@ -128,6 +129,8 @@ const ProductManagement = () => {
     videoUrl: "",
     colorVariants: [],
     colors: [],
+    // Country-specific pricing overrides (auto-conversion used when empty)
+    countryPricing: [],
     details: {
       specs: [],
       warranty: { summary: "", coveredInWarranty: "", serviceType: "", tnc: "" },
@@ -180,6 +183,7 @@ const ProductManagement = () => {
           wholesaleMinQty: v.wholesaleMinQty !== undefined ? v.wholesaleMinQty : "",
           countInStock: v.countInStock !== undefined ? v.countInStock : 0,
           images: v.images || [],
+          countryPricing: v.countryPricing || [],
         })),
         colors: product.colors?.map((c) => ({ name: c })) || [],
         videoUrl: product.videoUrl || "",
@@ -202,6 +206,7 @@ const ProductManagement = () => {
         countInStock: product.countInStock || 0,
         wholesalePrice: product.wholesalePrice || 0,
         wholesaleMinQty: product.wholesaleMinQty || 10,
+        countryPricing: product.countryPricing || [],
       });
     } else {
       setEditingProduct(null);
@@ -353,8 +358,91 @@ const ProductManagement = () => {
         wholesaleMinQty: "",
         countInStock: 0,
         images: [],
+        countryPricing: [],
       }],
     });
+  };
+
+  // ── Country Pricing Handlers (product-level) ──────────────────────────────
+  const handleAddCountryPricing = () => {
+    setFormData({
+      ...formData,
+      countryPricing: [...(formData.countryPricing || []), {
+        countryCode: "", countryName: "", currencyCode: "", currencySymbol: "",
+        price: "", wholesalePrice: "", wholesaleMinQty: 10, mrp: "",
+      }],
+    });
+  };
+
+  const handleRemoveCountryPricing = (index) => {
+    const next = [...(formData.countryPricing || [])];
+    next.splice(index, 1);
+    setFormData({ ...formData, countryPricing: next });
+  };
+
+  const handleCountryPricingChange = (index, field, value) => {
+    const next = (formData.countryPricing || []).map((cp, i) =>
+      i === index ? { ...cp, [field]: value } : cp
+    );
+    setFormData({ ...formData, countryPricing: next });
+  };
+
+  /** Called when the country dropdown changes — auto-fills currency fields */
+  const handleCountryPricingSelectCountry = (index, countryCode) => {
+    const found = getCountryByCode(countryCode);
+    if (!found) return;
+    const next = (formData.countryPricing || []).map((cp, i) =>
+      i === index
+        ? { ...cp, countryCode: found.countryCode, countryName: found.countryName, currencyCode: found.currencyCode, currencySymbol: found.currencySymbol }
+        : cp
+    );
+    setFormData({ ...formData, countryPricing: next });
+  };
+
+  // ── Country Pricing Handlers (variant-level) ──────────────────────────────
+  const handleAddVariantCountryPricing = (variantIndex) => {
+    const newVariants = (formData.colorVariants || []).map((v, i) =>
+      i === variantIndex
+        ? { ...v, countryPricing: [...(v.countryPricing || []), { countryCode: "", countryName: "", currencyCode: "", currencySymbol: "", price: "", wholesalePrice: "", wholesaleMinQty: 10, mrp: "" }] }
+        : v
+    );
+    setFormData({ ...formData, colorVariants: newVariants });
+  };
+
+  const handleRemoveVariantCountryPricing = (variantIndex, cpIndex) => {
+    const newVariants = (formData.colorVariants || []).map((v, i) => {
+      if (i !== variantIndex) return v;
+      const next = [...(v.countryPricing || [])];
+      next.splice(cpIndex, 1);
+      return { ...v, countryPricing: next };
+    });
+    setFormData({ ...formData, colorVariants: newVariants });
+  };
+
+  const handleVariantCountryPricingChange = (variantIndex, cpIndex, field, value) => {
+    const newVariants = (formData.colorVariants || []).map((v, i) => {
+      if (i !== variantIndex) return v;
+      const next = (v.countryPricing || []).map((cp, j) =>
+        j === cpIndex ? { ...cp, [field]: value } : cp
+      );
+      return { ...v, countryPricing: next };
+    });
+    setFormData({ ...formData, colorVariants: newVariants });
+  };
+
+  const handleVariantCountryPricingSelectCountry = (variantIndex, cpIndex, countryCode) => {
+    const found = getCountryByCode(countryCode);
+    if (!found) return;
+    const newVariants = (formData.colorVariants || []).map((v, i) => {
+      if (i !== variantIndex) return v;
+      const next = (v.countryPricing || []).map((cp, j) =>
+        j === cpIndex
+          ? { ...cp, countryCode: found.countryCode, countryName: found.countryName, currencyCode: found.currencyCode, currencySymbol: found.currencySymbol }
+          : cp
+      );
+      return { ...v, countryPricing: next };
+    });
+    setFormData({ ...formData, colorVariants: newVariants });
   };
 
   const handleRemoveColorVariant = (index) => {
@@ -469,7 +557,29 @@ const ProductManagement = () => {
             wholesaleMinQty: v.wholesaleMinQty !== "" && v.wholesaleMinQty !== undefined ? Number(v.wholesaleMinQty) : undefined,
             countInStock: v.countInStock !== "" && v.countInStock !== undefined ? Number(v.countInStock) : 0,
             images: v.images || [],
+            // Variant-level country pricing overrides
+            countryPricing: (v.countryPricing || []).filter(cp => cp.countryCode && cp.price !== "").map(cp => ({
+              countryCode: cp.countryCode,
+              countryName: cp.countryName,
+              currencyCode: cp.currencyCode,
+              currencySymbol: cp.currencySymbol,
+              price: Number(cp.price),
+              wholesalePrice: cp.wholesalePrice !== "" ? Number(cp.wholesalePrice) : 0,
+              wholesaleMinQty: Number(cp.wholesaleMinQty) || 10,
+              mrp: Number(cp.mrp),
+            })),
           })),
+        // Product-level country pricing overrides
+        countryPricing: (formData.countryPricing || []).filter(cp => cp.countryCode && cp.price !== "").map(cp => ({
+          countryCode: cp.countryCode,
+          countryName: cp.countryName,
+          currencyCode: cp.currencyCode,
+          currencySymbol: cp.currencySymbol,
+          price: Number(cp.price),
+          wholesalePrice: cp.wholesalePrice !== "" ? Number(cp.wholesalePrice) : 0,
+          wholesaleMinQty: Number(cp.wholesaleMinQty) || 10,
+          mrp: Number(cp.mrp),
+        })),
         details: {
           ...formData.details,
           highlights:
@@ -658,6 +768,7 @@ const ProductManagement = () => {
     { header: "packer", key: "packer", example: "Elcotek India Pvt Ltd, New Delhi", example2: "" },
     { header: "highlights", key: "highlights", example: "Super AMOLED|Fast Charging|5G Ready", example2: "Long Life|Safe Chemistry" },
     { header: "descriptionPoints", key: "descriptionPoints", example: "100% Original Part|Quality Tested", example2: "Safe and reliable" },
+    { header: "countryPricing", key: "countryPricing", example: "AE|United Arab Emirates|AED|د.إ|80|65|10|100||US|United States|USD|$|25|20|10|30", example2: "" },
   ];
 
   return (
@@ -1135,6 +1246,71 @@ const ProductManagement = () => {
                           }
                         />
                       </div>
+
+                      {/* Row 5: Variant Country Pricing */}
+                      <div className="border border-dashed border-emerald-300 rounded-xl p-3 bg-emerald-50/20 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs font-bold text-emerald-800 uppercase tracking-wider">🌍 Variant Country Pricing <span className="text-emerald-500 font-normal">(Optional)</span></p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleAddVariantCountryPricing(index)}
+                            className="shrink-0 text-emerald-700 bg-emerald-100 hover:bg-emerald-200 text-[11px] font-bold px-2.5 py-1 rounded transition-colors"
+                          >
+                            + Country
+                          </button>
+                        </div>
+
+                        {(variant.countryPricing || []).length === 0 && (
+                          <p className="text-[11px] text-gray-400 italic">No variant country pricing set (uses auto-converted INR variant price).</p>
+                        )}
+
+                        {(variant.countryPricing || []).map((vcp, vcpIdx) => (
+                          <div key={vcpIdx} className="bg-white border border-emerald-100 rounded-lg p-2.5 space-y-2">
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 space-y-0.5">
+                                <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Country</label>
+                                <select
+                                  className="w-full px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded text-xs font-bold focus:outline-none focus:border-emerald-400"
+                                  value={vcp.countryCode || ""}
+                                  onChange={(e) => handleVariantCountryPricingSelectCountry(index, vcpIdx, e.target.value)}
+                                >
+                                  <option value="">Select country…</option>
+                                  {COUNTRIES_LIST.map(c => (
+                                    <option key={c.countryCode} value={c.countryCode}>
+                                      {c.countryName} ({c.currencyCode} {c.currencySymbol})
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              <button type="button" onClick={() => handleRemoveVariantCountryPricing(index, vcpIdx)} className="text-red-400 hover:text-red-600 mt-4 p-1 transition-colors">
+                                <X size={14} />
+                              </button>
+                            </div>
+                            {vcp.countryCode && (
+                              <div className="grid grid-cols-4 gap-1.5">
+                                <div className="space-y-0.5">
+                                  <label className="text-[9px] font-bold text-gray-500 uppercase">Price ({vcp.currencySymbol || vcp.currencyCode})</label>
+                                  <input type="number" placeholder="0" className="w-full px-2 py-1 bg-gray-50 border border-gray-200 rounded text-xs font-bold focus:outline-none focus:border-emerald-400" value={vcp.price} onChange={(e) => handleVariantCountryPricingChange(index, vcpIdx, "price", e.target.value)} />
+                                </div>
+                                <div className="space-y-0.5">
+                                  <label className="text-[9px] font-bold text-gray-500 uppercase">MRP ({vcp.currencySymbol || vcp.currencyCode})</label>
+                                  <input type="number" placeholder="0" className="w-full px-2 py-1 bg-gray-50 border border-gray-200 rounded text-xs font-bold focus:outline-none focus:border-emerald-400" value={vcp.mrp} onChange={(e) => handleVariantCountryPricingChange(index, vcpIdx, "mrp", e.target.value)} />
+                                </div>
+                                <div className="space-y-0.5">
+                                  <label className="text-[9px] font-bold text-gray-500 uppercase">Wholesale</label>
+                                  <input type="number" placeholder="0" className="w-full px-2 py-1 bg-gray-50 border border-gray-200 rounded text-xs font-bold focus:outline-none focus:border-emerald-400" value={vcp.wholesalePrice} onChange={(e) => handleVariantCountryPricingChange(index, vcpIdx, "wholesalePrice", e.target.value)} />
+                                </div>
+                                <div className="space-y-0.5">
+                                  <label className="text-[9px] font-bold text-gray-500 uppercase">Min Qty</label>
+                                  <input type="number" placeholder="10" min="1" className="w-full px-2 py-1 bg-gray-50 border border-gray-200 rounded text-xs font-bold focus:outline-none focus:border-emerald-400" value={vcp.wholesaleMinQty} onChange={(e) => handleVariantCountryPricingChange(index, vcpIdx, "wholesaleMinQty", e.target.value)} />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   ))}
                   {(!formData.colorVariants || formData.colorVariants.length === 0) && (
@@ -1382,6 +1558,72 @@ const ProductManagement = () => {
                           placeholder="Min qty for wholesale price"
                         />
                       </div>
+                    </div>
+
+                    {/* ── Country-Specific Pricing ── */}
+                    <div className="border border-dashed border-emerald-300 rounded-xl p-4 bg-emerald-50/30 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-[13px] font-bold text-emerald-800 uppercase tracking-wider">🌍 Country-Specific Pricing <span className="text-emerald-500 font-normal">(Optional)</span></p>
+                          <p className="text-[11px] text-gray-500 mt-0.5">Set fixed prices for specific countries. If not set, prices are auto-converted from INR using live exchange rates.</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleAddCountryPricing}
+                          className="shrink-0 text-emerald-700 bg-emerald-100 hover:bg-emerald-200 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
+                        >
+                          + Add Country
+                        </button>
+                      </div>
+
+                      {(formData.countryPricing || []).length === 0 && (
+                        <p className="text-xs text-gray-400 italic">No country-specific pricing. Prices will be auto-converted from INR for all countries.</p>
+                      )}
+
+                      {(formData.countryPricing || []).map((cp, cpIdx) => (
+                        <div key={cpIdx} className="bg-white border border-emerald-100 rounded-xl p-3 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 space-y-1">
+                              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Country</label>
+                              <select
+                                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold focus:outline-none focus:border-emerald-400"
+                                value={cp.countryCode || ""}
+                                onChange={(e) => handleCountryPricingSelectCountry(cpIdx, e.target.value)}
+                              >
+                                <option value="">Select country…</option>
+                                {COUNTRIES_LIST.map(c => (
+                                  <option key={c.countryCode} value={c.countryCode}>
+                                    {c.countryName} ({c.currencyCode} {c.currencySymbol})
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <button type="button" onClick={() => handleRemoveCountryPricing(cpIdx)} className="text-red-400 hover:text-red-600 mt-5 p-1 transition-colors">
+                              <X size={16} />
+                            </button>
+                          </div>
+                          {cp.countryCode && (
+                            <div className="grid grid-cols-4 gap-2">
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase">Price ({cp.currencySymbol || cp.currencyCode})</label>
+                                <input type="number" placeholder="0" className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold focus:outline-none focus:border-emerald-400" value={cp.price} onChange={(e) => handleCountryPricingChange(cpIdx, "price", e.target.value)} />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase">MRP ({cp.currencySymbol || cp.currencyCode})</label>
+                                <input type="number" placeholder="0" className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold focus:outline-none focus:border-emerald-400" value={cp.mrp} onChange={(e) => handleCountryPricingChange(cpIdx, "mrp", e.target.value)} />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase">Wholesale ({cp.currencySymbol || cp.currencyCode})</label>
+                                <input type="number" placeholder="0" className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold focus:outline-none focus:border-emerald-400" value={cp.wholesalePrice} onChange={(e) => handleCountryPricingChange(cpIdx, "wholesalePrice", e.target.value)} />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase">Min Qty</label>
+                                <input type="number" placeholder="10" min="1" className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold focus:outline-none focus:border-emerald-400" value={cp.wholesaleMinQty} onChange={(e) => handleCountryPricingChange(cpIdx, "wholesaleMinQty", e.target.value)} />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </>
                 ) : (
@@ -1887,6 +2129,7 @@ const ProductManagement = () => {
           { header: "countryOfOrigin", key: "countryOfOrigin", example: "", example2: "India" },
           { header: "packer", key: "packer", example: "", example2: "Elcotek India Pvt Ltd, New Delhi" },
           { header: "colors", key: "colors", example: "", example2: "Black,White" },
+          { header: "countryPricing", key: "countryPricing", example: "AE|United Arab Emirates|AED|د.إ|80|65|10|100", example2: "" },
         ]}
         templateSheetName="Bulk Update Products"
         templateFileName="plusway_bulk_update_products.xlsx"

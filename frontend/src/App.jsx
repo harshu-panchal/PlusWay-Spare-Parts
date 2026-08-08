@@ -6,6 +6,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import { CartProvider } from "./module/customer/context/CartContext";
+import { CountryPricingProvider } from "./contexts/CountryPricingContext";
 import ScrollToTop from "./components/ScrollToTop";
 import LoadingFallback from "./components/LoadingFallback";
 import RouteTransitionLoader from "./components/RouteTransitionLoader";
@@ -108,8 +109,9 @@ const App = () => {
   }, []);
 
   return (
-    <CartProvider>
-      <Router>
+    <CountryPricingProvider>
+      <CartProvider>
+        <Router>
         <ScrollToTop />
         <RouteTransitionLoader />
         <Suspense fallback={<LoadingFallback />}>
@@ -192,8 +194,9 @@ const App = () => {
             </Route>
           </Routes>
         </Suspense>
-      </Router>
-    </CartProvider>
+        </Router>
+      </CartProvider>
+    </CountryPricingProvider>
   );
 };
 
