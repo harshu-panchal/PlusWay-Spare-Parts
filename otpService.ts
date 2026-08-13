@@ -73,8 +73,10 @@ function normalizeMobileNumber(mobile: string): string {
  * Build DLT-compliant message
  */
 function buildOtpMessage(otp: string): string {
-  const appName = process.env.APP_NAME || 'SpeeUP';
-  return `Welcome to the ${appName} powered by SMSINDIAHUB. Your OTP for registration is ${otp}`;
+  const appName = process.env.APP_NAME || 'PlusWay';
+  // DLT Approved Template ID: 1007282516644508833
+  // DLT Template Text: Welcome to the ##var## powered by Appzeto.Your OTP for registration is ##var##.BGADEC
+  return `Welcome to the ${appName} powered by Appzeto.Your OTP for registration is ${otp}.BGADEC`;
 }
 
 /**

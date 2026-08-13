@@ -41,11 +41,9 @@ const normalizeMobileNumber = (mobile) => {
  */
 const buildOtpMessage = (otp) => {
   const appName = process.env.APP_NAME || "PlusWay";
-  // NOTE: This template must match EXACTLY with your DLT approved template.
-  // If your template is "Your OTP is {#var#}. Valid for 5 minutes.", use that format instead.
-  // The reference code uses: "Welcome to the ${appName} powered by SMSINDIAHUB. Your OTP for registration is ${otp}"
-  // I will use the reference format as requested, but user should verify DLT.
-  return `Welcome to the ${appName} powered by SMSINDIAHUB. Your OTP for registration is ${otp}`;
+  // DLT Approved Template ID: 1007282516644508833
+  // DLT Template Text: Welcome to the ##var## powered by Appzeto.Your OTP for registration is ##var##.BGADEC
+  return `Welcome to the ${appName} powered by Appzeto.Your OTP for registration is ${otp}.BGADEC`;
 };
 
 /**
