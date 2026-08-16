@@ -270,7 +270,7 @@ const ProductDetail = () => {
             </Link>
             <span className="text-gray-300">/</span>
             <Link
-              to={product.model ? `/products?model=${product.model._id}` : "#"}
+              to="/section/697c5e98d1ffb9d52de9a3c2"
               className="hover:text-primary">
               {product.model?.name || "Model"}
             </Link>
@@ -689,11 +689,7 @@ const ProductDetail = () => {
               <div className="flex items-center justify-end gap-3 text-right">
                 <div>
                   <Link
-                    to={
-                      product.model
-                        ? `/products?model=${product.model._id}`
-                        : "#"
-                    }
+                    to="/section/697c5e98d1ffb9d52de9a3c2"
                     className="text-[11px] font-black text-blue-600 underline">
                     {product.model?.name || "View specific products"}
                   </Link>
