@@ -26,7 +26,10 @@ export const getProducts = asyncHandler(async (req, res) => {
     const keywordRaw = String(req.query.keyword || "").trim();
     const keywordTokens = tokenizeSearchQuery(keywordRaw);
 
-    const filters = {};
+    // Hide Draft products from the storefront. Products created before the
+    // `status` field existed have no value set — treat that the same as
+    // Published so legacy catalog data doesn't silently disappear.
+    const filters = { status: { $ne: "Draft" } };
 
     if (keywordTokens.length > 0) {
         const tokenClauses = await Promise.all(
@@ -146,7 +149,7 @@ export const getProductById = asyncHandler(async (req, res) => {
         .populate("category", "name order")
         .populate("model", "name image");
 
-    if (product) {
+    if (product && product.status !== "Draft") {
         const productObj = product.toObject();
         // Only send approved reviews to the customer frontend
         productObj.reviews = productObj.reviews.filter(r => r.status === "Approved");

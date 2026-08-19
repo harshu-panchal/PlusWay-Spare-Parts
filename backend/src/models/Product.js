@@ -1,5 +1,21 @@
 import mongoose from 'mongoose';
 
+// Device types that aren't tied to a specific phone model — generic
+// Accessories/Tools (screwdrivers, cases, chargers, etc.) don't need a
+// brand/model selection the way Mobile / Spare Parts do.
+const DEVICE_INDEPENDENT_TYPES = new Set(['accessories', 'tools']);
+
+// A product only needs a brand/model when at least one of its selected
+// deviceTypes is device-specific. If every selected type is Accessories
+// and/or Tools, brand/model are optional.
+export const isDeviceIndependentProduct = (deviceType) => {
+  const types = Array.isArray(deviceType)
+    ? deviceType
+    : (deviceType ? [deviceType] : []);
+  if (types.length === 0) return false;
+  return types.every((t) => DEVICE_INDEPENDENT_TYPES.has(String(t).trim().toLowerCase()));
+};
+
 // Per-country manual price override.
 // Admin enters prices in the local currency of each country.
 // If no override exists for a detected country, the system auto-converts
@@ -88,12 +104,16 @@ const productSchema = new mongoose.Schema({
   brand: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Brand',
-    required: true,
+    required: function () {
+      return !isDeviceIndependentProduct(this.deviceType);
+    },
   },
   model: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Model',
-    required: true,
+    required: function () {
+      return !isDeviceIndependentProduct(this.deviceType);
+    },
   },
   category: {
     type: mongoose.Schema.Types.ObjectId,
@@ -106,6 +126,16 @@ const productSchema = new mongoose.Schema({
   deviceType: {
     type: [String],
     default: ['Mobile'],
+  },
+  // Publish state. "Draft" products are hidden from the customer storefront
+  // (listing, search, direct product page) but remain fully visible/editable
+  // in the admin. Existing products created before this field existed have
+  // no `status` in the DB — customer-facing queries treat that the same as
+  // "Published" (see productSchema usage: `status: { $ne: 'Draft' }`).
+  status: {
+    type: String,
+    enum: ['Draft', 'Published'],
+    default: 'Published',
   },
   rating: {
     type: Number,
@@ -171,6 +201,7 @@ productSchema.index({ brand: 1 });
 productSchema.index({ model: 1 });
 productSchema.index({ productType: 1 });
 productSchema.index({ deviceType: 1 });
+productSchema.index({ status: 1 });
 productSchema.index({ countInStock: 1 }); // Useful for filtering out-of-stock items if needed
 
 const Product = mongoose.model('Product', productSchema);

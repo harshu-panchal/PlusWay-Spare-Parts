@@ -1,5 +1,7 @@
 import React, { useState } from "react";
+import axios from "axios";
 import { Mail, Phone, MapPin, Send, Clock, MessageSquare } from "lucide-react";
+import { API_ENDPOINTS } from "../../../config/api";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -23,8 +25,15 @@ const Contact = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate form submission
-    setTimeout(() => {
+    try {
+      await axios.post(API_ENDPOINTS.CREATE_FORM_SUBMISSION, {
+        formType: "Contact",
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        subject: formData.subject,
+        message: formData.message,
+      });
       alert("Thank you for contacting us! We'll get back to you soon.");
       setFormData({
         name: "",
@@ -33,11 +42,15 @@ const Contact = () => {
         subject: "",
         message: "",
       });
+    } catch (error) {
+      console.error("Failed to submit contact form", error);
+      alert(
+        error.response?.data?.message ||
+          "Failed to send your message. Please try again."
+      );
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
-
-    // TODO: Implement actual API call
-    // const response = await axios.post('/api/contact', formData);
+    }
   };
 
   const contactInfo = [

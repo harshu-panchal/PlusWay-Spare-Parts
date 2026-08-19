@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
+import { API_ENDPOINTS } from "../../../config/api";
 import {
   HelpCircle,
   Search,
@@ -137,13 +139,23 @@ const Support = () => {
     });
   };
 
-  const handleTicketSubmit = (e) => {
+  const handleTicketSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate instant ticket creation response
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      await axios.post(API_ENDPOINTS.CREATE_FORM_SUBMISSION, {
+        formType: "Support",
+        name: ticketForm.name,
+        email: ticketForm.email,
+        phone: ticketForm.phone,
+        subject: ticketForm.category,
+        message: ticketForm.message,
+        meta: {
+          orderId: ticketForm.orderId,
+          category: ticketForm.category,
+        },
+      });
       setSubmitSuccess(true);
       setTicketForm({
         name: "",
@@ -154,7 +166,15 @@ const Support = () => {
         message: "",
       });
       setTimeout(() => setSubmitSuccess(false), 6000);
-    }, 800);
+    } catch (error) {
+      console.error("Failed to submit support ticket", error);
+      alert(
+        error.response?.data?.message ||
+          "Failed to submit your ticket. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

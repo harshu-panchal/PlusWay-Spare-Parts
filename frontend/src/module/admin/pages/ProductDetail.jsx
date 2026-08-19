@@ -68,7 +68,17 @@ const ProductDetail = () => {
           <ChevronLeft size={24} className="text-gray-500" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{product.name}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-gray-900">{product.name}</h1>
+            <span
+              className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                product.status === "Draft"
+                  ? "bg-amber-50 text-amber-700 border-amber-200"
+                  : "bg-emerald-50 text-emerald-700 border-emerald-200"
+              }`}>
+              {product.status === "Draft" ? "Draft" : "Published"}
+            </span>
+          </div>
           <p className="text-sm text-gray-500">
             Product ID: {product._id}
           </p>

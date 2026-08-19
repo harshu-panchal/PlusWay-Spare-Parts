@@ -1,4 +1,4 @@
-import Product from "../../../models/Product.js";
+import Product, { isDeviceIndependentProduct } from "../../../models/Product.js";
 import Brand from "../../../models/Brand.js";
 import Category from "../../../models/Category.js";
 import Model from "../../../models/Model.js";
@@ -22,6 +22,17 @@ const genVariantSku = (colorName) => {
 // queries without throwing or over-matching.
 const escapeRegex = (s) =>
   String(s ?? "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// Normalize any incoming status value ("draft", "PUBLISHED", etc.) to the
+// canonical enum. Returns undefined for blank/unrecognized input so callers
+// can decide whether to default or leave the field untouched.
+const normalizeStatus = (value) => {
+  if (value === undefined || value === null) return undefined;
+  const s = String(value).trim().toLowerCase();
+  if (s === "draft") return "Draft";
+  if (s === "published") return "Published";
+  return undefined;
+};
 
 // Cap per-upload error list so a pathologically bad file can't bloat the
 // history document beyond Mongo's 16 MB BSON limit. 1000 covers any realistic
@@ -49,6 +60,7 @@ export const getProducts = async (req, res) => {
   const category = req.query.category;
   const brand = req.query.brand;
   const deviceType = req.query.deviceType;
+  const status = req.query.status;
 
   let filter = {};
 
@@ -80,6 +92,10 @@ export const getProducts = async (req, res) => {
 
   if (deviceType && deviceType !== "All") {
     filter.deviceType = { $in: [deviceType] };
+  }
+
+  if (status && status !== "All") {
+    filter.status = status === "Draft" ? "Draft" : "Published";
   }
 
   const count = await Product.countDocuments(filter);
@@ -134,6 +150,7 @@ export const createProduct = async (req, res) => {
     colors,
     colorVariants,
     countryPricing,
+    status,
   } = req.body;
 
   const generatedSlug =
@@ -162,7 +179,10 @@ export const createProduct = async (req, res) => {
     cashback,
     images,
     videoUrl,
-    brand,
+    // Brand/model are optional when every selected deviceType is device-independent
+    // (Accessories/Tools) — empty string must become undefined so Mongoose doesn't
+    // try to cast "" to an ObjectId.
+    brand: brand || undefined,
     model: model || undefined,
     category,
     productType,
@@ -176,6 +196,9 @@ export const createProduct = async (req, res) => {
     colorVariants,
     // Per-country manual price overrides (optional)
     countryPricing: Array.isArray(countryPricing) ? countryPricing : [],
+    // Manually-created products default to Published (matches prior behavior,
+    // where every created product was immediately live). Admin can pick Draft explicitly.
+    status: normalizeStatus(status) || "Published",
   };
 
   if (code) {
@@ -266,8 +289,12 @@ export const updateProduct = async (req, res) => {
     }
     if (req.body.images) product.images = req.body.images;
     if (req.body.videoUrl !== undefined) product.videoUrl = req.body.videoUrl;
-    if (req.body.brand) product.brand = req.body.brand;
-    if (req.body.model) product.model = req.body.model;
+    // Brand/model can be explicitly cleared (empty string) when the product's
+    // deviceType is device-independent (Accessories/Tools) — unlike most other
+    // optional fields here, `!== undefined` (not truthy) is checked so a blank
+    // value actually unsets the field instead of being ignored.
+    if (req.body.brand !== undefined) product.brand = req.body.brand || undefined;
+    if (req.body.model !== undefined) product.model = req.body.model || undefined;
     if (req.body.category) product.category = req.body.category;
     if (req.body.productType !== undefined) product.productType = req.body.productType;
     if (req.body.deviceType !== undefined) {
@@ -281,6 +308,10 @@ export const updateProduct = async (req, res) => {
     }
     if (req.body.variantType !== undefined) product.variantType = req.body.variantType;
     if (req.body.countInStock !== undefined) product.countInStock = req.body.countInStock;
+    if (req.body.status !== undefined) {
+      const normalized = normalizeStatus(req.body.status);
+      if (normalized) product.status = normalized;
+    }
 
     const incomingVariants = req.body.colorVariants;
     const hasVariants = Array.isArray(incomingVariants) && incomingVariants.filter(v => v.colorName?.trim()).length > 0;
@@ -596,6 +627,12 @@ export const bulkCreateProducts = async (req, res) => {
             if (row.productType) existingProduct.productType = String(row.productType).trim();
             if (row.deviceType) existingProduct.deviceType = typeof row.deviceType === "string" ? row.deviceType.split(",").map(s => s.trim()).filter(Boolean) : (Array.isArray(row.deviceType) ? row.deviceType : []);
             if (row.variantType) existingProduct.variantType = String(row.variantType).trim();
+            // Status is only touched when explicitly supplied — updating an existing
+            // product via bulk-upload should not silently flip Draft <-> Published.
+            if (row.status !== undefined && row.status !== "") {
+              const normalized = normalizeStatus(row.status);
+              if (normalized) existingProduct.status = normalized;
+            }
           }
 
           await existingProduct.save();
@@ -605,7 +642,13 @@ export const bulkCreateProducts = async (req, res) => {
 
         // --- CREATION MODE ---
         const hasVariantData = row.colorVariants && String(row.colorVariants).trim().length > 0;
-        const alwaysRequired = ["name", "brand", "category", "model"];
+        const parsedDeviceType = row.deviceType
+          ? (typeof row.deviceType === "string" ? row.deviceType.split(",").map(s => s.trim()).filter(Boolean) : (Array.isArray(row.deviceType) ? row.deviceType : ["Mobile"]))
+          : ["Mobile"];
+        // Accessories/Tools rows aren't tied to a specific phone model — brand/model
+        // become optional (same rule as the manual Add Product form / Product schema).
+        const deviceIndependent = isDeviceIndependentProduct(parsedDeviceType);
+        const alwaysRequired = ["name", "category", ...(deviceIndependent ? [] : ["brand", "model"])];
         const pricingRequired = hasVariantData ? [] : ["price", "mrp", "wholesalePrice", "wholesaleMinQty", "countInStock"];
         const requiredFields = [...alwaysRequired, ...pricingRequired];
         const missing = requiredFields.filter((f) => row[f] === "" || row[f] === undefined || row[f] === null);
@@ -614,14 +657,20 @@ export const bulkCreateProducts = async (req, res) => {
           continue;
         }
 
-        const brandId = brandMap[String(row.brand).toLowerCase().trim()];
-        if (!brandId) { results.errors.push({ row: rowNum, name: row.name, error: `Brand "${row.brand}" not found` }); continue; }
+        let brandId;
+        if (row.brand) {
+          brandId = brandMap[String(row.brand).toLowerCase().trim()];
+          if (!brandId) { results.errors.push({ row: rowNum, name: row.name, error: `Brand "${row.brand}" not found` }); continue; }
+        }
 
         const categoryId = categoryMap[String(row.category).toLowerCase().trim()];
         if (!categoryId) { results.errors.push({ row: rowNum, name: row.name, error: `Category "${row.category}" not found` }); continue; }
 
-        const modelId = modelMap[String(row.model).toLowerCase().trim()];
-        if (!modelId) { results.errors.push({ row: rowNum, name: row.name, error: `Model "${row.model}" not found` }); continue; }
+        let modelId;
+        if (row.model) {
+          modelId = modelMap[String(row.model).toLowerCase().trim()];
+          if (!modelId) { results.errors.push({ row: rowNum, name: row.name, error: `Model "${row.model}" not found` }); continue; }
+        }
 
         const productName = String(row.name).trim();
         const nameExists = await Product.findOne({ name: { $regex: new RegExp(`^${escapeRegex(productName)}$`, "i") } });
@@ -684,7 +733,7 @@ export const bulkCreateProducts = async (req, res) => {
           model: modelId,
           category: categoryId,
           productType: row.productType ? String(row.productType).trim() : undefined,
-          deviceType: row.deviceType ? (typeof row.deviceType === "string" ? row.deviceType.split(",").map(s => s.trim()).filter(Boolean) : (Array.isArray(row.deviceType) ? row.deviceType : ["Mobile"])) : ["Mobile"],
+          deviceType: parsedDeviceType,
           variantType: row.variantType ? String(row.variantType).trim() : "Color",
           price: firstVariant?.price ?? (row.price ? Number(row.price) : 0),
           mrp: firstVariant?.mrp ?? (row.mrp ? Number(row.mrp) : 0),
@@ -715,6 +764,8 @@ export const bulkCreateProducts = async (req, res) => {
           },
           // Parse optional countryPricing column (backward compatible — column may not exist)
           countryPricing: _parseCountryPricing(row.countryPricing),
+          // Bulk-uploaded products default to Published unless the row explicitly says Draft.
+          status: normalizeStatus(row.status) || "Published",
         };
 
         if (codeStr) {
@@ -850,6 +901,7 @@ export const downloadProductTemplate = async (req, res) => {
       { header: "highlights", key: "highlights", example: "Super AMOLED|Fast Charging|5G Ready", example2: "Long Life|Safe Chemistry" },
       { header: "descriptionPoints", key: "descriptionPoints", example: "100% Original Part|Quality Tested", example2: "Safe and reliable" },
       { header: "countryPricing", key: "countryPricing", example: "AE|United Arab Emirates|AED|د.إ|80|65|10|100||US|United States|USD|$|25|20|10|30", example2: "" },
+      { header: "status", key: "status", example: "", example2: "" },
     ];
 
     ws.columns = columns.map(c => ({
@@ -941,6 +993,15 @@ export const downloadProductTemplate = async (req, res) => {
         errorTitle: "Invalid Category",
         error: "Please select a Category from the dropdown list."
       };
+      // Column Z: Status (last column — blank defaults to Published)
+      ws.getCell(`Z${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: ['"Draft,Published"'],
+        showErrorMessage: true,
+        errorTitle: "Invalid Status",
+        error: "Please select Draft or Published (or leave blank for Published)."
+      };
     }
 
     // Instructions sheet – explains how to use the template
@@ -961,6 +1022,7 @@ export const downloadProductTemplate = async (req, res) => {
       ["", "Leave sku blank inside a variant to auto-generate."],
       ["", ""],
       ["brand / model / category", "Must match existing names in the admin (case-insensitive). Use the dropdowns provided."],
+      ["brand / model (Optional for Accessories/Tools)", "If deviceType is ONLY Accessories and/or Tools (no Mobile/Spare Parts), brand and model may be left blank — these products aren't tied to a specific phone."],
       ["images", "Pipe-separated full URLs -> url1|url2|url3"],
       ["specs", "key:value pairs, pipe-separated -> Color:Black|RAM:8GB"],
       ["highlights / descriptionPoints", "Pipe-separated -> Fast Charging|5G Ready"],
@@ -968,11 +1030,13 @@ export const downloadProductTemplate = async (req, res) => {
       ["countryPricing (Optional)", "Format: countryCode|countryName|currencyCode|currencySymbol|price|wholesalePrice|wholesaleMinQty|mrp"],
       ["", "Separate multiple countries with ||. Example: AE|United Arab Emirates|AED|د.إ|80|65|10|100||US|United States|USD|$|25|20|10|30"],
       ["", "If left blank, prices are auto-converted from INR using live exchange rates."],
+      ["status (Optional)", "Draft or Published. Leave blank to default to Published (same as before this column existed)."],
+      ["", "Draft products are hidden from the storefront (listing, search, product page) but stay editable in Admin."],
       ["Max file size", "10 MB"],
     ];
     instructionRows.forEach((r) => instr.addRow(r));
     instr.getRow(1).font = { bold: true, size: 13, color: { argb: "FF4F46E5" } };
-    [3, 4, 6, 7, 9, 14, 15, 16, 17, 18, 19].forEach((rowNum) => {
+    [3, 4, 6, 7, 9, 14, 15, 16, 17, 18, 19, 20].forEach((rowNum) => {
       const cell = instr.getRow(rowNum).getCell(1);
       cell.font = { bold: true };
     });
@@ -1038,6 +1102,8 @@ const BULK_PRODUCT_COLUMNS = [
   // Format per record: countryCode|countryName|currencyCode|currencySymbol|price|wholesalePrice|wholesaleMinQty|mrp
   // Example: AE|United Arab Emirates|AED|د.إ|80|65|10|100||US|United States|USD|$|25|20|10|30
   { header: "countryPricing", key: "countryPricing", width: 100 },
+  // Draft or Published. Product-level only — blank means unchanged (bulk-update) or Published (export re-upload default).
+  { header: "status", key: "status", width: 14 },
 ];
 
 const _colLetter = (n) => {
@@ -1094,6 +1160,7 @@ const applyExcelSheetDropdowns = ({ ws, columns, brands, categories, models, val
   const modelColLetter = _colLetter(findCol("model"));
   const categoryColLetter = _colLetter(findCol("category"));
   const deviceTypeColLetter = _colLetter(findCol("deviceType"));
+  const statusColLetter = _colLetter(findCol("status"));
 
   const brandEnd = Math.max(2, brands.length + 1);
   const categoryEnd = Math.max(2, categories.length + 1);
@@ -1132,6 +1199,16 @@ const applyExcelSheetDropdowns = ({ ws, columns, brands, categories, models, val
         showErrorMessage: true,
         errorTitle: "Invalid Device Type",
         error: "Please select a valid Device Type.",
+      };
+    }
+    if (statusColLetter) {
+      ws.getCell(`${statusColLetter}${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: ['"Draft,Published"'],
+        showErrorMessage: true,
+        errorTitle: "Invalid Status",
+        error: "Please select Draft or Published (or leave blank for no change / Published).",
       };
     }
   }
@@ -1288,6 +1365,8 @@ const EXPORT_BACKUP_COLUMNS = [
   { header: "uploadedDate", key: "uploadedDate", width: 14 },
   // Country pricing column — same format as BULK_PRODUCT_COLUMNS
   { header: "countryPricing", key: "countryPricing", width: 100 },
+  // Draft or Published — round-trips through bulk-create so a restore preserves publish state.
+  { header: "status", key: "status", width: 14 },
 ];
 
 // @desc    Export all products as a FULL BACKUP file in the SAME format as
@@ -1386,6 +1465,7 @@ export const exportProductsBackup = async (req, res) => {
         warrantyPolicy: p.details?.warranty?.policy || "",
         uploadedDate: _formatDDMMYYYY(p.createdAt),
         countryPricing: _serializeCountryPricing(p.countryPricing),
+        status: p.status || "Published",
       };
       const pRow = ws.addRow(_buildRowArrayFor(EXPORT_BACKUP_COLUMNS, rowObj));
       pRow.alignment = { vertical: "top", wrapText: false };
@@ -1427,6 +1507,7 @@ export const exportProductsBackup = async (req, res) => {
       ["highlights / descriptionPoints", "Pipe-separated bullets:  Fast Charging|5G Ready"],
       ["colors", "Comma-separated:  Black,White,Gold"],
       ["countryPricing", "Per-country pricing overrides: countryCode|countryName|currencyCode|currencySymbol|price|wholesalePrice|wholesaleMinQty|mrp (joined by ||)"],
+      ["status", "Draft or Published — reflects each product's current publish state. Preserved on restore; leave blank to default to Published."],
       ["description", "Use Alt+Enter (Excel) for paragraph breaks; stored as \\n in the cell. Each paragraph becomes one entry in the product's description array."],
       ["", ""],
       ["IMPORTANT — Restore vs Update", "This file is for RESTORE (re-uploading after a wipe). Each row CREATES a new product. If a product with the same name already exists, that row FAILS with \"already exists\". To edit existing products instead, use Admin → Products → Update (Bulk Update Products)."],
@@ -1641,6 +1722,7 @@ const PRODUCT_LEVEL_COLUMN_KEYS = new Set([
   "countryOfOrigin",
   "packer",
   "colors",
+  "status",
 ]);
 
 // Treat blank cell values as "no change".
@@ -1776,12 +1858,14 @@ export const downloadBulkUpdateTemplate = async (req, res) => {
       ["PRODUCT-LEVEL ROWS", "When the SKU matches Product.code, every column is editable except SKU (immutable) and slug (auto-managed)."],
       ["", ""],
       ["brand / model / category", "Pick from the dropdown. Must match an existing entry. Case-insensitive. To add a new one, create it via Admin → Brands / Models / Categories first."],
+      ["brand / model (Optional for Accessories/Tools)", "Only required if the product's deviceType includes Mobile or Spare Parts. Pure Accessories/Tools products may leave these blank."],
       ["images", "Comma- or pipe-separated full URLs replace the existing image list:  url1,url2,url3  (pipes also work: url1|url2|url3)"],
       ["specs", "Pipe-separated key:value pairs replace the existing specs list:  Color:Black|RAM:8GB|Storage:256GB"],
       ["highlights / descriptionPoints", "Pipe-separated bullets:  Fast Charging|5G Ready"],
       ["colors", "Comma-separated:  Black,White,Gold"],
       ["countryPricing", "Per-country pricing overrides: countryCode|countryName|currencyCode|currencySymbol|price|wholesalePrice|wholesaleMinQty|mrp (joined by ||)"],
       ["description", "Use \\n inside the cell for paragraph breaks (Alt+Enter in Excel)."],
+      ["status", "Draft or Published. Product-level rows only — ignored (with a warning) on variant rows. Blank = unchanged."],
       ["", ""],
       ["Things you CANNOT change here", "SKU itself, slug, reviews, rating, numReviews. Use the per-product edit page for those."],
       ["Ambiguous variant SKU", "If the same variant SKU exists on more than one product, that row fails with an error. Fix the duplicate via the product edit page."],
@@ -1943,6 +2027,14 @@ export const bulkUpdateProductsBySku = async (req, res) => {
           setStringField("deviceType", row.deviceType);
           setStringField("variantType", row.variantType);
           setStringField("videoUrl", row.videoUrl);
+
+          if (!isBlank(row.status)) {
+            const normalized = normalizeStatus(row.status);
+            if (!normalized) {
+              throw new Error(`Field "status" must be "Draft" or "Published" (got "${row.status}")`);
+            }
+            $set.status = normalized;
+          }
 
           if (!isBlank(row.images)) {
             $set.images = isClearToken(row.images) ? [] : parseImageList(row.images);

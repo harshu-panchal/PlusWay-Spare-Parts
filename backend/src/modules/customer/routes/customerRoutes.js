@@ -43,13 +43,18 @@ import { getModels } from "../../admin/controllers/modelController.js";
 import { getActiveBanners } from "../../admin/controllers/bannerController.js";
 import { globalSearch } from "../controllers/searchController.js";
 import { createLead } from "../controllers/leadController.js";
+import { createFormSubmission } from "../controllers/formSubmissionController.js";
 import { protect } from "../../../middleware/authMiddleware.js";
+import { formSubmissionLimiter } from "../../../middleware/rateLimiter.js";
 import { getCountry, getExchangeRatesHandler } from "../controllers/geoController.js";
 
 const router = express.Router();
 
 // Lead routes (Public)
 router.post("/leads", createLead);
+
+// Form submissions — Contact / Support / Career / Replacement (Public)
+router.post("/form-submissions", formSubmissionLimiter, createFormSubmission);
 
 // Auth routes
 router.post("/send-otp", otpLimiter, sendOtp);

@@ -71,6 +71,9 @@ export const API_ENDPOINTS = {
     // Leads
     CREATE_LEAD: `${API_BASE_URL}/api/customer/leads`,
 
+    // Form Submissions (Contact / Support / Career / Replacement)
+    CREATE_FORM_SUBMISSION: `${API_BASE_URL}/api/customer/form-submissions`,
+
     // Addresses
     ADDRESSES: `${API_BASE_URL}/api/customer/addresses`,
     ADDRESS_DETAIL: (id) => `${API_BASE_URL}/api/customer/addresses/${id}`,
@@ -136,9 +139,13 @@ export const API_ENDPOINTS = {
     ADMIN_REVIEWS: `${API_BASE_URL}/api/admin/reviews`,
     ADMIN_REVIEW_DETAIL: (id) => `${API_BASE_URL}/api/admin/reviews/${id}`,
 
-    // Admin Support Tickets
+    // Admin Support Tickets (legacy, superseded by Admin Form Submissions below)
     ADMIN_TICKETS: `${API_BASE_URL}/api/admin/tickets`,
     ADMIN_TICKET_DETAIL: (id) => `${API_BASE_URL}/api/admin/tickets/${id}`,
+
+    // Admin Form Submissions (Contact / Support / Career / Replacement)
+    ADMIN_FORM_SUBMISSIONS: `${API_BASE_URL}/api/admin/form-submissions`,
+    ADMIN_FORM_SUBMISSION_DETAIL: (id) => `${API_BASE_URL}/api/admin/form-submissions/${id}`,
 
     // Customer Categories (public endpoint used by admin)
     CUSTOMER_CATEGORIES: `${API_BASE_URL}/api/customer/categories`,

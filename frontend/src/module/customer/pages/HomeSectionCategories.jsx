@@ -41,7 +41,7 @@ const SectionItemCard = ({ item, displayType, filterDeviceType }) => {
         <Link
           to={`?brandId=${item._id}`}
           className="bg-white rounded-2xl border border-gray-200/70 shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-300 group flex flex-col overflow-hidden">
-          <div className="w-full aspect-[4/5] p-6 bg-[#f8fafc] flex items-center justify-center relative overflow-hidden">
+          <div className="w-full aspect-[4/5] p-2 bg-white flex items-center justify-center relative overflow-hidden">
             <LazyImage
               src={item.logo}
               alt={item.name}
@@ -60,7 +60,7 @@ const SectionItemCard = ({ item, displayType, filterDeviceType }) => {
         <Link
           to={`/model/${item._id}/products`}
           className="bg-white rounded-2xl border border-gray-200/70 shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-300 group flex flex-col overflow-hidden">
-          <div className="w-full aspect-[4/5] p-6 bg-[#f8fafc] flex items-center justify-center relative overflow-hidden">
+          <div className="w-full aspect-[4/5] p-2 bg-white flex items-center justify-center relative overflow-hidden">
             {item.image || item.brand?.logo ? (
               <LazyImage
                 src={item.image || item.brand?.logo}
@@ -91,7 +91,7 @@ const SectionItemCard = ({ item, displayType, filterDeviceType }) => {
         <Link
           to={`/products?category=${item._id}`}
           className="bg-white rounded-2xl border border-gray-200/70 shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-300 group flex flex-col overflow-hidden">
-          <div className="w-full aspect-[4/5] p-6 bg-[#f8fafc] flex items-center justify-center relative overflow-hidden">
+          <div className="w-full aspect-[4/5] p-2 bg-white flex items-center justify-center relative overflow-hidden">
             <LazyImage
               src={item.image}
               alt={item.name}

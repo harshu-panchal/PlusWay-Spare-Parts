@@ -65,7 +65,7 @@ const AdminLayout = () => {
       title: "Support",
       items: [
         { name: "Reviews", path: "/admin/reviews", icon: MessageSquare },
-        { name: "Support Tickets", path: "/admin/support", icon: LifeBuoy },
+        { name: "Form Submissions", path: "/admin/support", icon: LifeBuoy },
       ],
     },
     {

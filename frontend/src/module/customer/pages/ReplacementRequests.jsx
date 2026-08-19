@@ -1,8 +1,13 @@
 import React, { useState } from "react";
+import axios from "axios";
 import { RotateCcw, Upload, Camera, Send, AlertCircle } from "lucide-react";
+import { API_ENDPOINTS } from "../../../config/api";
 
 const ReplacementRequests = () => {
     const [formData, setFormData] = useState({
+        name: "",
+        email: "",
+        phone: "",
         orderId: "",
         productName: "",
         reason: "",
@@ -23,22 +28,43 @@ const ReplacementRequests = () => {
         e.preventDefault();
         setIsSubmitting(true);
 
-        // Simulate form submission
-        setTimeout(() => {
+        try {
+            await axios.post(API_ENDPOINTS.CREATE_FORM_SUBMISSION, {
+                formType: "Replacement",
+                name: formData.name,
+                email: formData.email,
+                phone: formData.phone,
+                subject: `Replacement Request — ${formData.reason}`,
+                message: formData.description,
+                meta: {
+                    orderId: formData.orderId,
+                    productName: formData.productName,
+                    reason: formData.reason,
+                    imageUrl: formData.imageUrl,
+                },
+            });
             alert(
                 "Replacement request submitted successfully! Our team will review it and contact you within 24 hours."
             );
             setFormData({
+                name: "",
+                email: "",
+                phone: "",
                 orderId: "",
                 productName: "",
                 reason: "",
                 description: "",
                 imageUrl: "",
             });
+        } catch (error) {
+            console.error("Failed to submit replacement request", error);
+            alert(
+                error.response?.data?.message ||
+                    "Failed to submit your request. Please try again."
+            );
+        } finally {
             setIsSubmitting(false);
-        }, 1000);
-
-        // TODO: Implement actual API call
+        }
     };
 
     const replacementReasons = [
@@ -96,6 +122,56 @@ const ReplacementRequests = () => {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Your Details */}
+                        <div>
+                            <h3 className="text-lg font-black text-secondary uppercase mb-4 pb-2 border-b">
+                                Your Details
+                            </h3>
+                            <div className="grid md:grid-cols-3 gap-5">
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">
+                                        Name *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        value={formData.name}
+                                        onChange={handleChange}
+                                        required
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded focus:outline-none focus:border-primary transition-colors font-medium"
+                                        placeholder="Your name"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">
+                                        Email *
+                                    </label>
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        value={formData.email}
+                                        onChange={handleChange}
+                                        required
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded focus:outline-none focus:border-primary transition-colors font-medium"
+                                        placeholder="your@email.com"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">
+                                        Phone
+                                    </label>
+                                    <input
+                                        type="tel"
+                                        name="phone"
+                                        value={formData.phone}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded focus:outline-none focus:border-primary transition-colors font-medium"
+                                        placeholder="+91 XXXXXXXXXX"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Order Information */}
                         <div>
                             <h3 className="text-lg font-black text-secondary uppercase mb-4 pb-2 border-b">

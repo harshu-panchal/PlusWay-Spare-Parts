@@ -269,12 +269,16 @@ const ProductDetail = () => {
               Home
             </Link>
             <span className="text-gray-300">/</span>
-            <Link
-              to="/section/697c5e98d1ffb9d52de9a3c2"
-              className="hover:text-primary">
-              {product.model?.name || "Model"}
-            </Link>
-            <span className="text-gray-300">/</span>
+            {product.model?._id && (
+              <>
+                <Link
+                  to={`/model/${product.model._id}/products`}
+                  className="hover:text-primary">
+                  {product.model.name}
+                </Link>
+                <span className="text-gray-300">/</span>
+              </>
+            )}
             <span className="text-gray-600 font-bold">
               {product.name.split("-")[0]}
             </span>
@@ -689,7 +693,7 @@ const ProductDetail = () => {
               <div className="flex items-center justify-end gap-3 text-right">
                 <div>
                   <Link
-                    to="/section/697c5e98d1ffb9d52de9a3c2"
+                    to={product.model?._id ? `/model/${product.model._id}/products` : "/products"}
                     className="text-[11px] font-black text-blue-600 underline">
                     {product.model?.name || "View specific products"}
                   </Link>

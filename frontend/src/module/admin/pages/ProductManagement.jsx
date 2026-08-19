@@ -27,6 +27,11 @@ import { API_ENDPOINTS } from "../../../config/api";
 import Pagination from "../../../components/Pagination";
 import { COUNTRIES_LIST, getCountryByCode } from "../../../data/countriesList";
 
+// Accessories/Tools aren't tied to a specific phone — brand/model become
+// optional when every selected device type is one of these (mirrors the
+// backend's `isDeviceIndependentProduct` rule in models/Product.js).
+const DEVICE_INDEPENDENT_TYPES = ["accessories", "tools"];
+
 const ProductManagement = () => {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
@@ -43,6 +48,7 @@ const ProductManagement = () => {
   const [total, setTotal] = useState(0);
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [brandFilter, setBrandFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("All");
 
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [isBulkPriceModalOpen, setIsBulkPriceModalOpen] = useState(false);
@@ -60,6 +66,11 @@ const ProductManagement = () => {
 
   const handleBrandFilterChange = (e) => {
     setBrandFilter(e.target.value);
+    setPage(1);
+  };
+
+  const handleStatusFilterChange = (e) => {
+    setStatusFilter(e.target.value);
     setPage(1);
   };
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -83,6 +94,8 @@ const ProductManagement = () => {
         queryParams += `&category=${encodeURIComponent(categoryFilter)}`;
       if (brandFilter && brandFilter !== "All")
         queryParams += `&brand=${encodeURIComponent(brandFilter)}`;
+      if (statusFilter && statusFilter !== "All")
+        queryParams += `&status=${encodeURIComponent(statusFilter)}`;
 
       const [prodRes, catRes, brandRes, modelRes, sectionRes] = await Promise.all([
         axios.get(`${API_ENDPOINTS.ADMIN_PRODUCTS}${queryParams}`, config),
@@ -110,10 +123,11 @@ const ProductManagement = () => {
 
   useEffect(() => {
     fetchData();
-  }, [page, searchTerm, categoryFilter, brandFilter]);
+  }, [page, searchTerm, categoryFilter, brandFilter, statusFilter]);
 
   const initialFormState = {
     name: "",
+    status: "Published",
     price: "",
     wholesalePrice: "",
     wholesaleMinQty: 10,
@@ -161,11 +175,20 @@ const ProductManagement = () => {
     return Array.from(set);
   }, [homeSections, formData?.deviceType]);
 
+  const isBrandModelOptional = useMemo(() => {
+    const types = Array.isArray(formData?.deviceType)
+      ? formData.deviceType
+      : (formData?.deviceType ? [formData.deviceType] : []);
+    if (types.length === 0) return false;
+    return types.every((t) => DEVICE_INDEPENDENT_TYPES.includes(String(t).trim().toLowerCase()));
+  }, [formData?.deviceType]);
+
   const handleOpenModal = (product = null) => {
     if (product) {
       setEditingProduct(product);
       setFormData({
         ...product,
+        status: product.status === "Draft" ? "Draft" : "Published",
         category: product.category?._id || product.category || "",
         brand: product.brand?._id || product.brand || "",
         model: product.model?._id || product.model || "",
@@ -769,6 +792,7 @@ const ProductManagement = () => {
     { header: "highlights", key: "highlights", example: "Super AMOLED|Fast Charging|5G Ready", example2: "Long Life|Safe Chemistry" },
     { header: "descriptionPoints", key: "descriptionPoints", example: "100% Original Part|Quality Tested", example2: "Safe and reliable" },
     { header: "countryPricing", key: "countryPricing", example: "AE|United Arab Emirates|AED|د.إ|80|65|10|100||US|United States|USD|$|25|20|10|30", example2: "" },
+    { header: "status", key: "status", example: "", example2: "" },
   ];
 
   return (
@@ -805,6 +829,14 @@ const ProductManagement = () => {
               {categories.map((c) => (
                 <option key={c._id} value={c._id}>{c.name}</option>
               ))}
+            </select>
+            <select
+              className="flex-1 md:flex-none px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition-all text-gray-600 bg-gray-50 text-sm font-medium"
+              value={statusFilter}
+              onChange={handleStatusFilterChange}>
+              <option value="All">All Statuses</option>
+              <option value="Published">Published</option>
+              <option value="Draft">Draft</option>
             </select>
           </div>
         </div>
@@ -939,9 +971,16 @@ const ProductManagement = () => {
                         />
                       </div>
                       <div className="min-w-0 max-w-[200px] md:max-w-[300px]">
-                        <p className="font-bold text-gray-900 text-[13px] truncate group-hover:text-blue-600 transition-colors" title={product.name}>
-                          {product.name}
-                        </p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-bold text-gray-900 text-[13px] truncate group-hover:text-blue-600 transition-colors" title={product.name}>
+                            {product.name}
+                          </p>
+                          {product.status === "Draft" && (
+                            <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200">
+                              Draft
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[10px] text-gray-400 font-bold tracking-wider">
                           SKU: {product.code || product._id.toString().slice(-6).toUpperCase()}
                         </p>
@@ -1320,6 +1359,39 @@ const ProductManagement = () => {
               </div>
 
               <div className="space-y-6">
+                <div className="flex items-center justify-between gap-4 p-4 rounded-xl border border-gray-200 bg-gray-50">
+                  <div>
+                    <p className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">Publish Status</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {formData.status === "Draft"
+                        ? "Hidden from the storefront — only visible in Admin."
+                        : "Live on the storefront."}
+                    </p>
+                  </div>
+                  <div className="flex bg-white border border-gray-200 rounded-lg p-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, status: "Draft" })}
+                      className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${
+                        formData.status === "Draft"
+                          ? "bg-amber-500 text-white shadow-sm"
+                          : "text-gray-500 hover:text-gray-700"
+                      }`}>
+                      Draft
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, status: "Published" })}
+                      className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${
+                        formData.status !== "Draft"
+                          ? "bg-emerald-600 text-white shadow-sm"
+                          : "text-gray-500 hover:text-gray-700"
+                      }`}>
+                      Published
+                    </button>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
@@ -1433,10 +1505,10 @@ const ProductManagement = () => {
                   </div>
                   <div className="space-y-2">
                     <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
-                      Brand
+                      Brand {isBrandModelOptional && <span className="text-gray-400 normal-case font-medium">(Optional for Accessories/Tools)</span>}
                     </label>
                     <select
-                      required
+                      required={!isBrandModelOptional}
                       className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all appearance-none"
                       value={formData.brand}
                       onChange={(e) =>
@@ -1452,10 +1524,10 @@ const ProductManagement = () => {
                   </div>
                   <div className="space-y-2">
                     <label className="text-[13px] font-bold text-gray-700 uppercase tracking-wider">
-                      Model
+                      Model {isBrandModelOptional && <span className="text-gray-400 normal-case font-medium">(Optional for Accessories/Tools)</span>}
                     </label>
                     <select
-                      required
+                      required={!isBrandModelOptional}
                       className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all appearance-none"
                       value={formData.model}
                       onChange={(e) =>
@@ -2130,6 +2202,7 @@ const ProductManagement = () => {
           { header: "packer", key: "packer", example: "", example2: "Elcotek India Pvt Ltd, New Delhi" },
           { header: "colors", key: "colors", example: "", example2: "Black,White" },
           { header: "countryPricing", key: "countryPricing", example: "AE|United Arab Emirates|AED|د.إ|80|65|10|100", example2: "" },
+          { header: "status", key: "status", example: "", example2: "" },
         ]}
         templateSheetName="Bulk Update Products"
         templateFileName="plusway_bulk_update_products.xlsx"

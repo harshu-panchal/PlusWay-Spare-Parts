@@ -1,8 +1,20 @@
 import React, { useState } from "react";
+import axios from "axios";
 import { Briefcase, MapPin, Clock, Send } from "lucide-react";
+import { API_ENDPOINTS } from "../../../config/api";
 
 const Career = () => {
     const [selectedJob, setSelectedJob] = useState(null);
+    const [applicationForm, setApplicationForm] = useState({
+        name: "",
+        email: "",
+        phone: "",
+        position: "",
+        experience: "",
+        resumeUrl: "",
+        coverLetter: "",
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const openPositions = [
         {
@@ -81,6 +93,60 @@ const Career = () => {
         "Training and development",
         "Friendly work environment",
     ];
+
+    const handleApplicationChange = (e) => {
+        setApplicationForm({
+            ...applicationForm,
+            [e.target.name]: e.target.value,
+        });
+    };
+
+    const handlePositionSelect = (e) => {
+        const job = openPositions.find((j) => String(j.id) === e.target.value);
+        setApplicationForm({
+            ...applicationForm,
+            position: job ? job.title : "",
+        });
+    };
+
+    const handleApplicationSubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+
+        try {
+            await axios.post(API_ENDPOINTS.CREATE_FORM_SUBMISSION, {
+                formType: "Career",
+                name: applicationForm.name,
+                email: applicationForm.email,
+                phone: applicationForm.phone,
+                subject: `Job Application: ${applicationForm.position || "General"}`,
+                message: applicationForm.coverLetter || "(No cover letter provided)",
+                meta: {
+                    position: applicationForm.position,
+                    experience: applicationForm.experience,
+                    resumeUrl: applicationForm.resumeUrl,
+                },
+            });
+            alert("Application submitted successfully! Our HR team will review it and get in touch.");
+            setApplicationForm({
+                name: "",
+                email: "",
+                phone: "",
+                position: "",
+                experience: "",
+                resumeUrl: "",
+                coverLetter: "",
+            });
+        } catch (error) {
+            console.error("Failed to submit job application", error);
+            alert(
+                error.response?.data?.message ||
+                    "Failed to submit your application. Please try again."
+            );
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -183,7 +249,7 @@ const Career = () => {
                         </h2>
                     </div>
 
-                    <form className="space-y-5">
+                    <form className="space-y-5" onSubmit={handleApplicationSubmit}>
                         <div className="grid md:grid-cols-2 gap-5">
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider">
@@ -191,6 +257,9 @@ const Career = () => {
                                 </label>
                                 <input
                                     type="text"
+                                    name="name"
+                                    value={applicationForm.name}
+                                    onChange={handleApplicationChange}
                                     required
                                     className="w-full px-4 py-2.5 border border-gray-300 rounded focus:outline-none focus:border-primary transition-colors font-medium"
                                     placeholder="Your full name"
@@ -202,6 +271,9 @@ const Career = () => {
                                 </label>
                                 <input
                                     type="email"
+                                    name="email"
+                                    value={applicationForm.email}
+                                    onChange={handleApplicationChange}
                                     required
                                     className="w-full px-4 py-2.5 border border-gray-300 rounded focus:outline-none focus:border-primary transition-colors font-medium"
                                     placeholder="your@email.com"
@@ -216,6 +288,9 @@ const Career = () => {
                                 </label>
                                 <input
                                     type="tel"
+                                    name="phone"
+                                    value={applicationForm.phone}
+                                    onChange={handleApplicationChange}
                                     required
                                     className="w-full px-4 py-2.5 border border-gray-300 rounded focus:outline-none focus:border-primary transition-colors font-medium"
                                     placeholder="+91 XXXXXXXXXX"
@@ -227,6 +302,8 @@ const Career = () => {
                                 </label>
                                 <select
                                     required
+                                    onChange={handlePositionSelect}
+                                    value={openPositions.find((j) => j.title === applicationForm.position)?.id ?? ""}
                                     className="w-full px-4 py-2.5 border border-gray-300 rounded focus:outline-none focus:border-primary transition-colors font-medium"
                                 >
                                     <option value="">Select a position</option>
@@ -245,6 +322,9 @@ const Career = () => {
                             </label>
                             <input
                                 type="text"
+                                name="experience"
+                                value={applicationForm.experience}
+                                onChange={handleApplicationChange}
                                 required
                                 className="w-full px-4 py-2.5 border border-gray-300 rounded focus:outline-none focus:border-primary transition-colors font-medium"
                                 placeholder="e.g. 2-3 years"
@@ -257,6 +337,9 @@ const Career = () => {
                             </label>
                             <input
                                 type="url"
+                                name="resumeUrl"
+                                value={applicationForm.resumeUrl}
+                                onChange={handleApplicationChange}
                                 required
                                 className="w-full px-4 py-2.5 border border-gray-300 rounded focus:outline-none focus:border-primary transition-colors font-medium"
                                 placeholder="Link to your resume (Google Drive, Dropbox, etc.)"
@@ -271,6 +354,9 @@ const Career = () => {
                                 Cover Letter
                             </label>
                             <textarea
+                                name="coverLetter"
+                                value={applicationForm.coverLetter}
+                                onChange={handleApplicationChange}
                                 rows="5"
                                 className="w-full px-4 py-2.5 border border-gray-300 rounded focus:outline-none focus:border-primary transition-colors font-medium resize-none"
                                 placeholder="Tell us why you'd be a great fit..."
@@ -279,10 +365,11 @@ const Career = () => {
 
                         <button
                             type="submit"
-                            className="w-full bg-primary text-white font-black py-3 rounded uppercase tracking-widest text-sm hover:bg-orange-600 transition-colors flex items-center justify-center gap-2"
+                            disabled={isSubmitting}
+                            className="w-full bg-primary text-white font-black py-3 rounded uppercase tracking-widest text-sm hover:bg-orange-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <Send size={18} />
-                            Submit Application
+                            {isSubmitting ? "Submitting..." : "Submit Application"}
                         </button>
                     </form>
                 </div>
@@ -370,10 +457,11 @@ const Career = () => {
                             </button>
                             <button
                                 onClick={() => {
+                                    setApplicationForm({
+                                        ...applicationForm,
+                                        position: selectedJob.title,
+                                    });
                                     setSelectedJob(null);
-                                    document
-                                        .querySelector('select[required]')
-                                        .value = selectedJob.id;
                                 }}
                                 className="flex-1 bg-primary text-white font-black py-3 rounded uppercase text-sm hover:bg-orange-600 transition-colors"
                             >

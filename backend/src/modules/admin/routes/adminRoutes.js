@@ -22,6 +22,11 @@ import {
   deleteTicket,
 } from "../controllers/ticketController.js";
 import {
+  getFormSubmissions,
+  updateFormSubmission,
+  deleteFormSubmission,
+} from "../controllers/formSubmissionController.js";
+import {
   getBrands,
   createBrand,
   updateBrand,
@@ -180,6 +185,13 @@ router
   .route("/tickets/:id")
   .put(protect, admin, updateTicket)
   .delete(protect, admin, deleteTicket);
+
+// Form submission routes (Contact / Support / Career / Replacement)
+router.route("/form-submissions").get(protect, admin, getFormSubmissions);
+router
+  .route("/form-submissions/:id")
+  .put(protect, admin, updateFormSubmission)
+  .delete(protect, admin, deleteFormSubmission);
 
 // Category routes
 router

@@ -71,7 +71,7 @@ const searchProducts = async (query, limit) => {
         modelName: { $arrayElemAt: ["$modelDoc.name", 0] },
       },
     },
-    { $match: match },
+    { $match: { ...match, status: { $ne: "Draft" } } },
     { $sort: { createdAt: -1 } },
     { $limit: limit },
   ]);

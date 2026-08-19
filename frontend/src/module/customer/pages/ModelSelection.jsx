@@ -133,7 +133,7 @@ const ModelSelection = () => {
                             }
                             className="bg-white rounded-2xl border border-gray-200/70 shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-300 group flex flex-col overflow-hidden"
                         >
-                            <div className="w-full aspect-[4/5] p-6 bg-[#f8fafc] flex items-center justify-center relative overflow-hidden">
+                            <div className="w-full aspect-[4/5] p-2 bg-white flex items-center justify-center relative overflow-hidden">
                                 {model.image ? (
                                     <LazyImage
                                         src={model.image}
