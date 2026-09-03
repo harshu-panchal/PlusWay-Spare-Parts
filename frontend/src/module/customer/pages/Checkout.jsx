@@ -15,7 +15,7 @@ const Checkout = () => {
     const [fullAddress, setFullAddress] = useState({
         address: '', city: '', pincode: '', country: 'India'
     });
-    const [paymentMethod, setPaymentMethod] = useState('paypal'); // Default to PayPal
+    const [paymentMethod, setPaymentMethod] = useState('cod'); // Default to COD
 
     const handlePlaceOrder = async () => {
         try {
@@ -144,7 +144,7 @@ const Checkout = () => {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {[
-                                    { id: 'paypal', name: 'PayPal or Credit Card', icon: <CreditCard size={20} /> },
+                                    { id: 'cod', name: 'Cash on Delivery', icon: <Wallet size={20} /> },
                                 ].map((method) => (
                                     <label key={method.id} className={`flex items-center gap-4 p-5 rounded-2xl border-2 cursor-pointer transition-all group ${paymentMethod === method.id ? 'border-primary bg-white' : 'border-gray-100 bg-gray-50 hover:border-gray-300'}`}>
                                         <input
