@@ -151,7 +151,7 @@ const Login = () => {
                       pattern="[0-9]*"
                       required
                       placeholder="Enter mobile number"
-                      className="flex-1 min-w-0 px-4 py-4 bg-transparent focus:outline-none font-black tracking-widest text-secondary"
+                      className="flex-1 min-w-0 px-4 py-4 bg-transparent focus:outline-none font-black tracking-widest text-secondary placeholder:text-sm placeholder:font-medium placeholder:tracking-normal"
                       value={mobile}
                       onChange={(e) =>
                         setMobile(

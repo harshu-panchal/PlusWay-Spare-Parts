@@ -162,7 +162,7 @@ const Signup = () => {
                         name="name"
                         required
                         placeholder="Full Name"
-                        className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-primary font-bold text-secondary transition-all"
+                        className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-primary font-bold text-secondary transition-all placeholder:text-sm placeholder:font-medium placeholder:tracking-normal"
                         value={formData.name}
                         onChange={handleChange}
                       />
@@ -185,7 +185,7 @@ const Signup = () => {
                         pattern="[0-9]*"
                         required
                         placeholder="Mobile Number"
-                        className="flex-1 min-w-0 px-4 py-4 bg-transparent focus:outline-none font-black tracking-widest text-secondary"
+                        className="flex-1 min-w-0 px-4 py-4 bg-transparent focus:outline-none font-black tracking-widest text-secondary placeholder:text-sm placeholder:font-medium placeholder:tracking-normal"
                         value={formData.mobile}
                         onChange={handleChange}
                       />
@@ -202,7 +202,7 @@ const Signup = () => {
                         type="email"
                         name="email"
                         placeholder="Email Address (Optional)"
-                        className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-primary font-bold text-secondary transition-all"
+                        className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-primary font-bold text-secondary transition-all placeholder:text-sm placeholder:font-medium placeholder:tracking-normal"
                         value={formData.email}
                         onChange={handleChange}
                       />
