@@ -1,10 +1,20 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import browserslist from 'browserslist'
+import { browserslistToTargets } from 'lightningcss'
+
+const cssTargets = browserslistToTargets(browserslist('defaults, Safari >= 12, iOS >= 12'))
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  css: {
+    transformer: 'lightningcss',
+    lightningcss: {
+      targets: cssTargets,
+    },
+  },
   server: {
     proxy: {
       "/api": {
@@ -15,6 +25,7 @@ export default defineConfig({
   },
   build: {
     target: 'es2020',
+    cssMinify: 'lightningcss',
     minify: 'terser',
     terserOptions: {
       compress: {

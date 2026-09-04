@@ -15,6 +15,7 @@ const OrderDetails = () => {
     const [sdkReady, setSdkReady] = useState(false);
     const [clientId, setClientId] = useState("");
     const { fetchCart } = useCart();
+    const razorpayLoadPromise = React.useRef(null);
 
     const getToken = () => {
         const userInfo = localStorage.getItem("userInfo");
@@ -73,14 +74,32 @@ const OrderDetails = () => {
     };
 
     const loadRazorpay = () => {
-        return new Promise((resolve) => {
-            const script = document.createElement("script");
-            script.src = "https://checkout.razorpay.com/v1/checkout.js";
-            script.onload = () => resolve(true);
-            script.onerror = () => resolve(false);
-            document.body.appendChild(script);
-        });
+        if (!razorpayLoadPromise.current) {
+            razorpayLoadPromise.current = new Promise((resolve) => {
+                if (window.Razorpay) {
+                    resolve(true);
+                    return;
+                }
+                const script = document.createElement("script");
+                script.src = "https://checkout.razorpay.com/v1/checkout.js";
+                script.onload = () => resolve(true);
+                script.onerror = () => resolve(false);
+                document.body.appendChild(script);
+            });
+        }
+        return razorpayLoadPromise.current;
     };
+
+    // Preload the Razorpay SDK as soon as the order is known, so the script
+    // is already cached by the time the user clicks "Pay Now". This keeps
+    // the click-to-open gap short enough that Safari doesn't treat the
+    // checkout popup as unrequested and block it.
+    useEffect(() => {
+        if (order && !order.isPaid) {
+            loadRazorpay();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [order?._id]);
 
     const handleRazorpayPayment = async () => {
         const res = await loadRazorpay();

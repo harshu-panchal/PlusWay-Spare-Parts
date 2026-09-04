@@ -95,3 +95,20 @@ body {
     animation: text-shimmer 1.5s infinite;
   }
 }
+
+/* Use the dynamic viewport height where supported so mobile Safari's
+   collapsing address bar doesn't cause h-screen/min-h-screen content to
+   jump or get cut off. Browsers without dvh support keep today's 100vh. */
+@supports (height: 100dvh) {
+  .h-screen {
+    height: 100dvh;
+  }
+
+  .min-h-screen {
+    min-height: 100dvh;
+  }
+
+  .max-h-screen {
+    max-height: 100dvh;
+  }
+}
