@@ -110,7 +110,7 @@ const Login = () => {
     <div className="bg-[#f4f4f4] min-h-[calc(100vh-160px)] flex flex-col justify-center py-12 px-4">
       <div className="max-w-md w-full mx-auto">
         <div className="bg-white rounded-[40px] shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-10 lg:p-14">
+          <div className="px-5 py-8 sm:p-10 lg:p-14">
             <div className="w-16 h-16 bg-orange-50 rounded-2xl flex items-center justify-center text-primary mb-8 mx-auto shadow-sm">
               {step === 1 ? <Smartphone size={32} /> : <Lock size={32} />}
             </div>
@@ -151,7 +151,7 @@ const Login = () => {
                       pattern="[0-9]*"
                       required
                       placeholder="Enter mobile number"
-                      className="flex-1 min-w-0 px-4 py-4 bg-transparent focus:outline-none font-black tracking-widest text-secondary placeholder:text-sm placeholder:font-medium placeholder:tracking-normal"
+                      className="flex-1 min-w-0 px-2 sm:px-4 py-4 bg-transparent focus:outline-none font-black tracking-widest text-secondary placeholder:text-sm placeholder:font-medium placeholder:tracking-normal"
                       value={mobile}
                       onChange={(e) =>
                         setMobile(
