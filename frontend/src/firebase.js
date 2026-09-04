@@ -12,6 +12,12 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const messaging = getMessaging(app);
+
+let messaging = null;
+try {
+  messaging = getMessaging(app);
+} catch (error) {
+  console.warn("Firebase messaging could not be initialized:", error);
+}
 
 export { messaging, getToken, onMessage };

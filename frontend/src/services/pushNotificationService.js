@@ -47,6 +47,10 @@ async function requestNotificationPermission() {
 // Get FCM token
 async function getFCMToken() {
   try {
+    if (!messaging) {
+      console.warn("Messaging not supported");
+      return null;
+    }
     const registration = await registerServiceWorker();
     // Use the registration to get the token
     const token = await getToken(messaging, {
@@ -160,7 +164,7 @@ async function removeFCMToken() {
 
 // Setup foreground notification handler
 function setupForegroundNotificationHandler(handler) {
-  if (foregroundHandlerBound) {
+  if (foregroundHandlerBound || !messaging) {
     return;
   }
 
