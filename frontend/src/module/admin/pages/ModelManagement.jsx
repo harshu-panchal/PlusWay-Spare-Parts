@@ -135,7 +135,7 @@ const ModelManagement = () => {
       handleCloseModal();
     } catch (error) {
       console.error("Error saving model:", error);
-      alert("Failed to save model");
+      alert(error.response?.data?.message || "Failed to save model");
     }
   };
 

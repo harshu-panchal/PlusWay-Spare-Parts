@@ -108,13 +108,16 @@ export const createModel = async (req, res) => {
     finalName = `${brandDoc.name} ${name}`;
   }
 
+  // Scoped to the same brand — different brands can legitimately have a
+  // model with the same name (e.g. two "Apple" brand records in the catalog).
   const modelExists = await Model.findOne({
+    brand,
     name: { $regex: new RegExp(`^${finalName}$`, "i") },
   });
   if (modelExists) {
     return res
       .status(400)
-      .json({ message: "Model with this name already exists" });
+      .json({ message: "This brand already has a model with this name" });
   }
 
   const model = new Model({
@@ -157,15 +160,18 @@ export const updateModel = async (req, res) => {
       finalName = `${brandDoc.name} ${finalName}`;
     }
 
+    // Scoped to the same (target) brand — different brands can legitimately
+    // have a model with the same name (e.g. two "Apple" brand records).
     const modelExists = await Model.findOne({
       _id: { $ne: req.params.id },
+      brand: targetBrandId,
       name: { $regex: new RegExp(`^${finalName}$`, "i") },
     });
 
     if (modelExists) {
       return res
         .status(400)
-        .json({ message: "Model with this name already exists" });
+        .json({ message: "This brand already has a model with this name" });
     }
 
     model.name = finalName;
