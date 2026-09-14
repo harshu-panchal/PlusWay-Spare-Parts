@@ -80,9 +80,10 @@ const ProductDetail = () => {
   // Keep these helpers for backward compatibility with the rest of the component
   const effectivePrice           = pricing?.price           ?? 0;
   const effectiveMrp             = pricing?.mrp             ?? 0;
-  const effectiveWholesalePrice  = pricing?.wholesalePrice  ?? 0;
-  const effectiveWholesaleMinQty = pricing?.wholesaleMinQty ?? (product?.wholesaleMinQty || 10);
   const effectiveCurrencySymbol  = pricing?.currencySymbol  ?? "₹";
+  const discountPercent = effectiveMrp > effectivePrice
+    ? Math.round(((effectiveMrp - effectivePrice) / effectiveMrp) * 100)
+    : 0;
   const effectiveCountInStock    = selectedVariant?.countInStock != null ? selectedVariant.countInStock : product?.countInStock;
   const effectiveSku             = selectedVariant?.sku || product?.code;
 
@@ -182,8 +183,6 @@ const ProductDetail = () => {
             price: data.price,
             mrp: data.mrp,
             countInStock: data.countInStock,
-            wholesalePrice: data.wholesalePrice,
-            wholesaleMinQty: data.wholesaleMinQty,
           },
           ...recent.filter((item) => item._id !== data._id),
         ].slice(0, 8); // Keep last 8 items
@@ -472,69 +471,22 @@ const ProductDetail = () => {
                   <span className="line-through">
                     {effectiveCurrencySymbol}{formatPrice(effectiveMrp)}
                   </span>
+                  {discountPercent > 0 && (
+                    <span className="text-[11px] font-black text-accent uppercase tracking-widest">
+                      {discountPercent}% OFF
+                    </span>
+                  )}
                 </div>
                 <div className="bg-[#f8f9fa] p-4 border-l-4 border-secondary flex flex-col gap-2 rounded-r-2xl">
                   <div className="flex items-baseline gap-2">
                     <span className="text-4xl font-black text-secondary italic tracking-tighter">
-                      {effectiveCurrencySymbol}{formatPrice(
-                        quantity >= effectiveWholesaleMinQty
-                          ? effectiveWholesalePrice
-                          : effectivePrice
-                      )}
+                      {effectiveCurrencySymbol}{formatPrice(effectivePrice)}
                     </span>
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-2">
                       Current Unit Price
                     </span>
                   </div>
-
-                  {effectiveWholesalePrice > 0 && (
-                    <div
-                      className={`mt-2 p-3 rounded-xl border transition-all ${quantity >= effectiveWholesaleMinQty ? "bg-blue-50 border-blue-200 shadow-sm" : "bg-white border-gray-100"}`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex flex-col">
-                          <span
-                            className={`text-[10px] font-black uppercase tracking-widest ${quantity >= effectiveWholesaleMinQty ? "text-blue-600" : "text-gray-400"}`}>
-                            Wholesale Pricing
-                          </span>
-                          <span className="text-sm font-black text-secondary">
-                            {effectiveCurrencySymbol}{formatPrice(effectiveWholesalePrice)}{" "}
-                            <span className="text-[10px] font-bold text-gray-400">
-                              for {effectiveWholesaleMinQty}+ pieces
-                            </span>
-                          </span>
-                        </div>
-                        {quantity >= effectiveWholesaleMinQty ? (
-                          <span className="bg-blue-600 text-white text-[8px] font-black px-2 py-1 rounded-full uppercase">
-                            Applied
-                          </span>
-                        ) : (
-                          <span
-                            className="text-[10px] font-bold text-blue-600 cursor-help"
-                            title={`Buy ${effectiveWholesaleMinQty} or more to get this price`}>
-                            Save {effectiveCurrencySymbol}
-                            {formatPrice(effectivePrice - effectiveWholesalePrice)}{" "}
-                            per unit!
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
                 </div>
-              </div>
-
-              <div className="text-sm text-red-600 font-bold flex flex-col">
-                <span>
-                  You save:{" "}
-                  {effectiveCurrencySymbol}{formatPrice(
-                    effectiveMrp -
-                    (quantity >= effectiveWholesaleMinQty
-                      ? effectiveWholesalePrice
-                      : effectivePrice)
-                  )}
-                </span>
-                <span className="text-[10px] uppercase tracking-widest opacity-70">
-                  Total Savings on MRP
-                </span>
               </div>
 
               {/* Country pricing info — shown only for non-Indian users */}
@@ -564,11 +516,7 @@ const ProductDetail = () => {
                 </p>
                 <p className="text-2xl font-black text-secondary tracking-tighter">
                   {effectiveCurrencySymbol}
-                  {formatPrice(
-                    (quantity >= effectiveWholesaleMinQty
-                      ? effectiveWholesalePrice
-                      : effectivePrice) * quantity
-                  )}
+                  {formatPrice(effectivePrice * quantity)}
                 </p>
               </div>
               <div className="text-right">
@@ -611,8 +559,6 @@ const ProductDetail = () => {
                         color: selectedColor,
                         price: effectivePrice,
                         mrp: effectiveMrp,
-                        wholesalePrice: effectiveWholesalePrice,
-                        wholesaleMinQty: effectiveWholesaleMinQty,
                         countInStock: effectiveCountInStock,
                         code: effectiveSku,
                       },
@@ -633,8 +579,6 @@ const ProductDetail = () => {
                         color: selectedColor,
                         price: effectivePrice,
                         mrp: effectiveMrp,
-                        wholesalePrice: effectiveWholesalePrice,
-                        wholesaleMinQty: effectiveWholesaleMinQty,
                         countInStock: effectiveCountInStock,
                         code: effectiveSku,
                       },

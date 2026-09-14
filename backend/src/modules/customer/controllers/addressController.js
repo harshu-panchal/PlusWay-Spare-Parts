@@ -27,7 +27,7 @@ export const addAddress = async (req, res) => {
             return res.status(404).json({ message: "Customer not found" });
         }
 
-        const { type, name, mobile, street, city, state, pincode, isDefault } = req.body;
+        const { type, name, mobile, street, landmark, city, state, pincode, isDefault } = req.body;
 
         // If this is set as default, unset all other defaults
         if (isDefault) {
@@ -42,6 +42,7 @@ export const addAddress = async (req, res) => {
             name,
             mobile,
             street,
+            landmark,
             city,
             state,
             pincode,
@@ -72,7 +73,7 @@ export const updateAddress = async (req, res) => {
             return res.status(404).json({ message: "Address not found" });
         }
 
-        const { type, name, mobile, street, city, state, pincode, isDefault } = req.body;
+        const { type, name, mobile, street, landmark, city, state, pincode, isDefault } = req.body;
 
         // If setting as default, unset all other defaults
         if (isDefault && !address.isDefault) {
@@ -83,6 +84,7 @@ export const updateAddress = async (req, res) => {
         address.name = name || address.name;
         address.mobile = mobile || address.mobile;
         address.street = street || address.street;
+        address.landmark = landmark !== undefined ? landmark : address.landmark;
         address.city = city || address.city;
         address.state = state || address.state;
         address.pincode = pincode || address.pincode;

@@ -15,6 +15,7 @@ const Addresses = () => {
     name: "",
     mobile: "",
     street: "",
+    landmark: "",
     city: "",
     state: "",
     pincode: "",
@@ -54,6 +55,7 @@ const Addresses = () => {
       name: "",
       mobile: "",
       street: "",
+      landmark: "",
       city: "",
       state: "",
       pincode: "",
@@ -103,6 +105,7 @@ const Addresses = () => {
       name: address.name,
       mobile: address.mobile,
       street: address.street,
+      landmark: address.landmark || "",
       city: address.city,
       state: address.state,
       pincode: address.pincode,
@@ -228,6 +231,11 @@ const Addresses = () => {
                         <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
                           {address.street}
                         </p>
+                        {address.landmark && (
+                          <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">
+                            Near {address.landmark}
+                          </p>
+                        )}
                         <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
                           {address.city}, {address.state} - {address.pincode}
                         </p>
@@ -344,6 +352,20 @@ const Addresses = () => {
                   value={formData.street}
                   onChange={handleInputChange}
                   required
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:border-primary font-bold text-secondary transition-all"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                  Landmark <span className="text-gray-300">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  name="landmark"
+                  value={formData.landmark}
+                  onChange={handleInputChange}
+                  placeholder="Near famous shop / landmark"
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:border-primary font-bold text-secondary transition-all"
                 />
               </div>

@@ -147,8 +147,6 @@ export const CountryPricingProvider = ({ children }) => {
    * @returns {{
    *   price: number,
    *   mrp: number,
-   *   wholesalePrice: number,
-   *   wholesaleMinQty: number,
    *   currencySymbol: string,
    *   currencyCode: string,
    *   countryName: string,
@@ -172,8 +170,6 @@ export const CountryPricingProvider = ({ children }) => {
         return {
           price:           vOverride.price           ?? 0,
           mrp:             vOverride.mrp             ?? 0,
-          wholesalePrice:  vOverride.wholesalePrice  ?? 0,
-          wholesaleMinQty: vOverride.wholesaleMinQty ?? variant.wholesaleMinQty ?? product.wholesaleMinQty ?? 10,
           currencySymbol:  vOverride.currencySymbol  || sym,
           currencyCode:    vOverride.currencyCode    || cur,
           countryName:     name,
@@ -192,8 +188,6 @@ export const CountryPricingProvider = ({ children }) => {
         return {
           price:           pOverride.price           ?? 0,
           mrp:             pOverride.mrp             ?? 0,
-          wholesalePrice:  pOverride.wholesalePrice  ?? 0,
-          wholesaleMinQty: pOverride.wholesaleMinQty ?? product.wholesaleMinQty ?? 10,
           currencySymbol:  pOverride.currencySymbol  || sym,
           currencyCode:    pOverride.currencyCode    || cur,
           countryName:     name,
@@ -207,15 +201,11 @@ export const CountryPricingProvider = ({ children }) => {
     const source = variant || product;
     const basePrice          = (source.price          != null ? source.price          : product.price)          ?? 0;
     const baseMrp            = (source.mrp            != null ? source.mrp            : product.mrp)            ?? 0;
-    const baseWholesalePrice = (source.wholesalePrice  != null ? source.wholesalePrice : product.wholesalePrice) ?? 0;
-    const baseMinQty         = source.wholesaleMinQty ?? product.wholesaleMinQty ?? 10;
 
     if (isIndia) {
       return {
         price:           basePrice,
         mrp:             baseMrp,
-        wholesalePrice:  baseWholesalePrice,
-        wholesaleMinQty: baseMinQty,
         currencySymbol:  "₹",
         currencyCode:    "INR",
         countryName:     "India",
@@ -227,8 +217,6 @@ export const CountryPricingProvider = ({ children }) => {
     return {
       price:           convertFromINR(basePrice),
       mrp:             convertFromINR(baseMrp),
-      wholesalePrice:  convertFromINR(baseWholesalePrice),
-      wholesaleMinQty: baseMinQty,
       currencySymbol:  sym,
       currencyCode:    cur,
       countryName:     name,

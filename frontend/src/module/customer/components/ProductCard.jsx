@@ -79,11 +79,6 @@ const ProductCard = ({ product }) => {
                             <span className="text-sm md:text-lg font-black text-secondary tracking-tighter">
                                 {pricing.currencySymbol}{formatPrice(pricing.price)}
                             </span>
-                            {pricing.wholesalePrice > 0 && (
-                                <span className="text-[10px] md:text-xs font-black text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded tracking-tight">
-                                    Wholesale: {pricing.currencySymbol}{formatPrice(pricing.wholesalePrice)} <span className="text-[8px] opacity-70">({pricing.wholesaleMinQty}+)</span>
-                                </span>
-                            )}
                         </div>
                         <div className="flex items-center gap-2">
                             {pricing.mrp > pricing.price && (

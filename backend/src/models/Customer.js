@@ -31,6 +31,7 @@ const customerSchema = new mongoose.Schema(
         name: String,
         mobile: String,
         street: String,
+        landmark: String,
         city: String,
         state: String,
         pincode: String,
