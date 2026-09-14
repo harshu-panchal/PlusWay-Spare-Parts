@@ -72,14 +72,34 @@ const ImageUpload = ({ value, onChange, placeholder = "Upload Image" }) => {
     return (
         <div className="w-full h-full">
             {value ? (
-                <div className="relative w-full h-full rounded-xl overflow-hidden border border-gray-200 group">
+                <div
+                    className="relative w-full h-full rounded-xl overflow-hidden border border-gray-200 group cursor-pointer"
+                    onClick={() => inputRef.current?.click()}
+                >
                     <img src={value} alt="Uploaded" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        {uploading ? (
+                            <Loader className="w-6 h-6 animate-spin text-white" />
+                        ) : (
+                            <span className="text-white text-[10px] font-bold uppercase tracking-wide">Click to change</span>
+                        )}
+                    </div>
                     <button
                         type="button"
-                        onClick={() => onChange("")}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onChange("");
+                        }}
                         className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                         <X size={16} />
                     </button>
+                    <input
+                        type="file"
+                        className="hidden"
+                        ref={inputRef}
+                        onChange={uploadFileHandler}
+                        disabled={uploading}
+                    />
                 </div>
             ) : (
                 <div
