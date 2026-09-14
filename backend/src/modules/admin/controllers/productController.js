@@ -1586,73 +1586,119 @@ export const bulkUpdatePrices = async (req, res) => {
       return cleanRow;
     });
 
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
+    // Validate rows up front and collect the SKUs we actually need to look up.
+    const validRows = [];
+    rows.forEach((row, i) => {
       const rowNum = i + 2;
       const sku = String(row.SKU || "").trim();
-
       if (!sku || !row.Price) {
         results.errors.push({ row: rowNum, error: "Missing SKU or Price" });
-        continue;
+        return;
       }
+      validRows.push({ rowNum, sku, row });
+    });
+
+    const skus = validRows.map((r) => r.sku);
+    const skuSet = new Set(skus);
+
+    // Bulk-fetch every matching product in two queries total instead of up to
+    // three sequential queries PER ROW (which is what made large uploads take
+    // several minutes — 12k+ rows meant 30k+ round trips to Mongo, several
+    // thousand of them full collection scans on the unindexed colorVariants.sku field).
+    const [productLevelMatches, variantLevelMatches] = await Promise.all([
+      Product.find({ code: { $in: skus } }, "_id code"),
+      Product.find({ "colorVariants.sku": { $in: skus } }, "_id name colorVariants"),
+    ]);
+
+    const productByCode = new Map(productLevelMatches.map((p) => [p.code, p]));
+
+    // sku -> { product, variantIdx }. First match wins if a SKU somehow
+    // appears on more than one product's variants.
+    const variantBySku = new Map();
+    variantLevelMatches.forEach((product) => {
+      product.colorVariants.forEach((v, idx) => {
+        if (v.sku && skuSet.has(v.sku) && !variantBySku.has(v.sku)) {
+          variantBySku.set(v.sku, { product, variantIdx: idx });
+        }
+      });
+    });
+
+    const bulkOps = [];
+    const bulkMeta = []; // parallel to bulkOps: what to report once the write confirms
+
+    validRows.forEach(({ rowNum, sku, row }) => {
+      const product = productByCode.get(sku);
+      if (product) {
+        const updateData = { price: Number(row.Price) };
+        if (row.MRP !== "" && row.MRP !== undefined) updateData.mrp = Number(row.MRP);
+        if (row.WholesalePrice !== "" && row.WholesalePrice !== undefined) updateData.wholesalePrice = Number(row.WholesalePrice);
+        if (row.WholesaleMinQty !== "" && row.WholesaleMinQty !== undefined) updateData.wholesaleMinQty = Number(row.WholesaleMinQty);
+
+        bulkOps.push({ updateOne: { filter: { _id: product._id }, update: { $set: updateData } } });
+        bulkMeta.push({ rowNum, success: { row: rowNum, sku, type: "product" } });
+        return;
+      }
+
+      const variantMatch = variantBySku.get(sku);
+      if (variantMatch) {
+        const { product: vProduct, variantIdx } = variantMatch;
+        const setFields = {
+          [`colorVariants.${variantIdx}.price`]: Number(row.Price),
+        };
+        if (row.MRP !== "" && row.MRP !== undefined) setFields[`colorVariants.${variantIdx}.mrp`] = Number(row.MRP);
+        if (row.WholesalePrice !== "" && row.WholesalePrice !== undefined) setFields[`colorVariants.${variantIdx}.wholesalePrice`] = Number(row.WholesalePrice);
+        if (row.WholesaleMinQty !== "" && row.WholesaleMinQty !== undefined) setFields[`colorVariants.${variantIdx}.wholesaleMinQty`] = Number(row.WholesaleMinQty);
+
+        // Re-derive product-level price from the first variant, matching the
+        // original per-row behaviour.
+        if (variantIdx === 0) {
+          setFields.price = Number(row.Price);
+          if (row.MRP !== "" && row.MRP !== undefined) setFields.mrp = Number(row.MRP);
+          if (row.WholesalePrice !== "" && row.WholesalePrice !== undefined) setFields.wholesalePrice = Number(row.WholesalePrice);
+          if (row.WholesaleMinQty !== "" && row.WholesaleMinQty !== undefined) setFields.wholesaleMinQty = Number(row.WholesaleMinQty);
+        }
+
+        bulkOps.push({ updateOne: { filter: { _id: vProduct._id }, update: { $set: setFields } } });
+        bulkMeta.push({
+          rowNum,
+          success: {
+            row: rowNum,
+            sku,
+            type: "variant",
+            colorName: vProduct.colorVariants[variantIdx].colorName,
+            productName: vProduct.name,
+          },
+        });
+        return;
+      }
+
+      results.errors.push({ row: rowNum, error: `SKU ${sku} not found` });
+    });
+
+    // Execute in batches (unordered, so one bad op doesn't block the rest) and
+    // resolve success/failure per row from the actual write outcome.
+    const BATCH_SIZE = 1000;
+    for (let i = 0; i < bulkOps.length; i += BATCH_SIZE) {
+      const opsBatch = bulkOps.slice(i, i + BATCH_SIZE);
+      const metaBatch = bulkMeta.slice(i, i + BATCH_SIZE);
+      const failedIndexes = new Set();
 
       try {
-        // 1. Try product-level code first
-        let product = await Product.findOne({ code: sku });
-
-        if (product) {
-          // Update product-level pricing
-          const updateData = { price: Number(row.Price) };
-          if (row.MRP !== "" && row.MRP !== undefined) updateData.mrp = Number(row.MRP);
-          if (row.WholesalePrice !== "" && row.WholesalePrice !== undefined) updateData.wholesalePrice = Number(row.WholesalePrice);
-          if (row.WholesaleMinQty !== "" && row.WholesaleMinQty !== undefined) updateData.wholesaleMinQty = Number(row.WholesaleMinQty);
-          await Product.findByIdAndUpdate(product._id, updateData);
-          results.success.push({ row: rowNum, sku, type: "product" });
-          continue;
-        }
-
-        // 2. Try variant SKU — find product that has a colorVariant with matching sku
-        product = await Product.findOne({ "colorVariants.sku": sku });
-
-        if (product) {
-          const variantIdx = product.colorVariants.findIndex(v => v.sku === sku);
-          if (variantIdx !== -1) {
-            // Build $set payload using positional $ operator for reliable subdoc update
-            const setFields = {
-              [`colorVariants.${variantIdx}.price`]: Number(row.Price),
-            };
-            if (row.MRP !== "" && row.MRP !== undefined) setFields[`colorVariants.${variantIdx}.mrp`] = Number(row.MRP);
-            if (row.WholesalePrice !== "" && row.WholesalePrice !== undefined) setFields[`colorVariants.${variantIdx}.wholesalePrice`] = Number(row.WholesalePrice);
-            if (row.WholesaleMinQty !== "" && row.WholesaleMinQty !== undefined) setFields[`colorVariants.${variantIdx}.wholesaleMinQty`] = Number(row.WholesaleMinQty);
-
-            // Re-derive product-level price from first variant (variantIdx 0) or the updated one if it's first
-            const isFirstVariant = variantIdx === 0;
-            if (isFirstVariant) {
-              setFields.price = Number(row.Price);
-              if (row.MRP !== "" && row.MRP !== undefined) setFields.mrp = Number(row.MRP);
-              if (row.WholesalePrice !== "" && row.WholesalePrice !== undefined) setFields.wholesalePrice = Number(row.WholesalePrice);
-              if (row.WholesaleMinQty !== "" && row.WholesaleMinQty !== undefined) setFields.wholesaleMinQty = Number(row.WholesaleMinQty);
-            }
-
-            await Product.updateOne({ _id: product._id }, { $set: setFields });
-
-            results.success.push({
-              row: rowNum,
-              sku,
-              type: "variant",
-              colorName: product.colorVariants[variantIdx].colorName,
-              productName: product.name,
-            });
-          }
-          continue;
-        }
-
-        // 3. Nothing found
-        results.errors.push({ row: rowNum, error: `SKU ${sku} not found` });
-
-      } catch (err) {
-        results.errors.push({ row: rowNum, error: err.message });
+        await Product.bulkWrite(opsBatch, { ordered: false });
+      } catch (bulkErr) {
+        // Unordered bulkWrite still throws once it's done, but keeps going —
+        // writeErrors tells us exactly which ops in this batch failed.
+        (bulkErr.writeErrors || []).forEach((we) => failedIndexes.add(we.index));
+        if (!bulkErr.writeErrors) throw bulkErr;
       }
+
+      metaBatch.forEach((meta, idx) => {
+        if (failedIndexes.has(idx)) {
+          results.errors.push({ row: meta.rowNum, error: "Database write failed for this row" });
+        } else {
+          results.success.push(meta.success);
+        }
+      });
     }
 
     try { fs.unlinkSync(req.file.path); } catch (_) {}

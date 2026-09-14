@@ -203,6 +203,7 @@ productSchema.index({ productType: 1 });
 productSchema.index({ deviceType: 1 });
 productSchema.index({ status: 1 });
 productSchema.index({ countInStock: 1 }); // Useful for filtering out-of-stock items if needed
+productSchema.index({ 'colorVariants.sku': 1 }); // Variant SKU lookups (bulk price/update uploads)
 
 const Product = mongoose.model('Product', productSchema);
 
