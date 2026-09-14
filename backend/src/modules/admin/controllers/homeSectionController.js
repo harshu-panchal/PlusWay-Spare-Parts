@@ -65,7 +65,26 @@ export const getActiveHomeSections = async (req, res) => {
         const populatedSections = await Promise.all(
             sections.map((section) => populateSection(section)),
         );
-        res.json(populatedSections);
+
+        // A section's `categories` array holds direct refs (e.g. specific brands an
+        // admin curated for this section). populate() resolves those refs as-is, so a
+        // brand hidden via the Brand Management toggle would still slip through here
+        // unless we filter it back out.
+        const filteredSections = populatedSections.map((section) => {
+            const plain = section.toObject();
+            if (plain.displayType === 'brands') {
+                plain.categories = (plain.categories || []).filter(
+                    (item) => item && item.isActive !== false,
+                );
+            } else if (plain.displayType === 'models') {
+                plain.categories = (plain.categories || []).filter(
+                    (item) => item && item.brand?.isActive !== false,
+                );
+            }
+            return plain;
+        });
+
+        res.json(filteredSections);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

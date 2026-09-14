@@ -8,6 +8,8 @@ import {
   ChevronRight,
   X,
   Save,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import ImageUpload from "../../../components/ImageUpload";
 import { API_BASE_URL } from "../../../config/api";
@@ -24,7 +26,7 @@ const BrandManagement = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const initialBrandState = { name: "", logo: "" };
+  const initialBrandState = { name: "", logo: "", isActive: true };
 
   const [formData, setFormData] = useState(initialBrandState);
 
@@ -106,6 +108,20 @@ const BrandManagement = () => {
     }
   };
 
+  const handleToggleActive = async (item) => {
+    try {
+      const token = localStorage.getItem("adminToken");
+      await axios.put(
+        `${API_BASE_URL}/api/admin/brands/${item._id}`,
+        { isActive: !item.isActive },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      fetchItems();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to update brand visibility");
+    }
+  };
+
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this brand?")) return;
 
@@ -168,14 +184,27 @@ const BrandManagement = () => {
           {items.map((item) => (
             <div
               key={item._id}
-              className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group">
+              className={`bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow group ${
+                item.isActive === false ? "border-gray-200 opacity-60" : "border-gray-100"
+              }`}>
               <div className="h-40 bg-gray-50 relative flex items-center justify-center p-4">
+                {item.isActive === false && (
+                  <span className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-gray-800 text-white">
+                    Hidden
+                  </span>
+                )}
                 <img
                   src={item.logo || null}
                   alt={item.name}
                   className="max-w-full max-h-full object-contain"
                 />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                  <button
+                    onClick={() => handleToggleActive(item)}
+                    title={item.isActive === false ? "Show to customers" : "Hide from customers"}
+                    className="p-2 bg-white text-gray-800 rounded-lg hover:bg-green-600 hover:text-white transition-colors">
+                    {item.isActive === false ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
                   <button
                     onClick={() => handleOpenModal(item)}
                     className="p-2 bg-white text-gray-800 rounded-lg hover:bg-blue-600 hover:text-white transition-colors">

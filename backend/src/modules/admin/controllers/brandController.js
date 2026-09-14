@@ -31,11 +31,42 @@ export const getBrands = asyncHandler(async (req, res) => {
   res.json({ brands, page, pages: Math.ceil(count / pageSize), total: count });
 });
 
+// @desc    Get active brands only (storefront-facing)
+// @route   GET /api/customer/brands
+// @access  Public
+export const getActiveBrands = asyncHandler(async (req, res) => {
+  // isActive: false explicitly hides a brand. Brands created before this
+  // field existed have no isActive value stored at all, so { isActive: true }
+  // would wrongly exclude them — match anything except an explicit false.
+  const filter = { isActive: { $ne: false } };
+
+  if (req.query.all === "true") {
+    const brands = await Brand.find(filter).sort({ name: 1 });
+    return res.json({ brands, total: brands.length });
+  }
+
+  const pageSize = Number(req.query.pageSize) || 20;
+  const page = Number(req.query.pageNumber) || 1;
+  const search = req.query.search || "";
+
+  if (search) {
+    filter.name = { $regex: escapeRegex(search), $options: "i" };
+  }
+
+  const count = await Brand.countDocuments(filter);
+  const brands = await Brand.find(filter)
+    .limit(pageSize)
+    .skip(pageSize * (page - 1))
+    .sort({ createdAt: -1 });
+
+  res.json({ brands, page, pages: Math.ceil(count / pageSize), total: count });
+});
+
 // @desc    Create a brand
 // @route   POST /api/admin/brands
 // @access  Private/Admin
 export const createBrand = asyncHandler(async (req, res) => {
-  const { name, logo } = req.body;
+  const { name, logo, isActive } = req.body;
 
   const brandExists = await Brand.findOne({ name: { $regex: new RegExp(`^${name}$`, "i") } });
 
@@ -47,6 +78,7 @@ export const createBrand = asyncHandler(async (req, res) => {
   const brand = new Brand({
     name,
     logo,
+    isActive: isActive !== undefined ? isActive : true,
   });
 
   const createdBrand = await brand.save();
@@ -57,13 +89,13 @@ export const createBrand = asyncHandler(async (req, res) => {
 // @route   PUT /api/admin/brands/:id
 // @access  Private/Admin
 export const updateBrand = asyncHandler(async (req, res) => {
-  const { name, logo } = req.body;
+  const { name, logo, isActive } = req.body;
 
   const brand = await Brand.findById(req.params.id);
 
   if (brand) {
     const newName = name || brand.name;
-    
+
     const brandExists = await Brand.findOne({
       _id: { $ne: req.params.id },
       name: { $regex: new RegExp(`^${newName}$`, "i") }
@@ -76,6 +108,7 @@ export const updateBrand = asyncHandler(async (req, res) => {
 
     brand.name = newName;
     brand.logo = logo !== undefined ? logo : brand.logo;
+    brand.isActive = isActive !== undefined ? isActive : brand.isActive;
 
     const updatedBrand = await brand.save();
     res.json(updatedBrand);

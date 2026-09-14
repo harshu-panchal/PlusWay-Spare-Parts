@@ -71,7 +71,13 @@ const searchProducts = async (query, limit) => {
         modelName: { $arrayElemAt: ["$modelDoc.name", 0] },
       },
     },
-    { $match: { ...match, status: { $ne: "Draft" } } },
+    {
+      $match: {
+        ...match,
+        status: { $ne: "Draft" },
+        "brandDoc.isActive": { $ne: false },
+      },
+    },
     { $sort: { createdAt: -1 } },
     { $limit: limit },
   ]);
@@ -98,7 +104,7 @@ const searchModels = async (query, limit) => {
         brandName: { $arrayElemAt: ["$brandDoc.name", 0] },
       },
     },
-    { $match: match },
+    { $match: { ...match, "brandDoc.isActive": { $ne: false } } },
     { $sort: { name: 1 } },
     { $limit: limit },
   ]);

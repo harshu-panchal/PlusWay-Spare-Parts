@@ -31,12 +31,15 @@ export const getProducts = asyncHandler(async (req, res) => {
     // Published so legacy catalog data doesn't silently disappear.
     const filters = { status: { $ne: "Draft" } };
 
+    // Hide products belonging to brands the admin has hidden from customers.
+    const hiddenBrandIds = await Brand.find({ isActive: false }).distinct("_id");
+
     if (keywordTokens.length > 0) {
         const tokenClauses = await Promise.all(
             keywordTokens.map(async (token) => {
                 const regex = { $regex: escapeRegex(token), $options: "i" };
                 const [brandIds, modelIds] = await Promise.all([
-                    Brand.find({ name: regex }).distinct("_id"),
+                    Brand.find({ name: regex, isActive: { $ne: false } }).distinct("_id"),
                     Model.find({ name: regex }).distinct("_id"),
                 ]);
 
@@ -73,6 +76,12 @@ export const getProducts = asyncHandler(async (req, res) => {
     }
     if (req.query.brand) filters.brand = req.query.brand;
     if (req.query.model) filters.model = req.query.model;
+
+    if (hiddenBrandIds.length > 0) {
+        filters.brand = filters.brand
+            ? { $eq: filters.brand, $nin: hiddenBrandIds }
+            : { $nin: hiddenBrandIds };
+    }
 
     // Handling type/productType
     if (req.query.type) {
@@ -145,11 +154,11 @@ export const getProducts = asyncHandler(async (req, res) => {
 // @access  Public
 export const getProductById = asyncHandler(async (req, res) => {
     const product = await Product.findById(req.params.id)
-        .populate("brand", "name")
+        .populate("brand", "name isActive")
         .populate("category", "name order")
         .populate("model", "name image");
 
-    if (product && product.status !== "Draft") {
+    if (product && product.status !== "Draft" && product.brand?.isActive !== false) {
         const productObj = product.toObject();
         // Only send approved reviews to the customer frontend
         productObj.reviews = productObj.reviews.filter(r => r.status === "Approved");

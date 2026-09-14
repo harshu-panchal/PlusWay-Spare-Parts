@@ -43,6 +43,46 @@ export const getModels = async (req, res) => {
   res.json({ models, page, pages: Math.ceil(count / pageSize), total: count });
 };
 
+// @desc    Get models whose brand is active (storefront-facing)
+// @route   GET /api/customer/models
+// @access  Public
+export const getActiveModels = async (req, res) => {
+  const pageSize = Number(req.query.pageSize) || 20;
+  const page = Number(req.query.pageNumber) || 1;
+  const search = req.query.search || "";
+  const brand = req.query.brand;
+
+  // Models whose brand has been hidden by the admin shouldn't surface here,
+  // whether via the paginated list or the `all=true` bulk fetch.
+  const hiddenBrandIds = await Brand.find({ isActive: false }).distinct("_id");
+
+  if (req.query.all === "true") {
+    const models = await Model.find({ brand: { $nin: hiddenBrandIds } })
+      .populate("brand", "name logo")
+      .sort({ name: 1 });
+    return res.json({ models, total: models.length });
+  }
+
+  let filter = { brand: { $nin: hiddenBrandIds } };
+  if (search) {
+    filter.name = { $regex: escapeRegex(search), $options: "i" };
+  }
+  if (brand && brand !== "all") {
+    filter.brand = hiddenBrandIds.some((id) => id.equals(brand))
+      ? { $in: [] } // requested brand is hidden — no models should match
+      : brand;
+  }
+
+  const count = await Model.countDocuments(filter);
+  const models = await Model.find(filter)
+    .populate("brand", "name logo")
+    .limit(pageSize)
+    .skip(pageSize * (page - 1))
+    .sort({ createdAt: -1 });
+
+  res.json({ models, page, pages: Math.ceil(count / pageSize), total: count });
+};
+
 // @desc    Get model by ID
 // @route   GET /api/admin/models/:id
 // @access  Private/Admin

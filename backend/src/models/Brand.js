@@ -9,6 +9,10 @@ const brandSchema = new mongoose.Schema({
   logo: {
     type: String,
   },
+  isActive: {
+    type: Boolean,
+    default: true,
+  },
   models: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Model',
