@@ -46,6 +46,7 @@ const CategoryManagement = () => {
     isAccessory: false,
     showInMobileSpareParts: false,
     showInAccessories: false,
+    isActive: true,
   };
 
   const [formData, setFormData] = useState(initialCategoryState);
@@ -166,6 +167,20 @@ const CategoryManagement = () => {
     }
   };
 
+  const handleToggleActive = async (item) => {
+    try {
+      const token = localStorage.getItem("adminToken");
+      await axios.put(
+        `${API_BASE_URL}/api/admin/categories/${item._id}`,
+        { isActive: !item.isActive },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      fetchItems();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to update category visibility");
+    }
+  };
+
   const handleDragEnd = async (event) => {
     const { active, over } = event;
     
@@ -264,11 +279,12 @@ const CategoryManagement = () => {
               strategy={rectSortingStrategy}
             >
               {items.map((item) => (
-                <SortableCategoryItem 
-                  key={item._id} 
-                  item={item} 
-                  handleOpenModal={handleOpenModal} 
-                  handleDelete={handleDelete} 
+                <SortableCategoryItem
+                  key={item._id}
+                  item={item}
+                  handleOpenModal={handleOpenModal}
+                  handleDelete={handleDelete}
+                  handleToggleActive={handleToggleActive}
                 />
               ))}
             </SortableContext>

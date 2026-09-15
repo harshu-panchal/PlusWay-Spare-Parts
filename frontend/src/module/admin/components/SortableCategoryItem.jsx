@@ -1,9 +1,9 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Edit, Trash2, ChevronRight, GripVertical } from 'lucide-react';
+import { Edit, Trash2, ChevronRight, GripVertical, Eye, EyeOff } from 'lucide-react';
 
-export function SortableCategoryItem({ item, handleOpenModal, handleDelete }) {
+export function SortableCategoryItem({ item, handleOpenModal, handleDelete, handleToggleActive }) {
   const {
     attributes,
     listeners,
@@ -24,9 +24,9 @@ export function SortableCategoryItem({ item, handleOpenModal, handleDelete }) {
     <div
       ref={setNodeRef}
       style={style}
-      className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group relative"
+      className={`bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow group relative ${item.isActive === false ? "border-gray-200 opacity-60" : "border-gray-100"}`}
     >
-      <div 
+      <div
         className="absolute top-2 left-2 z-20 cursor-grab active:cursor-grabbing p-1.5 bg-white/80 backdrop-blur rounded-lg shadow-sm text-gray-400 hover:text-gray-800 transition-colors"
         {...attributes}
         {...listeners}
@@ -34,12 +34,24 @@ export function SortableCategoryItem({ item, handleOpenModal, handleDelete }) {
         <GripVertical size={18} />
       </div>
       <div className="h-40 bg-gray-50 relative flex items-center justify-center p-4">
+        {item.isActive === false && (
+          <span className="absolute top-2 right-2 z-10 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-gray-800 text-white">
+            Hidden
+          </span>
+        )}
         <img
           src={item.image || null}
           alt={item.name}
           className="max-w-full max-h-full object-contain pointer-events-none"
         />
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+          <button
+            onClick={(e) => { e.stopPropagation(); handleToggleActive(item); }}
+            title={item.isActive === false ? "Show to customers" : "Hide from customers"}
+            className="p-2 bg-white text-gray-800 rounded-lg hover:bg-green-600 hover:text-white transition-colors"
+          >
+            {item.isActive === false ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
           <button
             onClick={(e) => { e.stopPropagation(); handleOpenModal(item); }}
             className="p-2 bg-white text-gray-800 rounded-lg hover:bg-blue-600 hover:text-white transition-colors"

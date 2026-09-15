@@ -11,6 +11,8 @@ import {
   X,
   Save,
   FileSpreadsheet,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import ImageUpload from "../../../components/ImageUpload";
 import BulkUploadModal from "../../../components/BulkUploadModal";
@@ -41,6 +43,7 @@ const ModelManagement = () => {
     brand: "",
     released: "",
     image: "",
+    isActive: true,
   };
 
   const [formData, setFormData] = useState(initialFormState);
@@ -97,6 +100,7 @@ const ModelManagement = () => {
         brand: model.brand?._id || model.brand,
         released: model.released || "",
         image: model.image || "",
+        isActive: model.isActive !== false,
       });
     } else {
       setEditingModel(null);
@@ -152,6 +156,25 @@ const ModelManagement = () => {
     } catch (error) {
       console.error(error);
       alert("Failed to delete model");
+    }
+  };
+
+  const handleToggleActive = async (model) => {
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}`,
+        },
+      };
+      await axios.put(
+        API_ENDPOINTS.ADMIN_MODEL_DETAIL(model._id),
+        { isActive: !model.isActive },
+        config,
+      );
+      fetchData();
+    } catch (error) {
+      console.error(error);
+      alert("Failed to update model visibility");
     }
   };
 
@@ -309,6 +332,9 @@ const ModelManagement = () => {
                 <th className="px-6 py-4 text-sm font-semibold text-gray-600">
                   Details
                 </th>
+                <th className="px-6 py-4 text-sm font-semibold text-gray-600">
+                  Status
+                </th>
                 <th className="px-6 py-4 text-sm font-semibold text-gray-600 text-right">
                   Actions
                 </th>
@@ -356,8 +382,21 @@ const ModelManagement = () => {
                       ? `Released: ${formatReleasedDate(model.released)}`
                       : "No details available"}
                   </td>
+                  <td className="px-6 py-4">
+                    <button
+                      onClick={() => handleToggleActive(model)}
+                      className={`px-2 py-1 rounded-full text-xs font-bold transition-colors ${model.isActive === false ? "bg-gray-100 text-gray-600 hover:bg-gray-200" : "bg-green-100 text-green-700 hover:bg-green-200"}`}>
+                      {model.isActive === false ? "Hidden" : "Active"}
+                    </button>
+                  </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => handleToggleActive(model)}
+                        title={model.isActive === false ? "Show to customers" : "Hide from customers"}
+                        className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors">
+                        {model.isActive === false ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
                       <button
                         onClick={() => handleOpenModal(model)}
                         className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors">

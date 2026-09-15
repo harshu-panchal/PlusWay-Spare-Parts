@@ -193,6 +193,32 @@ const HomeSectionManagement = () => {
     }
   };
 
+  const handleToggleActive = async (section) => {
+    try {
+      const token = localStorage.getItem("adminToken");
+      const payload = {
+        title: section.title,
+        displayType: section.displayType || "categories",
+        categories: section.categories.map((item) =>
+          typeof item === "object" ? item._id : item,
+        ),
+        isActive: !section.isActive,
+        order: section.order,
+        productsPerRow: section.productsPerRow || 4,
+        filterDeviceType: section.filterDeviceType || "",
+      };
+      await axios.put(
+        API_ENDPOINTS.ADMIN_HOME_SECTION_DETAIL(section._id),
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      fetchSections();
+    } catch (error) {
+      console.error("Error toggling section visibility:", error);
+      alert(error.response?.data?.message || "Failed to update section visibility");
+    }
+  };
+
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this section?")) {
       try {
@@ -304,10 +330,12 @@ const HomeSectionManagement = () => {
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-bold ${section.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}`}>
+                  <button
+                    onClick={() => handleToggleActive(section)}
+                    title={section.isActive ? "Hide from customers" : "Show to customers"}
+                    className={`px-2 py-1 rounded-full text-xs font-bold transition-colors ${section.isActive ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>
                     {section.isActive ? "Active" : "Inactive"}
-                  </span>
+                  </button>
                 </td>
                 <td className="px-6 py-4 text-gray-500">{section.order}</td>
                 <td className="px-6 py-4">

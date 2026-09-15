@@ -53,17 +53,19 @@ export const getActiveModels = async (req, res) => {
   const brand = req.query.brand;
 
   // Models whose brand has been hidden by the admin shouldn't surface here,
-  // whether via the paginated list or the `all=true` bulk fetch.
+  // whether via the paginated list or the `all=true` bulk fetch. Same for a
+  // model that's been individually hidden.
   const hiddenBrandIds = await Brand.find({ isActive: false }).distinct("_id");
+  const baseFilter = { brand: { $nin: hiddenBrandIds }, isActive: { $ne: false } };
 
   if (req.query.all === "true") {
-    const models = await Model.find({ brand: { $nin: hiddenBrandIds } })
+    const models = await Model.find(baseFilter)
       .populate("brand", "name logo")
       .sort({ name: 1 });
     return res.json({ models, total: models.length });
   }
 
-  let filter = { brand: { $nin: hiddenBrandIds } };
+  let filter = { ...baseFilter };
   if (search) {
     filter.name = { $regex: escapeRegex(search), $options: "i" };
   }
@@ -100,7 +102,7 @@ export const getModelById = async (req, res) => {
 // @route   POST /api/admin/models
 // @access  Private/Admin
 export const createModel = async (req, res) => {
-  const { name, brand, released, displaySize, image } = req.body;
+  const { name, brand, released, displaySize, image, isActive } = req.body;
 
   const brandDoc = await Brand.findById(brand);
   let finalName = name;
@@ -126,6 +128,7 @@ export const createModel = async (req, res) => {
     released,
     displaySize,
     image,
+    isActive: isActive !== undefined ? isActive : true,
   });
 
   const createdModel = await model.save();
@@ -142,7 +145,7 @@ export const createModel = async (req, res) => {
 // @route   PUT /api/admin/models/:id
 // @access  Private/Admin
 export const updateModel = async (req, res) => {
-  const { name, brand, released, displaySize, image } = req.body;
+  const { name, brand, released, displaySize, image, isActive } = req.body;
 
   const model = await Model.findById(req.params.id);
 
@@ -179,6 +182,7 @@ export const updateModel = async (req, res) => {
     model.released = released || model.released;
     model.displaySize = displaySize || model.displaySize;
     model.image = image !== undefined ? image : model.image;
+    model.isActive = isActive !== undefined ? isActive : model.isActive;
 
     const updatedModel = await model.save();
 

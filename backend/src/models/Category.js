@@ -26,6 +26,10 @@ const categorySchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  isActive: {
+    type: Boolean,
+    default: true,
+  },
   order: {
     type: Number,
     default: 0,

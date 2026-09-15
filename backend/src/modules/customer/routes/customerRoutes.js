@@ -37,7 +37,7 @@ import {
   createRazorpayOrder,
   verifyRazorpayPayment,
 } from "../controllers/paymentController.js";
-import { getCategories } from "../../admin/controllers/categoryController.js";
+import { getActiveCategories } from "../../admin/controllers/categoryController.js";
 import { getActiveBrands } from "../../admin/controllers/brandController.js";
 import { getActiveModels } from "../../admin/controllers/modelController.js";
 import { getActiveBanners } from "../../admin/controllers/bannerController.js";
@@ -87,7 +87,7 @@ router.get("/products", getProducts);
 router.get("/products/:id", getProductById);
 router.route("/products/:id/reviews").post(protect, createProductReview);
 router.get("/models", getActiveModels);
-router.get("/categories", getCategories);
+router.get("/categories", getActiveCategories);
 router.get("/brands", getActiveBrands);
 router.get("/banners", getActiveBanners);
 

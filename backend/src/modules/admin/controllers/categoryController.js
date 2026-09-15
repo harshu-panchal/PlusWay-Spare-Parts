@@ -36,11 +36,46 @@ export const getCategories = asyncHandler(async (req, res) => {
   res.json({ categories, page, pages: Math.ceil(count / pageSize), total: count });
 });
 
+// @desc    Get active categories only (storefront-facing)
+// @route   GET /api/customer/categories
+// @access  Public
+export const getActiveCategories = asyncHandler(async (req, res) => {
+  // isActive: false explicitly hides a category. Categories created before
+  // this field existed have no isActive value stored — match anything except
+  // an explicit false (same convention as getActiveBrands).
+  const filter = { isActive: { $ne: false } };
+
+  if (req.query.all === 'true') {
+    const categories = await Category.find(filter).sort({ order: 1, createdAt: -1 });
+    return res.json({ categories, total: categories.length });
+  }
+
+  const pageSize = Number(req.query.pageSize) || 20;
+  const page = Number(req.query.pageNumber) || 1;
+  const search = req.query.search || '';
+
+  if (search) {
+    const escapedSearch = escapeRegex(search);
+    filter.$or = [
+      { name: { $regex: escapedSearch, $options: 'i' } },
+      { slug: { $regex: escapedSearch, $options: 'i' } }
+    ];
+  }
+
+  const count = await Category.countDocuments(filter);
+  const categories = await Category.find(filter)
+    .limit(pageSize)
+    .skip(pageSize * (page - 1))
+    .sort({ order: 1, createdAt: -1 });
+
+  res.json({ categories, page, pages: Math.ceil(count / pageSize), total: count });
+});
+
 // @desc    Create a category
 // @route   POST /api/admin/categories
 // @access  Private/Admin
 export const createCategory = asyncHandler(async (req, res) => {
-  const { name, slug, image, isAccessory, showInMobileSpareParts, showInAccessories } = req.body;
+  const { name, slug, image, isAccessory, showInMobileSpareParts, showInAccessories, isActive } = req.body;
 
   const categoryExists = await Category.findOne({
     $or: [
@@ -61,6 +96,7 @@ export const createCategory = asyncHandler(async (req, res) => {
     isAccessory,
     showInMobileSpareParts,
     showInAccessories,
+    isActive: isActive !== undefined ? isActive : true,
   });
 
   const createdCategory = await category.save();
@@ -71,7 +107,7 @@ export const createCategory = asyncHandler(async (req, res) => {
 // @route   PUT /api/admin/categories/:id
 // @access  Private/Admin
 export const updateCategory = asyncHandler(async (req, res) => {
-  const { name, slug, image, isAccessory, showInMobileSpareParts, showInAccessories } = req.body;
+  const { name, slug, image, isAccessory, showInMobileSpareParts, showInAccessories, isActive } = req.body;
 
   const category = await Category.findById(req.params.id);
 
@@ -98,6 +134,7 @@ export const updateCategory = asyncHandler(async (req, res) => {
     category.isAccessory = isAccessory !== undefined ? isAccessory : category.isAccessory;
     category.showInMobileSpareParts = showInMobileSpareParts !== undefined ? showInMobileSpareParts : category.showInMobileSpareParts;
     category.showInAccessories = showInAccessories !== undefined ? showInAccessories : category.showInAccessories;
+    category.isActive = isActive !== undefined ? isActive : category.isActive;
 
     const updatedCategory = await category.save();
     res.json(updatedCategory);
