@@ -30,6 +30,7 @@ const EMPTY_SEARCH_RESULTS = { models: [], products: [] };
 
 const FEATURED_NAV_ITEMS = [
   { name: "Mobile", defaultPath: "/brand-selection?deviceType=Mobile", forceDefault: true },
+  { name: "More from Apple", defaultPath: "/products?brand=6aa7da3bfcb2add6d26d4290", forceDefault: true },
 ];
 
 const SearchDropdown = ({
