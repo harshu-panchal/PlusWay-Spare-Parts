@@ -6,6 +6,9 @@ import Brand from "../../../models/Brand.js";
 import Category from "../../../models/Category.js";
 import Model from "../../../models/Model.js";
 import BulkUploadHistory from "../../../models/BulkUploadHistory.js";
+import Review from "../../../models/Review.js";
+import Lead from "../../../models/Lead.js";
+import FormSubmission from "../../../models/FormSubmission.js";
 import generateToken from "../../../utils/generateToken.js";
 import asyncHandler from "../../../middleware/asyncHandler.js";
 
@@ -346,4 +349,24 @@ export const getBulkUploadHistory = asyncHandler(async (req, res) => {
     .populate("uploadedBy", "name email")
     .sort({ createdAt: -1 });
   res.json(history);
+});
+
+// @desc    Get sidebar notification counts
+// @route   GET /api/admin/notification-counts
+// @access  Private/Admin
+export const getNotificationCounts = asyncHandler(async (req, res) => {
+  const customersSeenAt = req.query.customersSeenAt
+    ? new Date(Number(req.query.customersSeenAt))
+    : new Date(0);
+
+  const [newOrders, newCustomers, newLeads, pendingReviews, newFormSubmissions] =
+    await Promise.all([
+      Order.countDocuments({ status: "Pending" }),
+      Customer.countDocuments({ createdAt: { $gt: customersSeenAt } }),
+      Lead.countDocuments({ status: "New" }),
+      Review.countDocuments({ status: "Pending" }),
+      FormSubmission.countDocuments({ status: "New" }),
+    ]);
+
+  res.json({ newOrders, newCustomers, newLeads, pendingReviews, newFormSubmissions });
 });

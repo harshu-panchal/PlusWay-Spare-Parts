@@ -15,6 +15,7 @@ import {
   STORAGE_KEY,
   getCountryByIso,
   getMaxLength,
+  getMinLength,
   isMobileValidForCountry,
 } from "../../../data/countryCodes";
 
@@ -47,6 +48,8 @@ const Signup = () => {
 
   const mobileMaxLength = getMaxLength(country);
   const mobileIsValid = isMobileValidForCountry(formData.mobile, country);
+  const showMobileMismatch =
+    formData.mobile.length >= getMinLength(country) && !mobileIsValid;
 
   const handleCountryChange = (next) => {
     setCountry(next);
@@ -62,6 +65,7 @@ const Signup = () => {
       try {
         await axios.post(API_ENDPOINTS.CUSTOMER_SEND_OTP, {
           mobile: formData.mobile,
+          countryCode: country.code,
           type: "register",
         });
         setStep(2);
@@ -85,13 +89,14 @@ const Signup = () => {
         // First verify OTP using the separate route
         await axios.post(API_ENDPOINTS.CUSTOMER_VERIFY_OTP, {
           mobile: formData.mobile,
+          countryCode: country.code,
           otp,
         });
 
         // If verification is successful, proceed to registration
         const { data } = await axios.post(
           API_ENDPOINTS.CUSTOMER_REGISTER,
-          { ...formData, otp },
+          { ...formData, otp, countryCode: country.code },
         );
 
         // Store customer info and token
@@ -190,6 +195,13 @@ const Signup = () => {
                         onChange={handleChange}
                       />
                     </div>
+                    {showMobileMismatch && (
+                      <p className="mt-2 px-2 text-xs font-bold text-red-500">
+                        This isn't a valid {country.name} ({country.dial})
+                        mobile number. Check the number or change the country
+                        code.
+                      </p>
+                    )}
                   </div>
 
                   {/* Email Address */}

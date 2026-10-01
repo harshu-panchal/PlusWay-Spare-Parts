@@ -23,7 +23,7 @@ const ProductSidebarSettings = () => {
     if (settings) {
       try {
         setLoading(true);
-        const token = JSON.parse(localStorage.getItem("adminInfo"))?.token;
+        const token = localStorage.getItem("adminToken");
         await axios.put(API_ENDPOINTS.UPDATE_SETTINGS, settings, {
           headers: { Authorization: `Bearer ${token}` }
         });

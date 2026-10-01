@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
+import { useAdminNotifications, NOTIF_PATH_MAP } from "../../../hooks/useAdminNotifications";
 import {
   LayoutDashboard,
   Package,
@@ -32,6 +33,14 @@ import { removeFCMToken } from "../../../services/pushNotificationService";
 const AdminLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const location = useLocation();
+  const { counts, markSeen } = useAdminNotifications();
+
+  // Clear badge when admin lands on a notifiable page
+  useEffect(() => {
+    if (NOTIF_PATH_MAP[location.pathname]) {
+      markSeen(location.pathname);
+    }
+  }, [location.pathname, markSeen]);
 
   const menuSections = [
     {
@@ -121,6 +130,8 @@ const AdminLayout = () => {
               <ul className="space-y-1">
                 {section.items.map((item) => {
                   const isActive = location.pathname === item.path;
+                  const countKey = NOTIF_PATH_MAP[item.path];
+                  const badge = countKey ? counts[countKey] : 0;
                   return (
                     <li key={item.path}>
                       <Link
@@ -129,17 +140,29 @@ const AdminLayout = () => {
                           ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
                           : "hover:bg-gray-800/50 hover:text-gray-200"
                           }`}>
-                        <item.icon
-                          size={20}
-                          className={
-                            isActive
-                              ? "text-white"
-                              : "text-gray-500 group-hover:text-gray-300"
-                          }
-                        />
+                        <div className="relative shrink-0">
+                          <item.icon
+                            size={20}
+                            className={
+                              isActive
+                                ? "text-white"
+                                : "text-gray-500 group-hover:text-gray-300"
+                            }
+                          />
+                          {badge > 0 && !isSidebarOpen && (
+                            <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+                              {badge > 99 ? "99+" : badge}
+                            </span>
+                          )}
+                        </div>
                         {isSidebarOpen && (
-                          <span className="ml-3 font-medium text-sm">
+                          <span className="ml-3 font-medium text-sm flex-1">
                             {item.name}
+                          </span>
+                        )}
+                        {isSidebarOpen && badge > 0 && (
+                          <span className="ml-auto min-w-[20px] h-5 bg-red-500 text-white text-[11px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+                            {badge > 99 ? "99+" : badge}
                           </span>
                         )}
                         {isActive && !isSidebarOpen && (

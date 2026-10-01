@@ -2,8 +2,14 @@ import React, { useState } from "react";
 import axios from "axios";
 import { Mail, Phone, MapPin, Send, Clock, MessageSquare } from "lucide-react";
 import { API_ENDPOINTS } from "../../../config/api";
+import { useSettings } from "../../../contexts/SettingsContext";
 
 const Contact = () => {
+  const { settings } = useSettings();
+  const phone   = settings?.contact?.supportPhone   || "+91 9870162128";
+  const email   = settings?.contact?.supportEmail   || "plusway9@gmail.com";
+  const address = settings?.contact?.officeAddress  || "New Delhi, India";
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -54,24 +60,9 @@ const Contact = () => {
   };
 
   const contactInfo = [
-    {
-      icon: Mail,
-      title: "Email Us",
-      details: "plusway9@gmail.com",
-      description: "Send us an email anytime",
-    },
-    {
-      icon: Phone,
-      title: "Call Us",
-      details: "+91 9870162128",
-      description: "Mon-Sat: 9:00 AM - 7:00 PM",
-    },
-    {
-      icon: MapPin,
-      title: "Visit Us",
-      details: "New Delhi, India",
-      description: "Visit our office",
-    },
+    { icon: Mail,  title: "Email Us",  details: email,   description: "Send us an email anytime" },
+    { icon: Phone, title: "Call Us",   details: phone,   description: "Mon-Sat: 9:00 AM - 7:00 PM" },
+    { icon: MapPin,title: "Visit Us",  details: address, description: "Visit our office" },
   ];
 
   return (

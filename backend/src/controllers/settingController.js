@@ -17,31 +17,37 @@ export const getSettings = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 export const updateSettings = asyncHandler(async (req, res) => {
   let settings = await Setting.findOne();
-  
   if (!settings) {
     settings = new Setting();
   }
 
-  // Update product sidebar settings if provided
-  if (req.body.productSidebar) {
-    if (req.body.productSidebar.needHelp) {
-      settings.productSidebar.needHelp.title = req.body.productSidebar.needHelp.title || settings.productSidebar.needHelp.title;
-      settings.productSidebar.needHelp.description = req.body.productSidebar.needHelp.description || settings.productSidebar.needHelp.description;
+  const SECTIONS = ["general", "contact", "social", "shipping", "payments", "seo"];
+
+  // For each top-level section, merge field-by-field so omitted fields are left unchanged.
+  SECTIONS.forEach((section) => {
+    const incoming = req.body[section];
+    if (incoming && typeof incoming === "object") {
+      Object.keys(incoming).forEach((field) => {
+        const val = incoming[field];
+        // Allow explicit false / 0 / "" so the admin can clear a field intentionally.
+        if (val !== undefined && val !== null) {
+          settings[section][field] = val;
+        }
+      });
     }
-    if (req.body.productSidebar.freeShipping) {
-      settings.productSidebar.freeShipping.title = req.body.productSidebar.freeShipping.title || settings.productSidebar.freeShipping.title;
-      settings.productSidebar.freeShipping.description = req.body.productSidebar.freeShipping.description || settings.productSidebar.freeShipping.description;
-    }
-    if (req.body.productSidebar.guarantee) {
-      settings.productSidebar.guarantee.title = req.body.productSidebar.guarantee.title || settings.productSidebar.guarantee.title;
-      settings.productSidebar.guarantee.description = req.body.productSidebar.guarantee.description || settings.productSidebar.guarantee.description;
-    }
-    if (req.body.productSidebar.paymentProtection) {
-      settings.productSidebar.paymentProtection.title = req.body.productSidebar.paymentProtection.title || settings.productSidebar.paymentProtection.title;
-      settings.productSidebar.paymentProtection.description = req.body.productSidebar.paymentProtection.description || settings.productSidebar.paymentProtection.description;
-    }
+  });
+
+  // productSidebar has a nested structure — merge one extra level deep.
+  const sidebar = req.body.productSidebar;
+  if (sidebar && typeof sidebar === "object") {
+    ["needHelp", "freeShipping", "guarantee", "paymentProtection"].forEach((key) => {
+      if (sidebar[key] && typeof sidebar[key] === "object") {
+        if (sidebar[key].title !== undefined)       settings.productSidebar[key].title       = sidebar[key].title;
+        if (sidebar[key].description !== undefined) settings.productSidebar[key].description = sidebar[key].description;
+      }
+    });
   }
 
-  const updatedSettings = await settings.save();
-  res.json(updatedSettings);
+  const updated = await settings.save();
+  res.json(updated);
 });

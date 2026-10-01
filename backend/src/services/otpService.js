@@ -18,12 +18,20 @@ const generateOTP = (length = 4) => {
 };
 
 /**
- * Normalize mobile number to include country code (91)
+ * Normalize mobile number to include country code.
+ * E.164 input ("+14165551234") already carries its country code; bare
+ * numbers are legacy Indian numbers and get 91 prepended.
  */
 const normalizeMobileNumber = (mobile) => {
-  let cleanMobile = mobile.replace(/^\+/, "").replace(/\D/g, "");
+  if (mobile.startsWith("+")) {
+    return mobile.replace(/\D/g, "");
+  }
 
-  if (!cleanMobile.startsWith("91")) {
+  let cleanMobile = mobile.replace(/\D/g, "");
+
+  // A 10-digit number is a bare Indian number, even if it happens to start
+  // with "91" (e.g. 9123456789).
+  if (cleanMobile.length === 10 || !cleanMobile.startsWith("91")) {
     cleanMobile = "91" + cleanMobile;
   }
 
@@ -333,7 +341,7 @@ export const verifySmsOtp = async (
   // Normalize mobile number
   const normalizedMobile = targetMobile.replace(/\D/g, "");
 
-  if (normalizedMobile.length !== 10) {
+  if (normalizedMobile.length < 8 || normalizedMobile.length > 15) {
     console.error("OTP verification failed - invalid mobile format:", {
       original: targetMobile,
       normalized: normalizedMobile,
@@ -410,7 +418,7 @@ export const verifyOTP = async (mobile, otpInput, userType, shouldConsume = true
   // Normalize mobile number
   const normalizedMobile = mobile.replace(/\D/g, "");
 
-  if (normalizedMobile.length !== 10) {
+  if (normalizedMobile.length < 8 || normalizedMobile.length > 15) {
     console.error("OTP verification failed - invalid mobile format:", {
       original: mobile,
       normalized: normalizedMobile,

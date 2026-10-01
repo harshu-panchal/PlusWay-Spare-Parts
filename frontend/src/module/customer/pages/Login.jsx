@@ -10,6 +10,7 @@ import {
   STORAGE_KEY,
   getCountryByIso,
   getMaxLength,
+  getMinLength,
   isMobileValidForCountry,
 } from "../../../data/countryCodes";
 
@@ -40,6 +41,8 @@ const Login = () => {
 
   const mobileMaxLength = getMaxLength(country);
   const mobileIsValid = isMobileValidForCountry(mobile, country);
+  const showMobileMismatch =
+    mobile.length >= getMinLength(country) && !mobileIsValid;
 
   // Clamp the existing input if the user picks a country with a shorter max.
   const handleCountryChange = (next) => {
@@ -56,6 +59,7 @@ const Login = () => {
       try {
         await axios.post(API_ENDPOINTS.CUSTOMER_SEND_OTP, {
           mobile,
+          countryCode: country.code,
           type: "login",
         });
         setStep(2);
@@ -79,12 +83,14 @@ const Login = () => {
         // First verify OTP using the separate route
         await axios.post(API_ENDPOINTS.CUSTOMER_VERIFY_OTP, {
           mobile,
+          countryCode: country.code,
           otp,
         });
 
         // If verification is successful, proceed to login
         const { data } = await axios.post(API_ENDPOINTS.CUSTOMER_LOGIN, {
           mobile,
+          countryCode: country.code,
           otp,
         });
 
@@ -160,6 +166,12 @@ const Login = () => {
                       }
                     />
                   </div>
+                  {showMobileMismatch && (
+                    <p className="mt-2 px-2 text-xs font-bold text-red-500">
+                      This isn't a valid {country.name} ({country.dial}) mobile
+                      number. Check the number or change the country code.
+                    </p>
+                  )}
                 </div>
               ) : (
                 <div className="flex gap-3 justify-between">

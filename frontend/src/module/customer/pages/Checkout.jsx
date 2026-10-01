@@ -6,6 +6,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_ENDPOINTS } from '../../../config/api';
+import { useSettings } from '../../../contexts/SettingsContext';
 
 const emptyAddressForm = {
     type: 'Home', name: '', mobile: '', street: '', landmark: '', city: '', state: '', pincode: ''
@@ -13,7 +14,19 @@ const emptyAddressForm = {
 
 const Checkout = () => {
     const { cartTotal, cartItems } = useCart();
+    const { settings } = useSettings();
     const navigate = useNavigate();
+
+    const shippingConfig = settings?.shipping || {};
+    const standardShippingFee   = shippingConfig.standardShippingFee   ?? 0;
+    const freeShippingThreshold = shippingConfig.freeShippingThreshold  ?? 0;
+    const taxPercentage         = shippingConfig.taxPercentage          ?? 0;
+
+    const shippingPrice = (freeShippingThreshold > 0 && cartTotal >= freeShippingThreshold)
+      ? 0
+      : standardShippingFee;
+    const taxPrice = Math.round(cartTotal * (taxPercentage / 100) * 100) / 100;
+    const orderTotal = cartTotal + shippingPrice + taxPrice;
 
     const [savedAddresses, setSavedAddresses] = useState([]);
     const [addressesLoading, setAddressesLoading] = useState(true);
@@ -153,9 +166,9 @@ const Checkout = () => {
                 shippingAddress,
                 paymentMethod: paymentMethod,
                 itemsPrice: cartTotal,
-                taxPrice: 0,
-                shippingPrice: 0,
-                totalPrice: cartTotal
+                taxPrice,
+                shippingPrice,
+                totalPrice: orderTotal
             };
 
             const { data } = await axios.post(API_ENDPOINTS.ORDERS, orderData, config);
@@ -401,11 +414,20 @@ const Checkout = () => {
                                 </div>
                                 <div className="flex justify-between text-sm font-bold text-gray-500 uppercase tracking-widest">
                                     <span>Shipping</span>
-                                    <span className="text-accent tracking-widest">FREE</span>
+                                    {shippingPrice === 0
+                                      ? <span className="text-accent tracking-widest">FREE</span>
+                                      : <span className="text-secondary tracking-tighter">₹{shippingPrice.toLocaleString()}</span>
+                                    }
                                 </div>
+                                {taxPrice > 0 && (
+                                  <div className="flex justify-between text-sm font-bold text-gray-500 uppercase tracking-widest">
+                                      <span>Tax ({taxPercentage}%)</span>
+                                      <span className="text-secondary tracking-tighter">₹{taxPrice.toLocaleString()}</span>
+                                  </div>
+                                )}
                                 <div className="flex justify-between items-end mb-8 pt-4 border-t border-gray-100">
                                     <span className="text-sm font-black text-secondary uppercase tracking-[0.2em]">Total Payable</span>
-                                    <span className="text-3xl font-black text-primary italic tracking-tighter">₹{cartTotal.toLocaleString()}</span>
+                                    <span className="text-3xl font-black text-primary italic tracking-tighter">₹{orderTotal.toLocaleString()}</span>
                                 </div>
                             </div>
 

@@ -1541,16 +1541,71 @@ export const downloadPriceUpdateTemplate = async (req, res) => {
     const workbook = new ExcelJS.Workbook();
     const ws = workbook.addWorksheet("Bulk Price Update");
 
-    ws.columns = [
-      { header: "SKU *", key: "SKU", width: 20 },
-      { header: "Price *", key: "Price", width: 15 },
-      { header: "MRP", key: "MRP", width: 15 },
-      { header: "WholesalePrice", key: "WholesalePrice", width: 15 },
-      { header: "WholesaleMinQty", key: "WholesaleMinQty", width: 15 },
+    const columns = [
+      { header: "SKU *",           key: "SKU",             width: 22 },
+      { header: "Price *",         key: "Price",           width: 14 },
+      { header: "MRP",             key: "MRP",             width: 14 },
+      { header: "WholesalePrice",  key: "WholesalePrice",  width: 16 },
+      { header: "WholesaleMinQty", key: "WholesaleMinQty", width: 18 },
+      { header: "countryPricing",  key: "countryPricing",  width: 90 },
     ];
 
-    ws.getRow(1).font = { bold: true };
-    ws.addRow({ SKU: "PW-123456", Price: 500, MRP: 600, WholesalePrice: 450, WholesaleMinQty: 10 });
+    ws.columns = columns.map(c => ({ header: c.header, key: c.key, width: c.width }));
+
+    // Header row styling
+    const headerRow = ws.getRow(1);
+    headerRow.height = 26;
+    headerRow.eachCell((cell) => {
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF4F46E5" } };
+      cell.font = { name: "Segoe UI", size: 11, bold: true, color: { argb: "FFFFFFFF" } };
+      cell.alignment = { vertical: "middle", horizontal: "center" };
+      cell.border = {
+        bottom: { style: "thin", color: { argb: "FF3730A3" } },
+      };
+    });
+
+    // Example data row
+    const exRow = ws.addRow([
+      "PW-123456",
+      500,
+      600,
+      450,
+      10,
+      "AE|United Arab Emirates|AED|د.إ|80|65|10|100||US|United States|USD|$|25|20|10|30",
+    ]);
+    exRow.height = 20;
+    exRow.eachCell((cell) => {
+      cell.font = { name: "Segoe UI", size: 10 };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF0FDF4" } };
+    });
+
+    // Instructions sheet
+    const instr = workbook.addWorksheet("Instructions");
+    instr.columns = [{ width: 36 }, { width: 90 }];
+    const instrRows = [
+      ["BULK PRICE UPDATE — Instructions", ""],
+      ["", ""],
+      ["Columns", "Description"],
+      ["SKU *",            "Required. Product code (PW-XXXXXX) or color-variant SKU."],
+      ["Price *",          "Required. Base selling price in INR."],
+      ["MRP",              "Optional. Maximum Retail Price in INR. Leave blank to keep existing."],
+      ["WholesalePrice",   "Optional. Wholesale price in INR. Leave blank to keep existing."],
+      ["WholesaleMinQty",  "Optional. Minimum qty for wholesale pricing. Leave blank to keep existing."],
+      ["countryPricing",   "Optional. Per-country price overrides. Leave blank to keep existing country prices."],
+      ["", ""],
+      ["countryPricing format", "Each country entry: countryCode|countryName|currencyCode|currencySymbol|price|wholesalePrice|wholesaleMinQty|mrp"],
+      ["",                "Multiple countries joined by ||"],
+      ["",                "Example: AE|United Arab Emirates|AED|د.إ|80|65|10|100||US|United States|USD|$|25|20|10|30"],
+      ["",                ""],
+      ["Merge behaviour",  "Country entries in the upload are MERGED into the existing country pricing. Countries not mentioned in the row are untouched. To add a new country just include its entry."],
+      ["",                "countryCode must be a valid ISO 3166-1 alpha-2 code (e.g. AE, US, GB, DE, SG)."],
+      ["",                ""],
+      ["Common country codes", "AE=UAE, US=United States, GB=United Kingdom, DE=Germany, SG=Singapore, AU=Australia, CA=Canada, SA=Saudi Arabia, QA=Qatar, KW=Kuwait"],
+    ];
+    instrRows.forEach(r => instr.addRow(r));
+    const instrHeader = instr.getRow(1);
+    instrHeader.font = { bold: true, size: 13 };
+    instr.getRow(3).font = { bold: true };
 
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     res.setHeader("Content-Disposition", "attachment; filename=plusway_bulk_price_update.xlsx");
@@ -1606,8 +1661,8 @@ export const bulkUpdatePrices = async (req, res) => {
     // several minutes — 12k+ rows meant 30k+ round trips to Mongo, several
     // thousand of them full collection scans on the unindexed colorVariants.sku field).
     const [productLevelMatches, variantLevelMatches] = await Promise.all([
-      Product.find({ code: { $in: skus } }, "_id code"),
-      Product.find({ "colorVariants.sku": { $in: skus } }, "_id name colorVariants"),
+      Product.find({ code: { $in: skus } }, "_id code countryPricing"),
+      Product.find({ "colorVariants.sku": { $in: skus } }, "_id name countryPricing colorVariants"),
     ]);
 
     const productByCode = new Map(productLevelMatches.map((p) => [p.code, p]));
@@ -1634,6 +1689,13 @@ export const bulkUpdatePrices = async (req, res) => {
         if (row.WholesalePrice !== "" && row.WholesalePrice !== undefined) updateData.wholesalePrice = Number(row.WholesalePrice);
         if (row.WholesaleMinQty !== "" && row.WholesaleMinQty !== undefined) updateData.wholesaleMinQty = Number(row.WholesaleMinQty);
 
+        const newCPs = _parseCountryPricing(String(row.countryPricing || ""));
+        if (newCPs.length > 0) {
+          const cpMap = new Map((product.countryPricing || []).map(cp => [cp.countryCode, { ...cp.toObject ? cp.toObject() : cp }]));
+          newCPs.forEach(cp => cpMap.set(cp.countryCode, cp));
+          updateData.countryPricing = [...cpMap.values()];
+        }
+
         bulkOps.push({ updateOne: { filter: { _id: product._id }, update: { $set: updateData } } });
         bulkMeta.push({ rowNum, success: { row: rowNum, sku, type: "product" } });
         return;
@@ -1649,6 +1711,15 @@ export const bulkUpdatePrices = async (req, res) => {
         if (row.WholesalePrice !== "" && row.WholesalePrice !== undefined) setFields[`colorVariants.${variantIdx}.wholesalePrice`] = Number(row.WholesalePrice);
         if (row.WholesaleMinQty !== "" && row.WholesaleMinQty !== undefined) setFields[`colorVariants.${variantIdx}.wholesaleMinQty`] = Number(row.WholesaleMinQty);
 
+        // Merge countryPricing into this variant
+        const newCPs = _parseCountryPricing(String(row.countryPricing || ""));
+        if (newCPs.length > 0) {
+          const existingVCPs = vProduct.colorVariants[variantIdx].countryPricing || [];
+          const cpMap = new Map(existingVCPs.map(cp => [cp.countryCode, { ...cp.toObject ? cp.toObject() : cp }]));
+          newCPs.forEach(cp => cpMap.set(cp.countryCode, cp));
+          setFields[`colorVariants.${variantIdx}.countryPricing`] = [...cpMap.values()];
+        }
+
         // Re-derive product-level price from the first variant, matching the
         // original per-row behaviour.
         if (variantIdx === 0) {
@@ -1656,6 +1727,12 @@ export const bulkUpdatePrices = async (req, res) => {
           if (row.MRP !== "" && row.MRP !== undefined) setFields.mrp = Number(row.MRP);
           if (row.WholesalePrice !== "" && row.WholesalePrice !== undefined) setFields.wholesalePrice = Number(row.WholesalePrice);
           if (row.WholesaleMinQty !== "" && row.WholesaleMinQty !== undefined) setFields.wholesaleMinQty = Number(row.WholesaleMinQty);
+          if (newCPs.length > 0) {
+            const existingPCPs = vProduct.countryPricing || [];
+            const cpMap = new Map(existingPCPs.map(cp => [cp.countryCode, { ...cp.toObject ? cp.toObject() : cp }]));
+            newCPs.forEach(cp => cpMap.set(cp.countryCode, cp));
+            setFields.countryPricing = [...cpMap.values()];
+          }
         }
 
         bulkOps.push({ updateOne: { filter: { _id: vProduct._id }, update: { $set: setFields } } });

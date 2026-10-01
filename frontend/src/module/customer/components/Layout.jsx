@@ -4,8 +4,12 @@ import Header from './Header';
 import Footer from './Footer';
 import BottomNav from './BottomNav';
 import LazyImage from "../../../components/LazyImage";
+import { useSettings } from "../../../contexts/SettingsContext";
 
 const Layout = ({ children }) => {
+    const { settings } = useSettings();
+    const whatsapp = settings?.contact?.whatsappNumber || "919870162128";
+
     return (
         <div className="min-h-screen flex flex-col font-sans">
             <Header />
@@ -19,7 +23,7 @@ const Layout = ({ children }) => {
 
             {/* WhatsApp Floating Button */}
             <a
-                href="https://wa.me/919870162128"
+                href={`https://wa.me/${whatsapp}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="fixed bottom-20 right-6 md:bottom-6 bg-[#25D366] text-white p-3 rounded-full shadow-lg hover:scale-110 transition-transform z-40"

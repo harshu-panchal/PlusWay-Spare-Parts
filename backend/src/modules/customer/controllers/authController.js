@@ -2,23 +2,27 @@ import asyncHandler from '../../../middleware/asyncHandler.js';
 import { sendSmsOtp, verifySmsOtp } from '../../../services/otpService.js';
 import Customer from '../../../models/Customer.js';
 import generateToken from '../../../utils/generateToken.js';
+import { normalizeCustomerMobile } from '../../../utils/phone.js';
 
 // @desc    Send OTP for registration/login
 // @route   POST /api/customer/send-otp
 // @access  Public
 export const sendOtp = asyncHandler(async (req, res) => {
-  const { mobile, type } = req.body; // type: 'register' or 'login'
+  const { type, countryCode } = req.body; // type: 'register' or 'login'
 
-  if (!mobile) {
+  if (!req.body.mobile) {
     res.status(400);
     throw new Error('Mobile number is required');
   }
 
-  // Validate mobile format
-  if (!/^[0-9]{10}$/.test(mobile)) {
+  // Validate the number against the selected country (e.g. reject an
+  // Indian number when Canada is selected)
+  const phone = normalizeCustomerMobile(req.body.mobile, countryCode);
+  if (!phone.valid) {
     res.status(400);
-    throw new Error('Mobile number must be 10 digits');
+    throw new Error('Please enter a valid mobile number for the selected country');
   }
+  const { mobile } = phone;
 
   // Check if customer exists based on type
   const customerExists = await Customer.findOne({ mobile });
@@ -48,12 +52,19 @@ export const sendOtp = asyncHandler(async (req, res) => {
 // @route   POST /api/customer/verify-otp
 // @access  Public
 export const verifyOtp = asyncHandler(async (req, res) => {
-  const { mobile, otp } = req.body;
+  const { otp, countryCode } = req.body;
 
-  if (!mobile || !otp) {
+  if (!req.body.mobile || !otp) {
     res.status(400);
     throw new Error('Mobile number and OTP are required');
   }
+
+  const phone = normalizeCustomerMobile(req.body.mobile, countryCode);
+  if (!phone.valid) {
+    res.status(400);
+    throw new Error('Please enter a valid mobile number for the selected country');
+  }
+  const { mobile } = phone;
 
   const isValidOtp = await verifySmsOtp(null, otp, mobile, 'Customer', false);
 

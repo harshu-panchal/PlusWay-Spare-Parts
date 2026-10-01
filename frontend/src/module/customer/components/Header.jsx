@@ -1,4 +1,5 @@
 import React, { useState, useContext, useEffect, useRef } from "react";
+import { useSettings } from "../../../contexts/SettingsContext";
 import {
   Search,
   User,
@@ -141,6 +142,8 @@ const SearchDropdown = ({
 };
 
 const Header = () => {
+  const { settings } = useSettings();
+  const supportPhone = settings?.contact?.supportPhone || "+91 9870162128";
   const { cartItems } = useContext(CartContext);
   const [searchQuery, setSearchQuery] = useState("");
   const [isAccountOpen, setIsAccountOpen] = useState(false);
@@ -362,8 +365,7 @@ const Header = () => {
         <div className="max-w-7xl mx-auto w-full flex justify-between">
           <div className="flex items-center gap-4 text-gray-600 font-medium">
             <span className="flex items-center gap-1">
-              <Phone size={12} className="text-primary" /> Support: +91
-              9870162128
+              <Phone size={12} className="text-primary" /> Support: {supportPhone}
             </span>
           </div>
           <div className="flex gap-4 text-gray-600 font-medium uppercase tracking-wider items-center">
@@ -795,9 +797,9 @@ const Header = () => {
               Support
             </p>
             <a
-              href="tel:+919870162128"
+              href={`tel:${supportPhone.replace(/\s/g, "")}`}
               className="flex items-center gap-2 text-sm font-bold text-secondary hover:text-primary transition-colors">
-              <Phone size={14} className="text-primary" /> +91 9870162128
+              <Phone size={14} className="text-primary" /> {supportPhone}
             </a>
           </div>
         </div>

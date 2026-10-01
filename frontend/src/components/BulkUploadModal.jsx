@@ -345,7 +345,7 @@ const BulkUploadModal = ({
                       {isDragging ? "Drop it here!" : "Drag & drop your Excel file here"}
                     </p>
                     <p className="text-xs text-gray-400">or <span className="text-blue-600 font-semibold">click to browse</span></p>
-                    <p className="text-[11px] text-gray-400 mt-1">.xlsx, .xls, or .csv • Max 10 MB</p>
+                    <p className="text-[11px] text-gray-400 mt-1">.xlsx, .xls, or .csv • Max 25 MB</p>
                   </div>
                 )}
               </div>

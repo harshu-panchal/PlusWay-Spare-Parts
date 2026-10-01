@@ -3,7 +3,7 @@ import multer from "multer";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
-import { authAdmin, getAdminProfile, getDashboardStats, getReportStats, getWalletStats, getBulkUploadHistory } from "../controllers/adminController.js";
+import { authAdmin, getAdminProfile, getDashboardStats, getReportStats, getWalletStats, getBulkUploadHistory, getNotificationCounts } from "../controllers/adminController.js";
 import {
   getCustomers,
   getCustomerById,
@@ -100,7 +100,7 @@ const excelUpload = multer({
       cb(new Error("Only Excel/CSV files (.xlsx, .xls, .csv) are allowed"));
     }
   },
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25MB limit
 });
 
 
@@ -112,6 +112,7 @@ router.get("/dashboard-stats", protect, admin, getDashboardStats);
 router.get("/reports-stats", protect, admin, getReportStats);
 router.get("/wallet-stats", protect, admin, getWalletStats);
 router.get("/bulk-upload-history", protect, admin, getBulkUploadHistory);
+router.get("/notification-counts", protect, admin, getNotificationCounts);
 
 // Order routes
 router.route("/orders").get(protect, admin, getOrders);

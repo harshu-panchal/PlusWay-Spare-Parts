@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { API_ENDPOINTS } from "../../../config/api";
+import { useSettings } from "../../../contexts/SettingsContext";
 import {
   HelpCircle,
   Search,
@@ -24,6 +25,12 @@ import {
 } from "lucide-react";
 
 const Support = () => {
+  const { settings } = useSettings();
+  const supportPhone   = settings?.contact?.supportPhone   || "+91 9870162128";
+  const supportEmail   = settings?.contact?.supportEmail   || "plusway9@gmail.com";
+  const whatsappNumber = settings?.contact?.whatsappNumber || "919870162128";
+  const phoneDigits    = supportPhone.replace(/\D/g, "");
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [openFaqIndex, setOpenFaqIndex] = useState(0); // Open first FAQ by default
@@ -234,7 +241,7 @@ const Support = () => {
                   <Phone size={24} />
                 </div>
                 <span className="text-xs font-bold text-orange-600 uppercase tracking-wider">Helpline Number</span>
-                <h3 className="text-2xl font-black text-slate-900 mt-1 mb-2">+91 9870162128</h3>
+                <h3 className="text-2xl font-black text-slate-900 mt-1 mb-2">{supportPhone}</h3>
                 <p className="text-xs text-slate-500 leading-relaxed font-medium">
                   Direct phone assistance for urgent order queries, part verification, and support.
                 </p>
@@ -245,13 +252,13 @@ const Support = () => {
 
               <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-2">
                 <a
-                  href="tel:9870162128"
+                  href={`tel:${phoneDigits}`}
                   className="flex-1 bg-orange-500 hover:bg-orange-600 text-white text-center py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors shadow-xs"
                 >
                   Call Now
                 </a>
                 <button
-                  onClick={() => copyToClipboard("9870162128", "phone")}
+                  onClick={() => copyToClipboard(phoneDigits, "phone")}
                   className="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold"
                 >
                   {copiedField === "phone" ? "Copied!" : "Copy"}
@@ -266,7 +273,7 @@ const Support = () => {
                   <Mail size={24} />
                 </div>
                 <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Email Assistance</span>
-                <h3 className="text-xl font-black text-slate-900 mt-1 mb-2 truncate">plusway9@gmail.com</h3>
+                <h3 className="text-xl font-black text-slate-900 mt-1 mb-2 truncate">{supportEmail}</h3>
                 <p className="text-xs text-slate-500 leading-relaxed font-medium">
                   Send us unboxing videos, GST invoice requests, or detailed technical inquiries.
                 </p>
@@ -277,13 +284,13 @@ const Support = () => {
 
               <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-2">
                 <a
-                  href="mailto:plusway9@gmail.com"
+                  href={`mailto:${supportEmail}`}
                   className="flex-1 bg-slate-900 hover:bg-slate-800 text-white text-center py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors shadow-xs"
                 >
                   Send Email
                 </a>
                 <button
-                  onClick={() => copyToClipboard("plusway9@gmail.com", "email")}
+                  onClick={() => copyToClipboard(supportEmail, "email")}
                   className="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold"
                 >
                   {copiedField === "email" ? "Copied!" : "Copy"}
@@ -309,7 +316,7 @@ const Support = () => {
 
               <div className="mt-6 pt-4 border-t border-slate-100">
                 <a
-                  href="https://wa.me/919870162128"
+                  href={`https://wa.me/${whatsappNumber}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors shadow-xs"
@@ -450,7 +457,7 @@ const Support = () => {
               <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0" />
               <div>
                 <p className="font-bold">Support Ticket Received!</p>
-                <p className="text-xs text-emerald-700">Thank you! Our support team will respond to your inquiry via phone (+91 9870162128) or email (plusway9@gmail.com) shortly.</p>
+                <p className="text-xs text-emerald-700">Thank you! Our support team will respond to your inquiry via phone ({supportPhone}) or email ({supportEmail}) shortly.</p>
               </div>
             </div>
           )}

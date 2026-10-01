@@ -1,12 +1,22 @@
 import Customer from "../../../models/Customer.js";
 import generateToken from "../../../utils/generateToken.js";
 import { verifySmsOtp } from "../../../services/otpService.js";
+import { normalizeCustomerMobile } from "../../../utils/phone.js";
+
+const INVALID_MOBILE_MESSAGE =
+  "Please enter a valid mobile number for the selected country";
 
 // @desc    Register a new customer
 // @route   POST /api/customer/register
 // @access  Public
 export const registerCustomer = async (req, res) => {
-  const { name, mobile, email, otp } = req.body;
+  const { name, email, otp, countryCode } = req.body;
+
+  const phone = normalizeCustomerMobile(req.body.mobile, countryCode);
+  if (!phone.valid) {
+    return res.status(400).json({ message: INVALID_MOBILE_MESSAGE });
+  }
+  const { mobile } = phone;
 
   const isValidOtp = await verifySmsOtp(null, otp, mobile, "Customer");
   if (!isValidOtp) {
@@ -44,7 +54,13 @@ export const registerCustomer = async (req, res) => {
 // @route   POST /api/customer/login
 // @access  Public
 export const authCustomer = async (req, res) => {
-  const { mobile, otp } = req.body;
+  const { otp, countryCode } = req.body;
+
+  const phone = normalizeCustomerMobile(req.body.mobile, countryCode);
+  if (!phone.valid) {
+    return res.status(400).json({ message: INVALID_MOBILE_MESSAGE });
+  }
+  const { mobile } = phone;
 
   const isValidOtp = await verifySmsOtp(null, otp, mobile, "Customer");
   if (!isValidOtp) {
