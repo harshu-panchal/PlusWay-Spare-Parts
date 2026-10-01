@@ -552,6 +552,7 @@ export const bulkCreateProducts = async (req, res) => {
       try {
         const skuValue = row.SKU || row.code;
         const codeStr = skuValue ? String(skuValue).trim() : "";
+        const countryCell = readCountryCell(row);
         let existingProduct = null;
         let isVariantMatch = false;
 
@@ -587,6 +588,17 @@ export const bulkCreateProducts = async (req, res) => {
                 existingProduct.wholesaleMinQty = firstVariant.wholesaleMinQty ?? existingProduct.wholesaleMinQty;
               }
               existingProduct.countInStock = activeVariants.reduce((sum, v) => sum + (Number(v.countInStock) || 0), 0);
+
+              // Country Prices: merge per country into the variant; the first
+              // variant also drives the product's own country prices.
+              if (!isBlankCell(countryCell)) {
+                const vMerge = mergeCountryPricesCell(countryCell, existingProduct.colorVariants[variantIdx].countryPricing);
+                if (vMerge.errors.length) throw new Error(vMerge.errors.join("; "));
+                existingProduct.colorVariants[variantIdx].countryPricing = vMerge.countryPricing;
+                if (variantIdx === 0) {
+                  existingProduct.countryPricing = mergeCountryPricesCell(countryCell, existingProduct.countryPricing).countryPricing;
+                }
+              }
               existingProduct.markModified("colorVariants");
             }
           } else {
@@ -623,6 +635,11 @@ export const bulkCreateProducts = async (req, res) => {
             if (row.wholesaleMinQty !== undefined && row.wholesaleMinQty !== "") existingProduct.wholesaleMinQty = Number(row.wholesaleMinQty);
             if (row.countInStock !== undefined && row.countInStock !== "") existingProduct.countInStock = Number(row.countInStock);
             if (row.cashback !== undefined && row.cashback !== "") existingProduct.cashback = Number(row.cashback);
+            if (!isBlankCell(countryCell)) {
+              const pMerge = mergeCountryPricesCell(countryCell, existingProduct.countryPricing);
+              if (pMerge.errors.length) throw new Error(pMerge.errors.join("; "));
+              existingProduct.countryPricing = pMerge.countryPricing;
+            }
             if (row.description) existingProduct.description = String(row.description).split("\n").map(p => p.trim()).filter(Boolean);
             if (row.videoUrl !== undefined && row.videoUrl !== "") existingProduct.videoUrl = String(row.videoUrl).trim();
             if (row.productType) existingProduct.productType = String(row.productType).trim();
@@ -688,6 +705,12 @@ export const bulkCreateProducts = async (req, res) => {
             parsed = raw.split("||").map((variantStr) => {
               const [variantFieldsStr, countryPricingStr] = variantStr.split("~");
               const parts = variantFieldsStr.split(";").map((p) => p.trim());
+              let variantCountryPricing = [];
+              if (countryPricingStr && countryPricingStr.trim()) {
+                const vc = mergeCountryPricesCell(countryPricingStr, []);
+                if (vc.errors.length) throw new Error(`Variant "${parts[0] || "?"}": ${vc.errors.join("; ")}`);
+                variantCountryPricing = vc.countryPricing;
+              }
               return {
                 colorName: parts[0] || "",
                 sku: parts[1] && parts[1].trim() ? parts[1].trim() : "",
@@ -697,7 +720,7 @@ export const bulkCreateProducts = async (req, res) => {
                 wholesaleMinQty: parts[5] ? Number(parts[5]) : undefined,
                 countInStock: parts[6] ? Number(parts[6]) : 0,
                 images: parts[7] ? parts[7].split(",").map((u) => u.trim()).filter(Boolean) : [],
-                countryPricing: countryPricingStr ? _parseCountryPricing(countryPricingStr) : [],
+                countryPricing: variantCountryPricing,
               };
             });
           } else {
@@ -726,6 +749,13 @@ export const bulkCreateProducts = async (req, res) => {
         if (slugExists) slug = `${slug}-${Date.now()}`;
 
         const firstVariant = colorVariants.length ? colorVariants[0] : null;
+
+        const productCountry = mergeCountryPricesCell(countryCell, []);
+        if (productCountry.errors.length) {
+          results.errors.push({ row: rowNum, name: productName, error: productCountry.errors.join("; ") });
+          continue;
+        }
+        const productCountryPricing = productCountry.countryPricing;
 
         const productData = {
           name: productName,
@@ -763,8 +793,8 @@ export const bulkCreateProducts = async (req, res) => {
             countryOfOrigin: row.countryOfOrigin ? String(row.countryOfOrigin).trim() : "",
             packer: row.packer ? String(row.packer).trim() : "",
           },
-          // Parse optional countryPricing column (backward compatible — column may not exist)
-          countryPricing: _parseCountryPricing(row.countryPricing),
+          // Optional "Country Prices" column (the old "countryPricing" header still works)
+          countryPricing: productCountryPricing,
           // Bulk-uploaded products default to Published unless the row explicitly says Draft.
           status: normalizeStatus(row.status) || "Published",
         };
@@ -901,7 +931,7 @@ export const downloadProductTemplate = async (req, res) => {
       { header: "packer", key: "packer", example: "Elcotek India Pvt Ltd, New Delhi", example2: "" },
       { header: "highlights", key: "highlights", example: "Super AMOLED|Fast Charging|5G Ready", example2: "Long Life|Safe Chemistry" },
       { header: "descriptionPoints", key: "descriptionPoints", example: "100% Original Part|Quality Tested", example2: "Safe and reliable" },
-      { header: "countryPricing", key: "countryPricing", example: "AE|United Arab Emirates|AED|د.إ|80|65|10|100||US|United States|USD|$|25|20|10|30", example2: "" },
+      { header: "Country Prices", key: "countryPrices", example: COUNTRY_PRICES_EXAMPLE, example2: "DE, Germany, 17.5, 21" },
       { header: "status", key: "status", example: "", example2: "" },
     ];
 
@@ -1028,9 +1058,9 @@ export const downloadProductTemplate = async (req, res) => {
       ["specs", "key:value pairs, pipe-separated -> Color:Black|RAM:8GB"],
       ["highlights / descriptionPoints", "Pipe-separated -> Fast Charging|5G Ready"],
       ["SKU (top-level)", "Leave blank to auto-generate (e.g. PW-123456)."],
-      ["countryPricing (Optional)", "Format: countryCode|countryName|currencyCode|currencySymbol|price|wholesalePrice|wholesaleMinQty|mrp"],
-      ["", "Separate multiple countries with ||. Example: AE|United Arab Emirates|AED|د.إ|80|65|10|100||US|United States|USD|$|25|20|10|30"],
-      ["", "If left blank, prices are auto-converted from INR using live exchange rates."],
+      ...COUNTRY_PRICES_INSTRUCTION_ROWS,
+      ["", "Colour variants: add the same format after a ~ inside a variant, e.g. Black;PW-BLA-001;4500;5500;3800;10;50;img1~AE, United Arab Emirates, 80, 100 | US, United States, 25"],
+      ["", "If an SKU already exists, its row UPDATES that product/variant and only the countries listed are changed."],
       ["status (Optional)", "Draft or Published. Leave blank to default to Published (same as before this column existed)."],
       ["", "Draft products are hidden from the storefront (listing, search, product page) but stay editable in Admin."],
       ["Max file size", "10 MB"],
@@ -1041,6 +1071,7 @@ export const downloadProductTemplate = async (req, res) => {
       const cell = instr.getRow(rowNum).getCell(1);
       cell.font = { bold: true };
     });
+    addCountriesSheet(workbook);
 
     res.setHeader(
       "Content-Type",
@@ -1099,10 +1130,10 @@ const BULK_PRODUCT_COLUMNS = [
   { header: "countryOfOrigin", key: "countryOfOrigin", width: 18 },
   { header: "packer", key: "packer", width: 30 },
   { header: "colors", key: "colors", width: 22 },
-  // Country pricing: pipe-delimited per-country records, joined by ||
-  // Format per record: countryCode|countryName|currencyCode|currencySymbol|price|wholesalePrice|wholesaleMinQty|mrp
-  // Example: AE|United Arab Emirates|AED|د.إ|80|65|10|100||US|United States|USD|$|25|20|10|30
-  { header: "countryPricing", key: "countryPricing", width: 100 },
+  // Country prices — same cell as Bulk Price Update:
+  //   AE, United Arab Emirates, 25, 30, 20, 10 | US, United States, 7, 9
+  // (code, name, price, mrp, wholesale price, wholesale min qty; "|" between countries)
+  { header: "Country Prices", key: "countryPrices", width: 100 },
   // Draft or Published. Product-level only — blank means unchanged (bulk-update) or Published (export re-upload default).
   { header: "status", key: "status", width: 14 },
 ];
@@ -1274,27 +1305,35 @@ const _serializeVariantsForCreate = (variants) => {
 };
 
 /**
- * Serialize a countryPricing array into the Excel cell format.
- * Format per entry: countryCode|countryName|currencyCode|currencySymbol|price|wholesalePrice|wholesaleMinQty|mrp
- * Multiple entries joined by ||
+ * Serialize a countryPricing array into the "Country Prices" cell — the same
+ * format Bulk Price Update reads:
+ *   AE, United Arab Emirates, 25, 30, 20, 10 | US, United States, 7, 9, 0, 10
+ * i.e. code, name, price, mrp, wholesale price, wholesale min qty — countries
+ * separated by "|". Only the stored manual overrides are written.
  */
 const _serializeCountryPricing = (countryPricing) => {
   if (!Array.isArray(countryPricing) || countryPricing.length === 0) return "";
-  return countryPricing.map(cp => [
-    cp.countryCode || "",
-    cp.countryName || "",
-    cp.currencyCode || "",
-    cp.currencySymbol || "",
-    cp.price !== undefined && cp.price !== null ? cp.price : "",
-    cp.wholesalePrice !== undefined && cp.wholesalePrice !== null ? cp.wholesalePrice : "",
-    cp.wholesaleMinQty !== undefined && cp.wholesaleMinQty !== null ? cp.wholesaleMinQty : 10,
-    cp.mrp !== undefined && cp.mrp !== null ? cp.mrp : "",
-  ].join("|")).join("||");
+  const num = (v) => (v !== undefined && v !== null ? v : "");
+  return countryPricing
+    .filter((cp) => cp && cp.countryCode)
+    .map((cp) =>
+      [
+        cp.countryCode,
+        COUNTRY_CURRENCY_MAP[cp.countryCode]?.countryName || cp.countryName || cp.countryCode,
+        num(cp.price),
+        num(cp.mrp),
+        num(cp.wholesalePrice),
+        cp.wholesaleMinQty !== undefined && cp.wholesaleMinQty !== null ? cp.wholesaleMinQty : 10,
+      ].join(", "),
+    )
+    .join(" | ");
 };
 
 /**
- * Parse a countryPricing cell string back into an array of objects.
- * Handles both the full format and gracefully skips malformed entries.
+ * Parse the OLD 8-field countryPricing cell (kept so previously exported files
+ * still upload):
+ *   countryCode|countryName|currencyCode|currencySymbol|price|wholesalePrice|wholesaleMinQty|mrp
+ * Entries joined by ||. Malformed entries are skipped.
  */
 const _parseCountryPricing = (raw) => {
   if (!raw || String(raw).trim() === "") return [];
@@ -1364,8 +1403,8 @@ const EXPORT_BACKUP_COLUMNS = [
   // Read-only metadata — surfaced in the export for audit/sort visibility.
   // Ignored by the bulk-upload parser on round-trip.
   { header: "uploadedDate", key: "uploadedDate", width: 14 },
-  // Country pricing column — same format as BULK_PRODUCT_COLUMNS
-  { header: "countryPricing", key: "countryPricing", width: 100 },
+  // Country prices — same format as BULK_PRODUCT_COLUMNS / Bulk Price Update
+  { header: "Country Prices", key: "countryPrices", width: 100 },
   // Draft or Published — round-trips through bulk-create so a restore preserves publish state.
   { header: "status", key: "status", width: 14 },
 ];
@@ -1465,7 +1504,7 @@ export const exportProductsBackup = async (req, res) => {
         warrantyPeriod: p.details?.warranty?.period || "",
         warrantyPolicy: p.details?.warranty?.policy || "",
         uploadedDate: _formatDDMMYYYY(p.createdAt),
-        countryPricing: _serializeCountryPricing(p.countryPricing),
+        countryPrices: _serializeCountryPricing(p.countryPricing),
         status: p.status || "Published",
       };
       const pRow = ws.addRow(_buildRowArrayFor(EXPORT_BACKUP_COLUMNS, rowObj));
@@ -1507,7 +1546,8 @@ export const exportProductsBackup = async (req, res) => {
       ["specs", "Pipe-separated key:value pairs:  Color:Black|RAM:8GB|Storage:256GB"],
       ["highlights / descriptionPoints", "Pipe-separated bullets:  Fast Charging|5G Ready"],
       ["colors", "Comma-separated:  Black,White,Gold"],
-      ["countryPricing", "Per-country pricing overrides: countryCode|countryName|currencyCode|currencySymbol|price|wholesalePrice|wholesaleMinQty|mrp (joined by ||)"],
+      ["Country Prices", "This product's manual per-country prices:  code, name, price, mrp, wholesale price, wholesale min qty  |  next country. Same format as Bulk Price Update. Countries without an override are not listed (the store converts INR for them)."],
+      ["", "Colour variants carry their own country prices inside the colorVariants cell, after a ~ :  Black;SKU;price;mrp;wsPrice;wsMinQty;stock;imgs~AE, United Arab Emirates, 80, 100 | US, United States, 25"],
       ["status", "Draft or Published — reflects each product's current publish state. Preserved on restore; leave blank to default to Published."],
       ["description", "Use Alt+Enter (Excel) for paragraph breaks; stored as \\n in the cell. Each paragraph becomes one entry in the product's description array."],
       ["", ""],
@@ -1519,10 +1559,11 @@ export const exportProductsBackup = async (req, res) => {
     ];
     instructionRows.forEach((r) => instr.addRow(r));
     instr.getRow(1).font = { bold: true, size: 13, color: { argb: "FF4F46E5" } };
-    [3, 4, 6, 7, 8, 9, 11, 12, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25].forEach((rowNum) => {
+    [3, 4, 6, 7, 8, 9, 11, 12, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26].forEach((rowNum) => {
       const cell = instr.getRow(rowNum).getCell(1);
       if (cell) cell.font = { bold: true };
     });
+    addCountriesSheet(workbook);
 
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     res.setHeader("Content-Disposition", "attachment; filename=plusway_products_backup.xlsx");
@@ -1555,6 +1596,35 @@ export const exportProductsBackup = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const PRICE_CLEAR_TOKEN = "__CLEAR__";
+
+// Shared by every bulk template / export so the "Country Prices" column is
+// documented identically everywhere.
+const COUNTRY_PRICES_EXAMPLE = "AE, United Arab Emirates, 25, 30, 20, 10 | US, United States, 7, 9";
+const COUNTRY_PRICES_INSTRUCTION_ROWS = [
+  ["Country Prices (Optional)", "country, [name], price, MRP, wholesale price, wholesale min qty   |   next country ..."],
+  ["", `Example: ${COUNTRY_PRICES_EXAMPLE}`],
+  ["", "Country = 2-letter code (AE, US, GB, DE…) — see the 'Countries' sheet. Name is optional. Prices are in that country's own currency, plain numbers only."],
+  ["", `Values are optional from the right ('AE, 25' sets only the price); an empty value between commas means no change. ${PRICE_CLEAR_TOKEN} as the price removes a country.`],
+  ["", "Countries not listed keep their current price. A country with no override is auto-converted from INR at live exchange rates."],
+];
+
+// "Countries" reference sheet (every code the Country Prices column accepts).
+// Always added AFTER the data sheet so XLSX.SheetNames[0] stays the data sheet.
+const addCountriesSheet = (workbook) => {
+  const countries = [...COUNTRIES_LIST]
+    .filter((c) => c.countryCode !== "IN")
+    .sort((a, b) => a.countryName.localeCompare(b.countryName));
+  const ref = workbook.addWorksheet("Countries");
+  ref.columns = [
+    { header: "Code", width: 8 },
+    { header: "Country", width: 34 },
+    { header: "Currency", width: 10 },
+    { header: "Symbol", width: 8 },
+    { header: "Copy into the cell", width: 40 },
+  ];
+  ref.getRow(1).font = { bold: true };
+  countries.forEach((c) => ref.addRow([c.countryCode, c.countryName, c.currencyCode, c.currencySymbol, `${c.countryCode}, ${c.countryName}, `]));
+};
 
 const COUNTRY_ALIASES = { UK: "GB", UAE: "AE", USA: "US", INR: "IN" };
 const COUNTRY_CODE_BY_NAME = new Map(COUNTRIES_LIST.map((c) => [c.countryName.toLowerCase(), c.countryCode]));
@@ -1724,6 +1794,52 @@ const applyPriceValues = (state, values, code) => {
 const priceStateHasChanges = (state) => Object.keys(state.base).length > 0 || state.countryTouched;
 const priceStateCountryPricing = (state) => [...state.cpMap.values()];
 
+// The old 8-field cell: AE|United Arab Emirates|AED|د.إ|80|65|10|100||US|...
+// Told apart from the new format by its first record — no comma, 8+ pipe
+// parts, a 3-letter currency in slot 3 and a number in slot 5.
+const isLegacyCountryCell = (cell) => {
+  const first = String(cell ?? "").split("||")[0].split("|").map((p) => p.trim());
+  return (
+    first.length >= 8 &&
+    !first[0].includes(",") &&
+    /^[A-Za-z]{3}$/.test(first[2]) &&
+    first[4] !== "" &&
+    !Number.isNaN(Number(first[4]))
+  );
+};
+
+/**
+ * Merge a "Country Prices" cell into a SKU's existing countryPricing, per
+ * country (countries not in the cell are kept; __CLEAR__ as the price removes
+ * one). Used by bulk upload, bulk update and the upload of an export, so all of
+ * them read the cell exactly like Bulk Price Update does. Both the current
+ * format and the old 8-field one are accepted.
+ * Returns { countryPricing, touched, errors[] }.
+ */
+const mergeCountryPricesCell = (cell, existing) => {
+  const state = newPriceState(existing);
+  const errors = [];
+  if (!isBlankCell(cell)) {
+    if (isLegacyCountryCell(cell)) {
+      applyPriceValues(state, { countrypricing: String(cell) }, "IN");
+    } else {
+      for (const entry of parseCountryEntries(cell)) {
+        const where = `Country Prices #${entry.position}${entry.code ? ` (${entry.code})` : ""}`;
+        if (entry.error) { errors.push(`${where}: ${entry.error}`); continue; }
+        if (entry.code === "IN") { errors.push(`${where}: India is the base INR price — use the price / mrp columns instead`); continue; }
+        if (PRICE_VALUE_KEYS.every((k) => isBlankCell(entry.values[k]))) { errors.push(`${where}: no prices entered`); continue; }
+        const outcome = applyPriceValues(state, entry.values, entry.code);
+        if (outcome.error) errors.push(`${where}: ${outcome.error}`);
+      }
+    }
+  }
+  return { countryPricing: priceStateCountryPricing(state), touched: state.countryTouched, errors };
+};
+
+// Reads the cell from a bulk row, whichever header the file has. "Country
+// Prices" is the current header; "countryPricing" is the old one.
+const readCountryCell = (row) => row["Country Prices"] ?? row.countryPricing;
+
 // @desc    Download template for bulk price update
 // @route   GET /api/admin/products/bulk-price-template
 // @access  Private/Admin
@@ -1777,19 +1893,7 @@ export const downloadPriceUpdateTemplate = async (req, res) => {
     });
 
     // Country reference sheet
-    const countries = [...COUNTRIES_LIST]
-      .filter((c) => c.countryCode !== "IN")
-      .sort((a, b) => a.countryName.localeCompare(b.countryName));
-    const ref = workbook.addWorksheet("Countries");
-    ref.columns = [
-      { header: "Code", width: 8 },
-      { header: "Country", width: 34 },
-      { header: "Currency", width: 10 },
-      { header: "Symbol", width: 8 },
-      { header: "Copy into the cell", width: 40 },
-    ];
-    ref.getRow(1).font = { bold: true };
-    countries.forEach((c) => ref.addRow([c.countryCode, c.countryName, c.currencyCode, c.currencySymbol, `${c.countryCode}, ${c.countryName}, `]));
+    addCountriesSheet(workbook);
 
     // Instructions
     const instr = workbook.addWorksheet("Instructions");
@@ -1979,10 +2083,33 @@ export const bulkUpdatePrices = async (req, res) => {
       });
     }
 
-    try { fs.unlinkSync(req.file.path); } catch (_) {}
-
     results.errors.sort((a, b) => a.row - b.row);
     results.success.sort((a, b) => a.row - b.row);
+
+    // Keep the file and record it in upload history (best-effort)
+    if (rawRows.length > 0) {
+      try {
+        const ext = path.extname(req.file.originalname) || ".xlsx";
+        const savedFileName = `${req.file.filename}${ext}`;
+        fs.renameSync(req.file.path, `${req.file.path}${ext}`);
+        await BulkUploadHistory.create({
+          fileName: req.file.originalname,
+          filePath: savedFileName,
+          uploadType: "PricesUpdate",
+          totalRows: rawRows.length,
+          successCount: results.success.length,
+          errorCount: results.errors.length,
+          uploadedBy: req.user._id,
+          errors: _normalizeErrorsForHistory(results.errors),
+        });
+      } catch (historyErr) {
+        console.error("BulkUploadHistory write failed:", historyErr);
+        try { fs.unlinkSync(req.file.path); } catch (_) {}
+      }
+    } else {
+      try { fs.unlinkSync(req.file.path); } catch (_) {}
+    }
+
     const countryCount = results.success.reduce((sum, s) => sum + s.countries.length, 0);
     const statusCode = results.success.length > 0 ? 200 : 400;
     res.status(statusCode).json({
@@ -2073,7 +2200,7 @@ export const downloadBulkUpdateTemplate = async (req, res) => {
       // Live example: a product that has at least one color variant with an SKU
       Product.findOne({ "colorVariants.0.sku": { $exists: true, $ne: "" } }, "name code colorVariants brand model category").populate("brand model category", "name"),
       // Live example: a product without color variants but with a code
-      Product.findOne({ code: { $exists: true, $ne: "" }, $or: [{ colorVariants: { $exists: false } }, { colorVariants: { $size: 0 } }] }, "name code price mrp wholesalePrice wholesaleMinQty countInStock brand model category").populate("brand model category", "name"),
+      Product.findOne({ code: { $exists: true, $ne: "" }, $or: [{ colorVariants: { $exists: false } }, { colorVariants: { $size: 0 } }] }, "name code price mrp wholesalePrice wholesaleMinQty countInStock countryPricing brand model category").populate("brand model category", "name"),
     ]);
 
     const workbook = new ExcelJS.Workbook();
@@ -2110,6 +2237,7 @@ export const downloadBulkUpdateTemplate = async (req, res) => {
       if (v.wholesaleMinQty !== undefined) variantExampleRow.wholesaleMinQty = v.wholesaleMinQty;
       if (v.countInStock !== undefined) variantExampleRow.countInStock = v.countInStock;
       if (v.images?.length) variantExampleRow.images = v.images.join(",");
+      variantExampleRow.countryPrices = _serializeCountryPricing(v.countryPricing) || COUNTRY_PRICES_EXAMPLE;
     } else {
       variantExampleRow.SKU = "PW-BLA-001";
       variantExampleRow.colorName = "Black";
@@ -2119,6 +2247,7 @@ export const downloadBulkUpdateTemplate = async (req, res) => {
       variantExampleRow.wholesaleMinQty = 10;
       variantExampleRow.countInStock = 50;
       variantExampleRow.images = "http://server/uploads/img1.jpg,http://server/uploads/img2.jpg";
+      variantExampleRow.countryPrices = COUNTRY_PRICES_EXAMPLE;
     }
 
     if (sampleProductSimple) {
@@ -2129,6 +2258,7 @@ export const downloadBulkUpdateTemplate = async (req, res) => {
       productExampleRow.wholesalePrice = sampleProductSimple.wholesalePrice ?? "";
       productExampleRow.wholesaleMinQty = sampleProductSimple.wholesaleMinQty ?? "";
       productExampleRow.countInStock = sampleProductSimple.countInStock ?? "";
+      productExampleRow.countryPrices = _serializeCountryPricing(sampleProductSimple.countryPricing) || "DE, Germany, 17.5, 21";
       productExampleRow.brand = sampleProductSimple.brand?.name || (brands[0]?.name ?? "");
       productExampleRow.model = sampleProductSimple.model?.name || (models[0]?.name ?? "");
       productExampleRow.category = sampleProductSimple.category?.name || (categories[0]?.name ?? "");
@@ -2140,6 +2270,7 @@ export const downloadBulkUpdateTemplate = async (req, res) => {
       productExampleRow.wholesalePrice = 2100;
       productExampleRow.wholesaleMinQty = 10;
       productExampleRow.countInStock = 50;
+      productExampleRow.countryPrices = "DE, Germany, 17.5, 21";
       productExampleRow.brand = brands[0]?.name || "Apple";
       productExampleRow.model = models[0]?.name || "Apple iPhone 14 Pro";
       productExampleRow.category = categories[0]?.name || "Battery";
@@ -2193,7 +2324,8 @@ export const downloadBulkUpdateTemplate = async (req, res) => {
       ["specs", "Pipe-separated key:value pairs replace the existing specs list:  Color:Black|RAM:8GB|Storage:256GB"],
       ["highlights / descriptionPoints", "Pipe-separated bullets:  Fast Charging|5G Ready"],
       ["colors", "Comma-separated:  Black,White,Gold"],
-      ["countryPricing", "Per-country pricing overrides: countryCode|countryName|currencyCode|currencySymbol|price|wholesalePrice|wholesaleMinQty|mrp (joined by ||)"],
+      ...COUNTRY_PRICES_INSTRUCTION_ROWS,
+      ["", "Works on product SKUs and colour-variant SKUs alike. On the FIRST variant, the product's own country prices are updated too (same as Bulk Price Update)."],
       ["description", "Use \\n inside the cell for paragraph breaks (Alt+Enter in Excel)."],
       ["status", "Draft or Published. Product-level rows only — ignored (with a warning) on variant rows. Blank = unchanged."],
       ["", ""],
@@ -2208,6 +2340,7 @@ export const downloadBulkUpdateTemplate = async (req, res) => {
       const cell = instr.getRow(rowNum).getCell(1);
       if (cell) cell.font = { bold: true };
     });
+    addCountriesSheet(workbook);
 
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     res.setHeader("Content-Disposition", "attachment; filename=plusway_bulk_update_products.xlsx");
@@ -2289,6 +2422,7 @@ export const bulkUpdateProductsBySku = async (req, res) => {
       const row = rows[i];
       const rowNum = i + 2;
       const sku = String(row.SKU || "").trim();
+      const countryCell = readCountryCell(row);
 
       if (!sku) {
         results.errors.push({ row: rowNum, name: "?", error: "Missing SKU" });
@@ -2412,9 +2546,12 @@ export const bulkUpdateProductsBySku = async (req, res) => {
             $set["details.packer"] = isClearToken(row.packer) ? "" : String(row.packer).trim();
           }
 
-          // countryPricing — full replacement (all entries in the cell replace what's in DB)
-          if (!isBlank(row.countryPricing)) {
-            $set["countryPricing"] = isClearToken(row.countryPricing) ? [] : _parseCountryPricing(row.countryPricing);
+          // Country Prices — merged per country, exactly like Bulk Price Update
+          // (countries not in the cell are kept, __CLEAR__ as a price removes one).
+          if (!isBlank(countryCell)) {
+            const merged = mergeCountryPricesCell(countryCell, productByCode.countryPricing);
+            if (merged.errors.length) throw new Error(merged.errors.join("; "));
+            if (merged.touched) $set["countryPricing"] = merged.countryPricing;
           }
 
           // colorName on a product-level row is meaningless — warn rather than error.
@@ -2459,7 +2596,7 @@ export const bulkUpdateProductsBySku = async (req, res) => {
         // 2) Try variant-level: colorVariants.sku. Use find() to detect ambiguity.
         const variantMatches = await Product.find(
           { "colorVariants.sku": sku },
-          "_id name colorVariants price mrp wholesalePrice wholesaleMinQty countInStock",
+          "_id name colorVariants price mrp wholesalePrice wholesaleMinQty countInStock countryPricing",
         );
 
         if (variantMatches.length === 0) {
@@ -2515,8 +2652,15 @@ export const bulkUpdateProductsBySku = async (req, res) => {
           $set[`${base}.images`] = isClearToken(row.images) ? [] : parseImageList(row.images);
         }
 
-        if (!isBlank(row.countryPricing)) {
-          $set[`${base}.countryPricing`] = isClearToken(row.countryPricing) ? [] : _parseCountryPricing(row.countryPricing);
+        if (!isBlank(countryCell)) {
+          const vMerged = mergeCountryPricesCell(countryCell, parent.colorVariants[variantIdx].countryPricing);
+          if (vMerged.errors.length) throw new Error(vMerged.errors.join("; "));
+          if (vMerged.touched) $set[`${base}.countryPricing`] = vMerged.countryPricing;
+          // The first variant also drives the product's own country prices.
+          if (variantIdx === 0) {
+            const pMerged = mergeCountryPricesCell(countryCell, parent.countryPricing);
+            if (pMerged.touched) $set.countryPricing = pMerged.countryPricing;
+          }
         }
 
         // Mirror to top-level when updating the first variant (matches existing bulkUpdatePrices).

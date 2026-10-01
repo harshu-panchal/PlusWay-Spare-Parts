@@ -635,6 +635,30 @@ const OfferManagement = () => {
     const [editor, setEditor] = useState(null); // form state when open
     const [opening, setOpening] = useState(null); // id of the offer being loaded for edit
 
+    const [showInHeader, setShowInHeader] = useState(null); // null until loaded
+    const [headerSaving, setHeaderSaving] = useState(false);
+
+    useEffect(() => {
+        axios
+            .get(API_ENDPOINTS.GET_SETTINGS)
+            .then(({ data }) => setShowInHeader(data?.header?.showOffersLink !== false))
+            .catch(() => setShowInHeader(true));
+    }, []);
+
+    const toggleHeaderLink = async (next) => {
+        setHeaderSaving(true);
+        const previous = showInHeader;
+        setShowInHeader(next);
+        try {
+            await axios.put(API_ENDPOINTS.UPDATE_SETTINGS, { header: { showOffersLink: next } }, authConfig());
+        } catch {
+            setShowInHeader(previous);
+            setError("Couldn't update the header setting");
+        } finally {
+            setHeaderSaving(false);
+        }
+    };
+
     const loadOffers = useCallback(async () => {
         try {
             const { data } = await axios.get(API_ENDPOINTS.ADMIN_OFFERS, authConfig());
@@ -705,6 +729,25 @@ const OfferManagement = () => {
                     )}
                 </div>
             </div>
+
+            {/* Header link toggle */}
+            <label className="flex items-center justify-between gap-4 p-4 bg-white border border-gray-200 rounded-xl shadow-sm cursor-pointer">
+                <span>
+                    <span className="block text-sm font-bold text-gray-900">Show “Offers” link in store header</span>
+                    <span className="block text-xs text-gray-500 mt-0.5">Turn off to hide the Offers link from the storefront navigation. The /offers page itself stays reachable.</span>
+                </span>
+                <span className="relative inline-flex items-center shrink-0">
+                    <input
+                        type="checkbox"
+                        className="sr-only peer"
+                        checked={!!showInHeader}
+                        disabled={headerSaving || showInHeader === null}
+                        onChange={(e) => toggleHeaderLink(e.target.checked)}
+                    />
+                    <span className="w-11 h-6 bg-gray-200 rounded-full peer-checked:bg-blue-600 peer-disabled:opacity-50 transition-colors" />
+                    <span className="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5" />
+                </span>
+            </label>
 
             {/* Tabs */}
             <div className="flex gap-1 border-b border-gray-200">

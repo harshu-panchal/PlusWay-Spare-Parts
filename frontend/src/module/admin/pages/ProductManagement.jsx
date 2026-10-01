@@ -791,7 +791,7 @@ const ProductManagement = () => {
     { header: "packer", key: "packer", example: "Elcotek India Pvt Ltd, New Delhi", example2: "" },
     { header: "highlights", key: "highlights", example: "Super AMOLED|Fast Charging|5G Ready", example2: "Long Life|Safe Chemistry" },
     { header: "descriptionPoints", key: "descriptionPoints", example: "100% Original Part|Quality Tested", example2: "Safe and reliable" },
-    { header: "countryPricing", key: "countryPricing", example: "AE|United Arab Emirates|AED|د.إ|80|65|10|100||US|United States|USD|$|25|20|10|30", example2: "" },
+    { header: "Country Prices", key: "Country Prices", example: "AE, United Arab Emirates, 25, 30, 20, 10 | US, United States, 7, 9", example2: "DE, Germany, 17.5, 21" },
     { header: "status", key: "status", example: "", example2: "" },
   ];
 
@@ -2209,7 +2209,7 @@ const ProductManagement = () => {
           { header: "countryOfOrigin", key: "countryOfOrigin", example: "", example2: "India" },
           { header: "packer", key: "packer", example: "", example2: "Elcotek India Pvt Ltd, New Delhi" },
           { header: "colors", key: "colors", example: "", example2: "Black,White" },
-          { header: "countryPricing", key: "countryPricing", example: "AE|United Arab Emirates|AED|د.إ|80|65|10|100", example2: "" },
+          { header: "Country Prices", key: "Country Prices", example: "AE, United Arab Emirates, 25, 30, 20, 10 | US, United States, 7, 9", example2: "DE, Germany, 17.5, 21" },
           { header: "status", key: "status", example: "", example2: "" },
         ]}
         templateSheetName="Bulk Update Products"

@@ -886,12 +886,14 @@ const Header = () => {
           </div>
 
           <div className="flex-1 min-w-0 flex gap-3 md:gap-8 px-2 md:px-8 items-center h-full text-[9px] md:text-[11px] font-black uppercase tracking-wide md:tracking-widest overflow-x-auto no-scrollbar whitespace-nowrap">
-            <Link
-              to="/offers"
-              className="flex items-center gap-1 text-primary hover:text-orange-300 transition-colors shrink-0">
-              <Flame size={13} className="animate-pulse" />
-              Offers
-            </Link>
+            {settings?.header?.showOffersLink !== false && (
+              <Link
+                to="/offers"
+                className="flex items-center gap-1 text-primary hover:text-orange-300 transition-colors shrink-0">
+                <Flame size={13} className="animate-pulse" />
+                Offers
+              </Link>
+            )}
             {FEATURED_NAV_ITEMS.map((item) => {
               const targetPath = getFeaturedItemPath(item);
               return (

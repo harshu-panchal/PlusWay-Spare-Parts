@@ -7,6 +7,9 @@ const settingSchema = new mongoose.Schema(
       siteTagline: { type: String, default: "Your trusted mobile spare parts partner" },
       siteLogoUrl: { type: String, default: "" },
     },
+    header: {
+      showOffersLink: { type: Boolean, default: true },
+    },
     contact: {
       supportPhone:   { type: String, default: "+91 9870162128" },
       whatsappNumber: { type: String, default: "919870162128" },

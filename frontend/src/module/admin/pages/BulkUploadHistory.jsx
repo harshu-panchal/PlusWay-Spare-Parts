@@ -153,7 +153,7 @@ const BulkUploadHistory = () => {
                       <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
                         record.uploadType === 'Products' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-purple-50 text-purple-700 border border-purple-200'
                       }`}>
-                        {record.uploadType}
+                        {record.uploadType === 'PricesUpdate' ? 'Price Update' : record.uploadType === 'ProductsUpdate' ? 'Products Update' : record.uploadType}
                       </span>
                     </td>
                     <td className="px-6 py-4 font-bold text-gray-700">

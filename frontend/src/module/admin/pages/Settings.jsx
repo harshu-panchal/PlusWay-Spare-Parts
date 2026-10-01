@@ -13,6 +13,7 @@ const DEFAULTS = {
     siteTagline: "Your trusted mobile spare parts partner",
     siteLogoUrl: "",
   },
+  header: { showOffersLink: true },
   contact: {
     supportPhone: "+91 9870162128",
     whatsappNumber: "919870162128",
@@ -111,6 +112,7 @@ const Settings = () => {
         setForm((prev) => ({
           ...prev,
           general:  { ...prev.general,  ...data.general },
+          header:   { ...prev.header,   ...data.header },
           contact:  { ...prev.contact,  ...data.contact },
           social:   { ...prev.social,   ...data.social },
           shipping: { ...prev.shipping, ...data.shipping },
@@ -202,6 +204,7 @@ const Settings = () => {
               <Field label="Site Logo URL">
                 <Input section="general" field="siteLogoUrl" placeholder="https://example.com/logo.png" />
               </Field>
+              <Toggle section="header" field="showOffersLink" label="Show “Offers” in header" description="Display the Offers link in the storefront's navigation bar" />
             </div>
           )}
 
