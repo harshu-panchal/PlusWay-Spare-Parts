@@ -21,7 +21,7 @@ export const updateSettings = asyncHandler(async (req, res) => {
     settings = new Setting();
   }
 
-  const SECTIONS = ["general", "contact", "social", "shipping", "payments", "seo"];
+  const SECTIONS = ["general", "contact", "social", "shipping", "seo"];
 
   // For each top-level section, merge field-by-field so omitted fields are left unchanged.
   SECTIONS.forEach((section) => {

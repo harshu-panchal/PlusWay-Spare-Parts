@@ -3,11 +3,12 @@ import axios from "axios";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { API_ENDPOINTS } from "../../../config/api";
+import RevenueBars from "../components/RevenueBars";
+import { formatInr } from "../../../utils/formatInr";
 import {
     Wallet as WalletIcon,
     TrendingUp,
     Clock,
-    ArrowUpRight,
     ArrowDownRight,
     Download,
     Filter,
@@ -16,9 +17,46 @@ import {
     History,
     CheckCircle2,
     AlertCircle,
-    ExternalLink,
     Plus,
 } from "lucide-react";
+
+// "YYYY-MM-DD" -> "Sep 23". Parsed as a local date so it never shifts a day
+// (new Date("2026-09-23") is UTC midnight and can render as Sep 22).
+const formatTrendDay = (isoDay) => {
+    const [y, m, d] = isoDay.split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString([], { month: "short", day: "numeric" });
+};
+
+const RevenueTrendChart = ({ trend = [] }) => {
+    const totalRevenue = trend.reduce((sum, d) => sum + d.revenue, 0);
+    const points = trend.map((day) => ({
+        key: day._id,
+        label: formatTrendDay(day._id),
+        revenue: day.revenue,
+        orders: day.orders,
+    }));
+
+    return (
+        <div className="lg:col-span-3 bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100">
+            <div className="flex flex-wrap items-start justify-between gap-4 mb-8">
+                <div>
+                    <h3 className="text-lg font-bold text-gray-900">Revenue Trend</h3>
+                    <p className="text-xs text-gray-500 mt-1">Paid order revenue per day, last 14 days (IST).</p>
+                </div>
+                <div className="sm:text-right">
+                    <p className="text-xl font-bold text-gray-900">{formatInr(totalRevenue)}</p>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">14-day total</p>
+                </div>
+            </div>
+            <RevenueBars
+                points={points}
+                labelEvery={2}
+                emptyText="No paid orders in the last 14 days"
+                tableCaption="Daily paid order revenue, last 14 days"
+            />
+        </div>
+    );
+};
 
 const Wallet = () => {
     const [data, setData] = useState({
@@ -195,51 +233,10 @@ const Wallet = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Revenue Trend Chart */}
-                <div className="lg:col-span-3 bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-                    <div className="flex items-center justify-between mb-8">
-                        <div>
-                            <h3 className="text-lg font-bold text-gray-900">Revenue Trend</h3>
-                            <p className="text-xs text-gray-500 mt-1">Earnings visualization for the last 14 days.</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold">
-                                <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                                SALES REVENUE
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="relative h-48 flex items-end gap-2 px-4 border-b border-gray-100 pb-2">
-                        {data.revenueTrend && data.revenueTrend.length > 0 ? (
-                            data.revenueTrend.map((day, idx) => {
-                                const maxVal = Math.max(...data.revenueTrend.map(d => d.revenue)) || 1;
-                                const height = (day.revenue / maxVal) * 100;
-                                return (
-                                    <div key={idx} className="flex-1 flex flex-col items-center group relative">
-                                        <div
-                                            className="w-full bg-blue-600 rounded-t-lg transition-all duration-500 hover:bg-blue-700"
-                                            style={{ height: `${Math.max(height, 5)}%` }}
-                                        >
-                                            <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] font-bold py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                                                ₹{day.revenue.toLocaleString()}
-                                            </div>
-                                        </div>
-                                        <span className="text-[10px] text-gray-400 font-bold mt-2 rotate-45 origin-left whitespace-nowrap">{new Date(day._id).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
-                                    </div>
-                                );
-                            })
-                        ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gray-300 text-sm italic">
-                                Insufficient data for trend visualization
-                            </div>
-                        )}
-                    </div>
-                    <div className="mt-8"></div>
-                </div>
+                <RevenueTrendChart trend={data.revenueTrend} />
 
                 {/* Transaction History */}
-                <div className="lg:col-span-2 space-y-4">
+                <div className="lg:col-span-3 space-y-4">
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                         <div className="p-6 border-b border-gray-50 flex items-center justify-between bg-white">
                             <div className="flex items-center gap-3">
@@ -310,59 +307,6 @@ const Wallet = () => {
                         </div>
                         <div className="p-4 border-t border-gray-50 bg-gray-50/30 text-center">
                             <button className="text-xs font-bold text-blue-600 hover:underline">VIEW FULL HISTORY</button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Payment Methods & Quick Actions */}
-                <div className="space-y-8">
-                    <div className="bg-gradient-to-br from-[#0F172A] to-[#1E293B] p-8 rounded-3xl shadow-xl shadow-blue-900/10 relative overflow-hidden group">
-                        <div className="absolute -right-8 -top-8 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all duration-500"></div>
-                        <div className="relative z-10">
-                            <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white mb-6 shadow-lg shadow-blue-600/20">
-                                <WalletIcon size={24} />
-                            </div>
-                            <h3 className="text-white text-lg font-bold">Total Payouts</h3>
-                            <p className="text-gray-400 text-sm mt-1">Sum of all successfully withdrawn amounts.</p>
-                            <div className="mt-8">
-                                <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest">Available to withdraw</p>
-                                <h2 className="text-4xl font-black text-white italic tracking-tighter mt-1">₹{data.summary.balance.toLocaleString()}</h2>
-                            </div>
-                            <button className="w-full mt-8 py-4 bg-white text-[#0F172A] rounded-2xl font-black text-sm hover:bg-gray-100 transition-all shadow-xl shadow-black/20">
-                                INITIATE WITHDRAWAL
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                        <h3 className="text-sm font-bold text-gray-900 mb-6 flex items-center justify-between">
-                            Earnings Source
-                            <span className="text-[10px] text-blue-600 hover:underline cursor-pointer">DETAILS</span>
-                        </h3>
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between p-4 rounded-xl bg-gray-50 border border-gray-100 group hover:border-blue-100 transition-all">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-blue-600 shadow-sm">
-                                        <CreditCard size={18} />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs font-bold text-gray-900">Direct Sales</p>
-                                        <p className="text-[10px] text-gray-400 uppercase">92% of revenue</p>
-                                    </div>
-                                </div>
-                                <ArrowUpRight size={16} className="text-gray-300 group-hover:text-blue-500 transition-colors" />
-                            </div>
-                            <div className="flex items-center justify-between p-4 rounded-xl bg-gray-50 border border-gray-100 group hover:border-blue-100 transition-all opacity-50">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-purple-600 shadow-sm">
-                                        <TrendingUp size={18} />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs font-bold text-gray-900">Affiliate Comm.</p>
-                                        <p className="text-[10px] text-gray-400 uppercase">Coming Soon</p>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>

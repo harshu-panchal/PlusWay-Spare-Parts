@@ -7,7 +7,13 @@ const POLL_INTERVAL = 60_000; // 60 seconds
 
 function getSeenAt() {
   try {
-    return JSON.parse(localStorage.getItem(LS_KEY) || "{}");
+    const seenAt = JSON.parse(localStorage.getItem(LS_KEY) || "{}");
+    // Older versions stored the customers timestamp under `customers`
+    if (seenAt.customers && !seenAt.customersSeenAt) {
+      seenAt.customersSeenAt = seenAt.customers;
+    }
+    delete seenAt.customers;
+    return seenAt;
   } catch {
     return {};
   }
@@ -28,6 +34,16 @@ export const NOTIF_PATH_MAP = {
   "/admin/support": "newFormSubmissions",
 };
 
+// Maps sidebar paths to the "last opened" timestamp sent to the API. Each
+// badge only counts items created after the admin last opened that page.
+const SEEN_PARAM_MAP = {
+  "/admin/orders": "ordersSeenAt",
+  "/admin/customers": "customersSeenAt",
+  "/admin/leads": "leadsSeenAt",
+  "/admin/reviews": "reviewsSeenAt",
+  "/admin/support": "formSubmissionsSeenAt",
+};
+
 export function useAdminNotifications() {
   const [counts, setCounts] = useState({
     newOrders: 0,
@@ -45,7 +61,9 @@ export function useAdminNotifications() {
 
     const seenAt = getSeenAt();
     const params = {};
-    if (seenAt.customers) params.customersSeenAt = seenAt.customers;
+    for (const param of Object.values(SEEN_PARAM_MAP)) {
+      if (seenAt[param]) params[param] = seenAt[param];
+    }
 
     try {
       const { data } = await axios.get(API_ENDPOINTS.ADMIN_NOTIFICATION_COUNTS, {
@@ -70,19 +88,13 @@ export function useAdminNotifications() {
       const key = NOTIF_PATH_MAP[path];
       if (!key) return;
 
-      // For customers we track a timestamp; for others the backend uses status so
-      // just re-fetch (the admin visiting the page is implied to handle items there)
-      if (path === "/admin/customers") {
-        const seenAt = getSeenAt();
-        seenAt.customers = Date.now();
-        saveSeenAt(seenAt);
-      }
+      const seenAt = getSeenAt();
+      seenAt[SEEN_PARAM_MAP[path]] = Date.now();
+      saveSeenAt(seenAt);
 
-      // Optimistically zero out this badge, then re-fetch for accuracy
       setCounts((prev) => ({ ...prev, [key]: 0 }));
-      fetchCounts();
     },
-    [fetchCounts]
+    []
   );
 
   return { counts, markSeen };

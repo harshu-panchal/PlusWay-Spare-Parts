@@ -70,6 +70,9 @@ export const verifyRazorpayPayment = async (req, res) => {
     if (generated_signature === razorpay_signature) {
       order.isPaid = true;
       order.paidAt = Date.now();
+      // Record the gateway that actually took the payment, even if the
+      // order was created for a different one.
+      order.paymentMethod = "razorpay";
       order.paymentResult = {
         id: razorpay_payment_id,
         status: "completed",

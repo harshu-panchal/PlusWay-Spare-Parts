@@ -84,6 +84,9 @@ export const updateOrderToPaid = async (req, res) => {
   if (order) {
     order.isPaid = true;
     order.paidAt = Date.now();
+    // This route is only used by the PayPal flow; record the gateway that
+    // actually took the payment.
+    order.paymentMethod = 'paypal';
     order.paymentResult = {
       id: req.body.id,
       status: req.body.status,

@@ -25,11 +25,6 @@ const settingSchema = new mongoose.Schema(
       estimatedDelivery:      { type: String, default: "3-5 Business Days" },
       taxPercentage:          { type: Number, default: 0 },
     },
-    payments: {
-      razorpayEnabled:     { type: Boolean, default: true },
-      codEnabled:          { type: Boolean, default: true },
-      bankTransferEnabled: { type: Boolean, default: false },
-    },
     seo: {
       metaTitle:       { type: String, default: "Plusway Spare Parts | Genuine Mobile Spare Parts Online" },
       metaDescription: { type: String, default: "Buy genuine mobile spare parts, LCD screens, batteries, and accessories for all major brands at best prices." },

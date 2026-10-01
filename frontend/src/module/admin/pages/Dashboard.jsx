@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { useNavigate } from "react-router-dom";
 import { API_ENDPOINTS } from "../../../config/api";
+import { formatInr } from "../../../utils/formatInr";
 import {
   Package,
   ShoppingCart,
@@ -11,7 +12,10 @@ import {
   TrendingUp,
   ArrowUpRight,
   ArrowDownRight,
+  Minus,
   Clock,
+  ChevronDown,
+  Check,
   ExternalLink,
   AlertCircle,
   CheckCircle2,
@@ -21,13 +25,111 @@ import {
   Box,
 } from "lucide-react";
 
+// Period options; keys match the backend's ?range= values.
+const RANGE_OPTIONS = [
+  { key: "today", label: "Today", compareLabel: "vs yesterday, same time" },
+  { key: "yesterday", label: "Yesterday", compareLabel: "vs day before" },
+  { key: "7d", label: "Last 7 Days", compareLabel: "vs previous 7 days" },
+  { key: "30d", label: "Last 30 Days", compareLabel: "vs previous 30 days" },
+  { key: "90d", label: "Last 90 Days", compareLabel: "vs previous 90 days" },
+  { key: "this_month", label: "This Month", compareLabel: "vs same days last month" },
+  { key: "last_month", label: "Last Month", compareLabel: "vs the month before" },
+  { key: "this_year", label: "This Year", compareLabel: "vs same period last year" },
+  { key: "all", label: "All Time", compareLabel: "" },
+];
+const DEFAULT_RANGE = "30d";
+const RANGE_STORAGE_KEY = "adminDashboardRange";
+
+const getStoredRange = () => {
+  try {
+    const stored = localStorage.getItem(RANGE_STORAGE_KEY);
+    return RANGE_OPTIONS.some((o) => o.key === stored) ? stored : DEFAULT_RANGE;
+  } catch {
+    return DEFAULT_RANGE;
+  }
+};
+
+// Change vs the previous period: null when there is nothing to compare.
+const getChange = (current, previous) => {
+  if (previous === null || previous === undefined) return null;
+  if (previous === 0) {
+    return current === 0 ? { label: "0%", direction: 0 } : { label: "New", direction: 1 };
+  }
+  const pct = ((current - previous) / previous) * 100;
+  const rounded = Math.round(pct * 10) / 10;
+  return {
+    label: `${rounded > 0 ? "+" : ""}${rounded.toLocaleString(undefined, { maximumFractionDigits: 1 })}%`,
+    direction: Math.sign(rounded),
+  };
+};
+
+const RangePicker = ({ value, onChange, busy }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const selected = RANGE_OPTIONS.find((o) => o.key === value) || RANGE_OPTIONS[3];
+
+  useEffect(() => {
+    if (!open) return;
+    const onClickAway = (e) => {
+      if (!ref.current?.contains(e.target)) setOpen(false);
+    };
+    const onKey = (e) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", onClickAway);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClickAway);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-600 shadow-sm hover:border-gray-300 transition-colors">
+        <Clock size={16} className={busy ? "animate-spin" : ""} />
+        {selected.label}
+        <ChevronDown size={16} className={`text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <ul
+          role="listbox"
+          aria-label="Dashboard period"
+          className="absolute right-0 mt-2 w-52 bg-white border border-gray-100 rounded-xl shadow-lg py-1 z-30">
+          {RANGE_OPTIONS.map((option) => (
+            <li key={option.key}>
+              <button
+                type="button"
+                role="option"
+                aria-selected={option.key === value}
+                onClick={() => {
+                  onChange(option.key);
+                  setOpen(false);
+                }}
+                className={`w-full flex items-center justify-between px-4 py-2 text-sm text-left hover:bg-gray-50 ${option.key === value ? "font-bold text-blue-600" : "text-gray-700"}`}>
+                {option.label}
+                {option.key === value && <Check size={14} />}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [range, setRange] = useState(getStoredRange);
   const [data, setData] = useState({
     revenue: 0,
-    activeOrders: 0,
-    totalCustomers: 0,
+    orders: 0,
+    newCustomers: 0,
     productsSold: 0,
+    previous: null,
     totalProducts: 0,
     totalCategories: 0,
     totalBrands: 0,
@@ -36,118 +138,125 @@ const Dashboard = () => {
     lowStockProducts: [],
   });
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    try {
+      localStorage.setItem(RANGE_STORAGE_KEY, range);
+    } catch {
+      // Storage unavailable; the choice just won't be remembered.
+    }
+
+    let cancelled = false;
     const fetchData = async () => {
+      setRefreshing(true);
       try {
         const token = localStorage.getItem("adminToken");
-        const config = {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        };
-
-        const { data } = await axios.get(
-          API_ENDPOINTS.ADMIN_DASHBOARD_STATS,
-          config
-        );
-
+        const { data } = await axios.get(API_ENDPOINTS.ADMIN_DASHBOARD_STATS, {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { range },
+        });
+        if (cancelled) return;
         setData(data);
-        setLoading(false);
-      } catch (err) {
-        setError("Failed to fetch dashboard data");
-        setLoading(false);
+        setError(null);
+      } catch {
+        if (!cancelled) setError("Failed to fetch dashboard data");
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+          setRefreshing(false);
+        }
       }
     };
 
     fetchData();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [range]);
+
+  const rangeOption = RANGE_OPTIONS.find((o) => o.key === range) || RANGE_OPTIONS[3];
+  const previous = data.previous;
+
+  // Metrics for the selected period, compared with the previous one
+  const periodStat = (name, key, format = (v) => v.toLocaleString()) => ({
+    name,
+    value: format(data[key] || 0),
+    change: getChange(data[key] || 0, previous ? previous[key] : null),
+    footer: previous ? rangeOption.compareLabel : rangeOption.label,
+    previousValue: previous ? format(previous[key] || 0) : null,
+  });
+
+  // Catalog totals: not tied to the period
+  const catalogStat = (name, key) => ({
+    name,
+    value: (data[key] || 0).toLocaleString(),
+    change: null,
+    footer: "All time",
+    previousValue: null,
+  });
 
   const stats = [
     {
-      name: "Total Revenue",
-      value: `₹${data.revenue.toLocaleString()}`,
+      ...periodStat("Revenue", "revenue", formatInr),
       icon: TrendingUp,
-      change: "+12.5%",
-      isPositive: true,
       color: "text-emerald-600",
       bgColor: "bg-emerald-50",
       borderColor: "border-emerald-100",
       href: "/admin/orders",
     },
     {
-      name: "Active Orders",
-      value: data.activeOrders,
+      ...periodStat("Orders", "orders"),
       icon: ShoppingCart,
-      change: "+5.2%",
-      isPositive: true,
       color: "text-blue-600",
       bgColor: "bg-blue-50",
       borderColor: "border-blue-100",
       href: "/admin/orders",
     },
     {
-      name: "Total Customers",
-      value: data.totalCustomers,
+      ...periodStat("New Customers", "newCustomers"),
       icon: Users,
-      change: "+18.7%",
-      isPositive: true,
       color: "text-purple-600",
       bgColor: "bg-purple-50",
       borderColor: "border-purple-100",
       href: "/admin/customers",
     },
     {
-      name: "Products Sold",
-      value: data.productsSold,
+      ...periodStat("Products Sold", "productsSold"),
       icon: Package,
-      change: "-2.4%",
-      isPositive: false,
       color: "text-amber-600",
       bgColor: "bg-amber-50",
       borderColor: "border-amber-100",
       href: "/admin/orders",
     },
     {
-      name: "Total Products",
-      value: data.totalProducts,
+      ...catalogStat("Total Products", "totalProducts"),
       icon: Box,
-      change: "+4.1%",
-      isPositive: true,
       color: "text-indigo-600",
       bgColor: "bg-indigo-50",
       borderColor: "border-indigo-100",
       href: "/admin/products",
     },
     {
-      name: "Total Categories",
-      value: data.totalCategories,
+      ...catalogStat("Total Categories", "totalCategories"),
       icon: Layers,
-      change: "+2.4%",
-      isPositive: true,
       color: "text-rose-600",
       bgColor: "bg-rose-50",
       borderColor: "border-rose-100",
       href: "/admin/categories",
     },
     {
-      name: "Total Brands",
-      value: data.totalBrands,
+      ...catalogStat("Total Brands", "totalBrands"),
       icon: ShieldCheck,
-      change: "+1.2%",
-      isPositive: true,
       color: "text-cyan-600",
       bgColor: "bg-cyan-50",
       borderColor: "border-cyan-100",
       href: "/admin/brands",
     },
     {
-      name: "Total Models",
-      value: data.totalModels,
+      ...catalogStat("Total Models", "totalModels"),
       icon: Smartphone,
-      change: "+8.9%",
-      isPositive: true,
       color: "text-orange-600",
       bgColor: "bg-orange-50",
       borderColor: "border-orange-100",
@@ -159,8 +268,10 @@ const Dashboard = () => {
     // 1. Prepare Overview Data
     const overviewData = stats.map(stat => ({
       Metric: stat.name,
+      Period: stat.footer === "All time" ? "All time" : rangeOption.label,
       Value: stat.value,
-      Change: stat.change
+      "Previous Period": stat.previousValue ?? "",
+      Change: stat.change?.label ?? ""
     }));
 
     // 2. Prepare Recent Orders Data
@@ -191,7 +302,7 @@ const Dashboard = () => {
     const wsStock = XLSX.utils.json_to_sheet(lowStockData);
 
     // Adjust column widths
-    wsOverview["!cols"] = [{ wch: 25 }, { wch: 15 }, { wch: 10 }];
+    wsOverview["!cols"] = [{ wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 18 }, { wch: 10 }];
     wsOrders["!cols"] = [{ wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 25 }, { wch: 30 }, { wch: 15 }, { wch: 20 }, { wch: 15 }];
     wsStock["!cols"] = [{ wch: 40 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
 
@@ -202,7 +313,7 @@ const Dashboard = () => {
     // 5. Generate and Download
     const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
     const blob = new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-    saveAs(blob, `Dashboard_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+    saveAs(blob, `Dashboard_Report_${range}_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   if (loading) {
@@ -226,10 +337,7 @@ const Dashboard = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-600 shadow-sm">
-            <Clock size={16} />
-            Last 30 Days
-          </div>
+          <RangePicker value={range} onChange={setRange} busy={refreshing} />
           <button 
             onClick={handleExport}
             className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all">
@@ -239,7 +347,7 @@ const Dashboard = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 transition-opacity ${refreshing ? "opacity-60" : ""}`}>
         {stats.map((stat) => (
           <div
             key={stat.name}
@@ -249,10 +357,26 @@ const Dashboard = () => {
               <div className={`p-3 rounded-xl ${stat.bgColor} ${stat.color} transition-colors`}>
                 <stat.icon size={22} />
               </div>
-              <div className={`flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-full ${stat.isPositive ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"}`}>
-                {stat.isPositive ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-                {stat.change}
-              </div>
+              {stat.change && (
+                <div
+                  title={stat.previousValue !== null ? `Previous period: ${stat.previousValue}` : undefined}
+                  className={`flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-full ${
+                    stat.change.direction > 0
+                      ? "bg-emerald-50 text-emerald-600"
+                      : stat.change.direction < 0
+                        ? "bg-rose-50 text-rose-600"
+                        : "bg-gray-100 text-gray-500"
+                  }`}>
+                  {stat.change.direction > 0 ? (
+                    <ArrowUpRight size={12} />
+                  ) : stat.change.direction < 0 ? (
+                    <ArrowDownRight size={12} />
+                  ) : (
+                    <Minus size={12} />
+                  )}
+                  {stat.change.label}
+                </div>
+              )}
             </div>
             <div className="mt-5">
               <h3 className="text-gray-500 text-xs font-bold uppercase tracking-wider">
@@ -264,7 +388,9 @@ const Dashboard = () => {
             </div>
             <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
               <span className="text-[10px] text-gray-400 font-medium">
-                vs previous period
+                {stat.previousValue !== null
+                  ? `${stat.footer} (${stat.previousValue})`
+                  : stat.footer}
               </span>
               <ExternalLink size={12} className="text-gray-300 group-hover:text-blue-500 transition-colors" />
             </div>

@@ -1,21 +1,29 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useLocation } from "react-router-dom";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { API_ENDPOINTS } from "../../../config/api";
 import { CheckCircle2, Clock, Truck, Package, ChevronRight, MapPin, Phone, Loader2, AlertCircle, CreditCard } from 'lucide-react';
 import LazyImage from '../../../components/LazyImage';
-import { useCart } from '../context/CartContext';
+import useOrderPayment, { toPaypalUsdAmount } from '../hooks/useOrderPayment';
+
+const PAYMENT_METHOD_LABELS = {
+    paypal: "PayPal",
+    razorpay: "Razorpay (Cards, UPI, NetBanking)",
+    cod: "Cash on Delivery",
+};
 
 const OrderDetails = () => {
     const { id } = useParams();
+    const location = useLocation();
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [sdkReady, setSdkReady] = useState(false);
-    const [clientId, setClientId] = useState("");
-    const { fetchCart } = useCart();
-    const razorpayLoadPromise = React.useRef(null);
+    const [paying, setPaying] = useState(false);
+    // Outcome passed from Checkout (justPaid / paymentCancelled / paymentError),
+    // replaced by the outcome of a payment retried on this page.
+    const [notice, setNotice] = useState(location.state || {});
+    const { paypalClientId, capturePaypal, startRazorpay } = useOrderPayment();
 
     const getToken = () => {
         const userInfo = localStorage.getItem("userInfo");
@@ -25,20 +33,6 @@ const OrderDetails = () => {
     const getConfig = () => ({
         headers: { Authorization: `Bearer ${getToken()}` },
     });
-
-    useEffect(() => {
-        const fetchClientId = async () => {
-            try {
-                const { data } = await axios.get(API_ENDPOINTS.PAYPAL_CONFIG, getConfig());
-                setClientId(data);
-                setSdkReady(true);
-            } catch (err) {
-                console.error("Error fetching PayPal Config:", err);
-            }
-        };
-
-        fetchClientId();
-    }, []);
 
     useEffect(() => {
         const fetchOrder = async () => {
@@ -58,106 +52,25 @@ const OrderDetails = () => {
         fetchOrder();
     }, [id]);
 
-    const successPaymentHandler = async (paymentResult) => {
-        try {
-            const { data } = await axios.put(
-                API_ENDPOINTS.ORDER_PAY(id),
-                paymentResult,
-                getConfig()
-            );
-            setOrder(data);
-            fetchCart(); // Update cart count
-            alert("Payment Successful!");
-        } catch (err) {
-            alert(err.response?.data?.message || "Payment failed");
-        }
+    const handlePaid = (paidOrder) => {
+        setOrder(paidOrder);
+        setNotice({ justPaid: true });
     };
-
-    const loadRazorpay = () => {
-        if (!razorpayLoadPromise.current) {
-            razorpayLoadPromise.current = new Promise((resolve) => {
-                if (window.Razorpay) {
-                    resolve(true);
-                    return;
-                }
-                const script = document.createElement("script");
-                script.src = "https://checkout.razorpay.com/v1/checkout.js";
-                script.onload = () => resolve(true);
-                script.onerror = () => resolve(false);
-                document.body.appendChild(script);
-            });
-        }
-        return razorpayLoadPromise.current;
-    };
-
-    // Preload the Razorpay SDK as soon as the order is known, so the script
-    // is already cached by the time the user clicks "Pay Now". This keeps
-    // the click-to-open gap short enough that Safari doesn't treat the
-    // checkout popup as unrequested and block it.
-    useEffect(() => {
-        if (order && !order.isPaid) {
-            loadRazorpay();
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [order?._id]);
 
     const handleRazorpayPayment = async () => {
-        const res = await loadRazorpay();
-        if (!res) {
-            alert("Razorpay SDK failed to load. Are you online?");
-            return;
-        }
-
-        try {
-            const { data: orderData } = await axios.post(
-                API_ENDPOINTS.RAZORPAY_CREATE_ORDER(order._id),
-                {},
-                getConfig()
-            );
-
-            const options = {
-                key: orderData.key_id,
-                amount: orderData.amount,
-                currency: orderData.currency,
-                name: "Plusway Spare Parts",
-                description: "Order Payment",
-                order_id: orderData.id,
-                handler: async function (response) {
-                    try {
-                        const verifyData = {
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_signature: response.razorpay_signature
-                        };
-                        const { data } = await axios.post(
-                            API_ENDPOINTS.RAZORPAY_VERIFY(order._id),
-                            verifyData,
-                            getConfig()
-                        );
-                        setOrder(data);
-                        fetchCart(); // Update cart count
-                        alert("Payment Successful!");
-                    } catch (err) {
-                        alert(err.response?.data?.message || "Payment verification failed");
-                    }
-                },
-                prefill: {
-                    name: order.customer?.name,
-                    email: order.customer?.email,
-                    contact: order.customer?.mobile
-                },
-                theme: {
-                    color: "#3399cc",
-                },
-            };
-
-            const paymentObject = new window.Razorpay(options);
-            paymentObject.open();
-
-        } catch (err) {
-            console.error(err);
-            alert(err.response?.data?.message || "Error creating Razorpay order");
-        }
+        if (paying) return;
+        setPaying(true);
+        await startRazorpay(order, {
+            onSuccess: (paidOrder) => {
+                setPaying(false);
+                handlePaid(paidOrder);
+            },
+            onDismiss: () => setPaying(false),
+            onError: (message) => {
+                setPaying(false);
+                setNotice({ paymentError: message });
+            },
+        });
     };
 
     if (loading)
@@ -187,6 +100,31 @@ const OrderDetails = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Main Info */}
                     <div className="lg:col-span-2 space-y-6">
+
+                        {/* Payment outcome */}
+                        {notice.justPaid && order.isPaid && (
+                            <div className="p-6 rounded-2xl border bg-green-50 border-green-200 flex items-start gap-3">
+                                <CheckCircle2 size={22} className="text-green-600 shrink-0" />
+                                <div>
+                                    <h3 className="font-black text-green-700 uppercase tracking-tight">Payment successful</h3>
+                                    <p className="text-xs font-bold text-green-700/80">Thank you! Your order has been placed and is being processed.</p>
+                                </div>
+                            </div>
+                        )}
+                        {!order.isPaid && (notice.paymentCancelled || notice.paymentError) && (
+                            <div className="p-6 rounded-2xl border bg-red-50 border-red-200 flex items-start gap-3">
+                                <AlertCircle size={22} className="text-red-600 shrink-0" />
+                                <div>
+                                    <h3 className="font-black text-red-700 uppercase tracking-tight">
+                                        {notice.paymentError ? "Payment failed" : "Payment not completed"}
+                                    </h3>
+                                    <p className="text-xs font-bold text-red-700/80">
+                                        {notice.paymentError ? `${notice.paymentError}. ` : ""}
+                                        Your order is saved. Complete the payment using the options in the order summary.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Statuses */}
                         <div className="grid grid-cols-2 gap-4">
@@ -221,8 +159,10 @@ const OrderDetails = () => {
                             <h2 className="text-sm font-black text-secondary uppercase tracking-widest flex items-center gap-2">
                                 <CreditCard size={16} /> Payment Method
                             </h2>
-                            <p className="text-sm text-gray-600 font-bold uppercase">
-                                {order.paymentMethod}
+                            <p className="text-sm text-gray-600 font-bold">
+                                {order.isPaid || order.paymentMethod === 'cod'
+                                    ? PAYMENT_METHOD_LABELS[order.paymentMethod] || order.paymentMethod
+                                    : "Awaiting payment"}
                             </p>
                         </div>
 
@@ -296,25 +236,31 @@ const OrderDetails = () => {
                                     ) : (
                                         <>
                                             {/* PayPal Button */}
-                                            {sdkReady && clientId ? (
-                                                <PayPalScriptProvider options={{ "client-id": clientId, currency: "USD" }}>
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                                                Complete your payment
+                                            </p>
+                                            {paypalClientId ? (
+                                                <PayPalScriptProvider options={{ "client-id": paypalClientId, currency: "USD" }}>
                                                     <PayPalButtons
                                                         style={{ layout: "vertical" }}
-                                                        createOrder={(data, actions) => {
-                                                            const usdAmount = (order.totalPrice * 0.0106).toFixed(2);
-                                                            return actions.order.create({
+                                                        disabled={paying}
+                                                        createOrder={(data, actions) =>
+                                                            actions.order.create({
                                                                 purchase_units: [{
                                                                     amount: {
                                                                         currency_code: "USD",
-                                                                        value: usdAmount
+                                                                        value: toPaypalUsdAmount(order.totalPrice)
                                                                     }
                                                                 }]
                                                             })
-                                                        }}
-                                                        onApprove={(data, actions) => {
-                                                            return actions.order.capture().then((details) => {
-                                                                successPaymentHandler(details);
-                                                            });
+                                                        }
+                                                        onApprove={async (data, actions) => {
+                                                            const details = await actions.order.capture();
+                                                            try {
+                                                                handlePaid(await capturePaypal(order._id, details));
+                                                            } catch (err) {
+                                                                setNotice({ paymentError: err.response?.data?.message || "Payment failed" });
+                                                            }
                                                         }}
                                                     />
                                                 </PayPalScriptProvider>
@@ -334,10 +280,11 @@ const OrderDetails = () => {
 
                                             <button
                                                 onClick={handleRazorpayPayment}
-                                                className="w-full bg-[#3399cc] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#2b88b7] transition-colors flex items-center justify-center gap-2 shadow-sm"
+                                                disabled={paying}
+                                                className="w-full bg-[#3399cc] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#2b88b7] transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
                                             >
-                                                <CreditCard size={20} />
-                                                Pay with Razorpay
+                                                {paying ? <Loader2 size={20} className="animate-spin" /> : <CreditCard size={20} />}
+                                                {paying ? "Opening payment..." : "Pay with Razorpay"}
                                             </button>
                                         </>
                                     )}

@@ -16,6 +16,19 @@ import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import axios from "axios";
 import { API_ENDPOINTS } from "../../../config/api";
+import RevenueBars from "../components/RevenueBars";
+import { formatInr } from "../../../utils/formatInr";
+
+// Month key from the API: "YYYY-MM" (older backends sent just the month
+// number 1-12). Returns e.g. "Oct" or, with `long`, "October 2026".
+const formatMonth = (key, long = false) => {
+  const [year, month] = String(key).includes("-")
+    ? String(key).split("-").map(Number)
+    : [new Date().getFullYear(), Number(key)];
+  return new Date(year, month - 1, 1).toLocaleString("default", long
+    ? { month: "long", year: "numeric" }
+    : { month: "short" });
+};
 
 const Reports = () => {
   const [dateRange, setDateRange] = useState("7d");
@@ -107,7 +120,7 @@ const Reports = () => {
 
     // 4. Monthly Sales
     const monthlyData = (data.monthlySales || []).map(month => ({
-      "Month": new Date(0, month._id - 1).toLocaleString('default', { month: 'long' }),
+      "Month": formatMonth(month._id, true),
       "Revenue (₹)": month.revenue,
       "Orders": month.orders
     }));
@@ -266,65 +279,32 @@ const Reports = () => {
         </div>
       </div>
 
-      {/* Monthly Sales Trend Placeholder */}
+      {/* Monthly Sales Trend */}
       <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-        <div className="flex items-center justify-between mb-8">
-          <h3 className="text-lg font-black text-secondary uppercase tracking-tight">Sales Trend (Last 6 Months)</h3>
-          <div className="flex gap-2">
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-primary"></div>
-              <span className="text-xs font-bold text-gray-500">Revenue</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-secondary"></div>
-              <span className="text-xs font-bold text-gray-500">Orders</span>
-            </div>
+        <div className="flex flex-wrap items-start justify-between gap-4 mb-8">
+          <div>
+            <h3 className="text-lg font-black text-secondary uppercase tracking-tight">Sales Trend (Last 6 Months)</h3>
+            <p className="text-xs text-gray-500 mt-1">Paid order revenue per month (IST). Order counts shown under each month.</p>
+          </div>
+          <div className="sm:text-right">
+            <p className="text-xl font-bold text-gray-900">
+              {formatInr((data?.monthlySales || []).reduce((sum, m) => sum + m.revenue, 0))}
+            </p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">6-month total</p>
           </div>
         </div>
-        <div className="h-64 flex items-end justify-between gap-4 px-4">
-          {data && data.monthlySales && data.monthlySales.length > 0 ? (
-            data.monthlySales.map((item, index) => {
-              // Find max values for scaling
-              const maxRevenue = Math.max(...data.monthlySales.map(i => i.revenue));
-              const maxOrders = Math.max(...data.monthlySales.map(i => i.orders));
-
-              const revenueHeight = maxRevenue > 0 ? (item.revenue / maxRevenue) * 100 : 0;
-              const ordersHeight = maxOrders > 0 ? (item.orders / maxOrders) * 100 : 0;
-
-              const monthName = new Date(0, item._id - 1).toLocaleString('default', { month: 'short' });
-
-              return (
-                <div key={index} className="flex-1 flex flex-col items-center gap-3">
-                  <div className="w-full flex justify-center gap-1 h-full items-end">
-                    <div
-                      className="w-full max-w-[20px] bg-primary rounded-t-lg transition-all duration-1000 group relative"
-                      style={{ height: `${revenueHeight}%` }}
-                    >
-                      <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                        ₹{item.revenue.toLocaleString()}
-                      </div>
-                    </div>
-                    <div
-                      className="w-full max-w-[20px] bg-secondary/20 rounded-t-lg transition-all duration-1000 group relative"
-                      style={{ height: `${ordersHeight * 0.7}%` }}
-                    >
-                      <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                        {item.orders} Orders
-                      </div>
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                    {monthName}
-                  </span>
-                </div>
-              );
-            })
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
-              No sales data available.
-            </div>
-          )}
-        </div>
+        <RevenueBars
+          heightClass="h-64"
+          showOrdersOnAxis
+          points={(data?.monthlySales || []).map((m) => ({
+            key: String(m._id),
+            label: formatMonth(m._id),
+            revenue: m.revenue,
+            orders: m.orders,
+          }))}
+          emptyText="No paid orders in the last 6 months"
+          tableCaption="Monthly paid order revenue, last 6 months"
+        />
       </div>
     </div>
   );

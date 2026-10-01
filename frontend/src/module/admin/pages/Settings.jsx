@@ -3,7 +3,7 @@ import axios from "axios";
 import { API_ENDPOINTS } from "../../../config/api";
 import {
   Phone, Mail, MapPin, Facebook, Twitter, Instagram, Youtube,
-  Save, Globe, Shield, Truck, CreditCard, MessageCircle, Search,
+  Save, Globe, Shield, Truck, MessageCircle, Search,
   CheckCircle, AlertCircle,
 } from "lucide-react";
 
@@ -26,7 +26,6 @@ const DEFAULTS = {
     estimatedDelivery: "3-5 Business Days",
     taxPercentage: 0,
   },
-  payments: { razorpayEnabled: true, codEnabled: true, bankTransferEnabled: false },
   seo: {
     metaTitle: "Plusway Spare Parts | Genuine Mobile Spare Parts Online",
     metaDescription: "",
@@ -51,7 +50,6 @@ const Settings = () => {
           contact:  { ...prev.contact,  ...data.contact },
           social:   { ...prev.social,   ...data.social },
           shipping: { ...prev.shipping, ...data.shipping },
-          payments: { ...prev.payments, ...data.payments },
           seo:      { ...prev.seo,      ...data.seo },
         }));
       })
@@ -87,7 +85,6 @@ const Settings = () => {
     { id: "contact",  name: "Contact & Support", icon: Phone },
     { id: "social",   name: "Social Media",      icon: Facebook },
     { id: "shipping", name: "Shipping & Tax",    icon: Truck },
-    { id: "payments", name: "Payments",          icon: CreditCard },
     { id: "seo",      name: "SEO Settings",      icon: Search },
   ];
 
@@ -260,17 +257,6 @@ const Settings = () => {
               <p className="text-xs text-gray-500">
                 If the cart total is ≥ Free Shipping Threshold, shipping is free. Set threshold to 0 to always charge standard shipping fee. Shipping fee and tax are applied at checkout.
               </p>
-            </div>
-          )}
-
-          {/* ── PAYMENTS ── */}
-          {activeTab === "payments" && (
-            <div className="space-y-6">
-              <div className="space-y-4">
-                <Toggle section="payments" field="razorpayEnabled"     label="Razorpay"          description="Accept UPI, Cards, Netbanking" />
-                <Toggle section="payments" field="codEnabled"          label="Cash on Delivery"   description="Pay when you receive the order" />
-                <Toggle section="payments" field="bankTransferEnabled" label="Bank Transfer"       description="Direct transfer to bank account" />
-              </div>
             </div>
           )}
 

@@ -1,19 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useCart } from '../context/CartContext';
 import {
-    ChevronRight, MapPin, CreditCard, Wallet, Plus, Home, Briefcase
+    MapPin, CreditCard, Plus, Home, Briefcase, ShieldCheck, Loader2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import { API_ENDPOINTS } from '../../../config/api';
 import { useSettings } from '../../../contexts/SettingsContext';
+import useOrderPayment, { toPaypalUsdAmount } from '../hooks/useOrderPayment';
 
 const emptyAddressForm = {
     type: 'Home', name: '', mobile: '', street: '', landmark: '', city: '', state: '', pincode: ''
 };
 
 const Checkout = () => {
-    const { cartTotal, cartItems } = useCart();
+    const { cartTotal, cartItems, fetchCart } = useCart();
     const { settings } = useSettings();
     const navigate = useNavigate();
 
@@ -34,9 +36,12 @@ const Checkout = () => {
     const [addressForm, setAddressForm] = useState(emptyAddressForm);
     const [saveNewAddress, setSaveNewAddress] = useState(true);
     const [addressError, setAddressError] = useState('');
-    const [placingOrder, setPlacingOrder] = useState(false);
+    const [processing, setProcessing] = useState(false);
+    const [paymentError, setPaymentError] = useState('');
+    const paypalOrderRef = useRef(null);
+    const addressSectionRef = useRef(null);
 
-    const [paymentMethod, setPaymentMethod] = useState('paypal'); // Default to Online Payment
+    const { paypalClientId, capturePaypal, startRazorpay } = useOrderPayment();
 
     const getToken = () => {
         const userInfo = localStorage.getItem('userInfo');
@@ -71,7 +76,7 @@ const Checkout = () => {
 
     const handleAddressFieldChange = (field, value) => {
         setAddressForm({ ...addressForm, [field]: value });
-        setAddressError('');
+        setAddressError(''); setPaymentError('');
     };
 
     const validateNewAddress = () => {
@@ -84,11 +89,36 @@ const Checkout = () => {
         return '';
     };
 
+    // The address card can be far above the payment buttons (especially on
+    // mobile), so also show the error next to the buttons and scroll the
+    // address into view; otherwise a click looks like it did nothing.
+    const showAddressError = (message) => {
+        setAddressError(message);
+        setPaymentError(`${message} in the shipping address section above.`);
+        addressSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    // Synchronous check, so the PayPal button can refuse to open its popup
+    // when the address is incomplete.
+    const getAddressError = () => {
+        if (selectedAddressId) {
+            return savedAddresses.some(a => a._id === selectedAddressId)
+                ? ''
+                : 'Please select a delivery address';
+        }
+        return validateNewAddress();
+    };
+
     const resolveShippingAddress = async () => {
+        const validationError = getAddressError();
+        if (validationError) {
+            showAddressError(validationError);
+            return null;
+        }
+
         // Using a previously saved address
         if (selectedAddressId) {
             const addr = savedAddresses.find(a => a._id === selectedAddressId);
-            if (!addr) return null;
             return {
                 name: addr.name,
                 mobile: addr.mobile,
@@ -102,12 +132,6 @@ const Checkout = () => {
         }
 
         // Filling in a brand new address
-        const validationError = validateNewAddress();
-        if (validationError) {
-            setAddressError(validationError);
-            return null;
-        }
-
         if (saveNewAddress) {
             try {
                 const token = getToken();
@@ -132,19 +156,27 @@ const Checkout = () => {
         };
     };
 
-    const handlePlaceOrder = async () => {
+    // Leave checkout for the order page. The backend empties the cart when
+    // the order is created, so refresh the cart count on the way out.
+    const goToOrder = (orderId, state) => {
+        fetchCart();
+        navigate(`/order/${orderId}`, { state });
+    };
+
+    // Create the order for the chosen gateway. Returns the created order, or
+    // null if the address is invalid or the request failed.
+    const createOrder = async (paymentMethod) => {
+        setPaymentError('');
         try {
             const token = getToken();
 
             if (!token) {
-                alert("Please login first");
-                return;
+                setPaymentError('Please login first');
+                return null;
             }
 
             const shippingAddress = await resolveShippingAddress();
-            if (!shippingAddress) return;
-
-            setPlacingOrder(true);
+            if (!shippingAddress) return null;
 
             const config = {
                 headers: {
@@ -164,7 +196,7 @@ const Checkout = () => {
                     };
                 }),
                 shippingAddress,
-                paymentMethod: paymentMethod,
+                paymentMethod,
                 itemsPrice: cartTotal,
                 taxPrice,
                 shippingPrice,
@@ -172,16 +204,74 @@ const Checkout = () => {
             };
 
             const { data } = await axios.post(API_ENDPOINTS.ORDERS, orderData, config);
-
-            // Redirect to Order Details (Payment Page)
-            navigate(`/order/${data._id}`);
-
+            return data;
         } catch (error) {
             console.error("Place Order Error", error);
-            alert(error.response?.data?.message || "Failed to place order");
-        } finally {
-            setPlacingOrder(false);
+            setPaymentError(error.response?.data?.message || "Failed to place order");
+            return null;
         }
+    };
+
+    const handleRazorpay = async () => {
+        if (processing) return;
+        setProcessing(true);
+        const order = await createOrder('razorpay');
+        if (!order) {
+            setProcessing(false);
+            return;
+        }
+        await startRazorpay(order, {
+            onSuccess: (paidOrder) => goToOrder(paidOrder._id, { justPaid: true }),
+            // The order exists now, so a closed checkout continues on the
+            // order page, where payment can be completed later.
+            onDismiss: () => goToOrder(order._id, { paymentCancelled: true }),
+            onError: (message) => goToOrder(order._id, { paymentError: message }),
+        });
+    };
+
+    const handlePaypalClick = (data, actions) => {
+        const error = getAddressError();
+        if (error) {
+            showAddressError(error);
+            return actions.reject();
+        }
+        return actions.resolve();
+    };
+
+    const handlePaypalCreateOrder = async (data, actions) => {
+        const order = await createOrder('paypal');
+        if (!order) throw new Error('Order could not be created');
+        paypalOrderRef.current = order;
+        return actions.order.create({
+            purchase_units: [{
+                amount: { currency_code: 'USD', value: toPaypalUsdAmount(order.totalPrice) }
+            }]
+        });
+    };
+
+    const handlePaypalApprove = async (data, actions) => {
+        const orderId = paypalOrderRef.current._id;
+        const details = await actions.order.capture();
+        try {
+            const paidOrder = await capturePaypal(orderId, details);
+            goToOrder(paidOrder._id, { justPaid: true });
+        } catch (err) {
+            goToOrder(orderId, { paymentError: err.response?.data?.message || 'Payment failed' });
+        }
+    };
+
+    const handlePaypalCancel = () => {
+        if (paypalOrderRef.current) {
+            goToOrder(paypalOrderRef.current._id, { paymentCancelled: true });
+        }
+    };
+
+    const handlePaypalError = (err) => {
+        console.error('PayPal Error', err);
+        if (paypalOrderRef.current) {
+            goToOrder(paypalOrderRef.current._id, { paymentError: 'PayPal payment failed' });
+        }
+        // Otherwise createOrder already showed why the order wasn't placed.
     };
 
     return (
@@ -196,7 +286,7 @@ const Checkout = () => {
                     <div className="lg:col-span-8 space-y-6">
 
                         {/* Shipping Address Section */}
-                        <div className="bg-white p-8 rounded-[32px] shadow-sm border border-gray-100">
+                        <div ref={addressSectionRef} className="bg-white p-8 rounded-[32px] shadow-sm border border-gray-100 scroll-mt-28">
                             <div className="flex items-center gap-4 mb-8">
                                 <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-primary">
                                     <MapPin size={24} />
@@ -219,7 +309,7 @@ const Checkout = () => {
                                                 name="savedAddress"
                                                 className="mt-1 w-4 h-4 text-primary focus:ring-primary"
                                                 checked={selectedAddressId === addr._id}
-                                                onChange={() => { setSelectedAddressId(addr._id); setAddressError(''); }}
+                                                onChange={() => { setSelectedAddressId(addr._id); setAddressError(''); setPaymentError(''); }}
                                             />
                                             <div className="min-w-0">
                                                 <div className="flex items-center gap-2 mb-1">
@@ -245,7 +335,7 @@ const Checkout = () => {
                                             name="savedAddress"
                                             className="w-4 h-4 text-primary focus:ring-primary"
                                             checked={selectedAddressId === null}
-                                            onChange={() => { setSelectedAddressId(null); setAddressError(''); }}
+                                            onChange={() => { setSelectedAddressId(null); setAddressError(''); setPaymentError(''); }}
                                         />
                                         <Plus size={16} className="text-primary" />
                                         <span className="font-bold text-sm text-secondary">Deliver to a new address</span>
@@ -360,37 +450,6 @@ const Checkout = () => {
                             )}
                         </div>
 
-                        {/* Payment Method Section */}
-                        <div className="bg-white p-8 rounded-[32px] shadow-sm border border-gray-100">
-                            <div className="flex items-center gap-4 mb-8">
-                                <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-primary">
-                                    <CreditCard size={24} />
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-black text-secondary uppercase italic tracking-tighter">Payment <span className="text-primary italic">Method</span></h2>
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Select your preferred payment option</p>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {[
-                                    { id: 'paypal', name: 'Online Payment (Cards, UPI, NetBanking, PayPal)', icon: <CreditCard size={20} /> },
-                                ].map((method) => (
-                                    <label key={method.id} className={`flex items-center gap-4 p-5 rounded-2xl border-2 cursor-pointer transition-all group ${paymentMethod === method.id ? 'border-primary bg-white' : 'border-gray-100 bg-gray-50 hover:border-gray-300'}`}>
-                                        <input
-                                            type="radio"
-                                            name="payment"
-                                            className="w-5 h-5 text-primary focus:ring-primary"
-                                            checked={paymentMethod === method.id}
-                                            onChange={() => setPaymentMethod(method.id)}
-                                        />
-                                        <div className="text-primary font-bold">{method.icon}</div>
-                                        <span className="font-bold text-sm text-secondary">{method.name}</span>
-                                    </label>
-                                ))}
-                            </div>
-                        </div>
-
                     </div>
 
                     {/* Checkout Totals */}
@@ -419,25 +478,71 @@ const Checkout = () => {
                                       : <span className="text-secondary tracking-tighter">₹{shippingPrice.toLocaleString()}</span>
                                     }
                                 </div>
-                                {taxPrice > 0 && (
-                                  <div className="flex justify-between text-sm font-bold text-gray-500 uppercase tracking-widest">
-                                      <span>Tax ({taxPercentage}%)</span>
-                                      <span className="text-secondary tracking-tighter">₹{taxPrice.toLocaleString()}</span>
-                                  </div>
-                                )}
+                                <div className="flex justify-between text-sm font-bold text-gray-500 uppercase tracking-widest">
+                                    <span>Tax (GST{taxPercentage > 0 ? ` ${taxPercentage}%` : ''})</span>
+                                    <span className="text-secondary tracking-tighter">₹{taxPrice.toLocaleString()}</span>
+                                </div>
                                 <div className="flex justify-between items-end mb-8 pt-4 border-t border-gray-100">
                                     <span className="text-sm font-black text-secondary uppercase tracking-[0.2em]">Total Payable</span>
                                     <span className="text-3xl font-black text-primary italic tracking-tighter">₹{orderTotal.toLocaleString()}</span>
                                 </div>
                             </div>
 
-                            <button
-                                onClick={handlePlaceOrder}
-                                disabled={placingOrder}
-                                className="w-full bg-primary text-white font-black py-4 rounded-xl text-center shadow-lg hover:bg-orange-600 transition-all uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                            >
-                                {placingOrder ? 'PLACING ORDER...' : 'PLACE ORDER'} <ChevronRight size={18} />
-                            </button>
+                            {cartItems.length === 0 ? (
+                                <p className="text-center text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                    Your cart is empty
+                                </p>
+                            ) : (
+                                <div className="space-y-4">
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">
+                                        Pay securely to place your order
+                                    </p>
+
+                                    {paymentError && (
+                                        <p className="text-xs font-bold text-red-600 text-center">{paymentError}</p>
+                                    )}
+
+                                    <div className="relative z-0">
+                                        {paypalClientId ? (
+                                            <PayPalScriptProvider options={{ "client-id": paypalClientId, currency: "USD" }}>
+                                                <PayPalButtons
+                                                    style={{ layout: "vertical" }}
+                                                    disabled={processing}
+                                                    onClick={handlePaypalClick}
+                                                    createOrder={handlePaypalCreateOrder}
+                                                    onApprove={handlePaypalApprove}
+                                                    onCancel={handlePaypalCancel}
+                                                    onError={handlePaypalError}
+                                                />
+                                            </PayPalScriptProvider>
+                                        ) : (
+                                            <div className="text-center text-xs text-gray-400">Loading PayPal...</div>
+                                        )}
+                                    </div>
+
+                                    <div className="relative">
+                                        <div className="absolute inset-0 flex items-center">
+                                            <div className="w-full border-t border-gray-200"></div>
+                                        </div>
+                                        <div className="relative flex justify-center text-xs uppercase">
+                                            <span className="bg-white px-2 text-gray-400 font-bold">Or pay with</span>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={handleRazorpay}
+                                        disabled={processing}
+                                        className="w-full bg-[#3399cc] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#2b88b7] transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                                    >
+                                        {processing ? <Loader2 size={20} className="animate-spin" /> : <CreditCard size={20} />}
+                                        {processing ? 'Opening payment...' : 'Pay with Razorpay (Cards, UPI, NetBanking)'}
+                                    </button>
+
+                                    <p className="flex items-center justify-center gap-2 text-[10px] font-black uppercase text-gray-400 tracking-widest">
+                                        <ShieldCheck size={14} className="text-accent" /> 100% secure payment
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

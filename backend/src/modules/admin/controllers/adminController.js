@@ -11,6 +11,7 @@ import Lead from "../../../models/Lead.js";
 import FormSubmission from "../../../models/FormSubmission.js";
 import generateToken from "../../../utils/generateToken.js";
 import asyncHandler from "../../../middleware/asyncHandler.js";
+import { resolveDashboardRange } from "../../../utils/dateRange.js";
 
 // @desc    Auth admin & get token
 // @route   POST /api/admin/login
@@ -57,47 +58,48 @@ export const getAdminProfile = asyncHandler(async (req, res) => {
 // @route   GET /api/admin/dashboard-stats
 // @access  Private/Admin
 export const getDashboardStats = asyncHandler(async (req, res) => {
-  // 1. Total Revenue (sum of value of all paid orders)
-  const totalRevenue = await Order.aggregate([
-    {
-      $match: {
-        isPaid: true,
-        status: { $ne: "Cancelled" }, // Assuming there might be a status field, though Order model usually has isDelivered. Let's rely on isPaid for revenue.
-      },
-    },
-    {
-      $group: {
-        _id: null,
-        total: { $sum: "$totalPrice" },
-      },
-    },
-  ]);
+  // Period metrics follow the selected range (?range=today|yesterday|7d|30d|
+  // 90d|this_month|last_month|this_year|all) and are compared with the
+  // previous period of the same length. Catalog counts are all-time.
+  const range = resolveDashboardRange(req.query.range);
 
-  // 2. Active Orders (not delivered)
-  const activeOrders = await Order.countDocuments({
-    isDelivered: false,
-  });
+  const periodMetrics = async (from, to) => {
+    const paidInPeriod = {
+      isPaid: true,
+      status: { $ne: "Cancelled" },
+      paidAt: { $gte: from, $lt: to },
+    };
+    const [revenueAgg, soldAgg, orders, newCustomers] = await Promise.all([
+      // Revenue: paid orders, by payment date
+      Order.aggregate([
+        { $match: paidInPeriod },
+        { $group: { _id: null, total: { $sum: "$totalPrice" } } },
+      ]),
+      // Products sold: item quantities in those paid orders
+      Order.aggregate([
+        { $match: paidInPeriod },
+        { $unwind: "$orderItems" },
+        { $group: { _id: null, total: { $sum: "$orderItems.qty" } } },
+      ]),
+      // Orders placed in the period (paid or not)
+      Order.countDocuments({ createdAt: { $gte: from, $lt: to } }),
+      // Customers who signed up in the period
+      Customer.countDocuments({ createdAt: { $gte: from, $lt: to } }),
+    ]);
+    return {
+      revenue: revenueAgg[0]?.total || 0,
+      orders,
+      newCustomers,
+      productsSold: soldAgg[0]?.total || 0,
+    };
+  };
 
-  // 3. Total Customers
-  const totalCustomers = await Customer.countDocuments();
-
-  // 4. Products Sold
-  const productsSold = await Order.aggregate([
-    {
-      $match: {
-        isPaid: true,
-      },
-    },
-    {
-      $unwind: "$orderItems",
-    },
-    {
-      $group: {
-        _id: null,
-        total: { $sum: "$orderItems.qty" },
-      },
-    },
-  ]);
+  // `end` is "now" for open-ended ranges; nudge it so items created this
+  // millisecond are included.
+  const current = await periodMetrics(range.start, new Date(range.end.getTime() + 1));
+  const previous = range.prevStart
+    ? await periodMetrics(range.prevStart, range.prevEnd)
+    : null;
 
   // 5. Total Products
   const totalProducts = await Product.countDocuments();
@@ -123,10 +125,15 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     .limit(5);
 
   res.json({
-    revenue: totalRevenue[0]?.total || 0,
-    activeOrders,
-    totalCustomers,
-    productsSold: productsSold[0]?.total || 0,
+    range: {
+      key: range.key,
+      start: range.start,
+      end: range.end,
+      prevStart: range.prevStart,
+      prevEnd: range.prevEnd,
+    },
+    ...current,
+    previous,
     totalProducts,
     totalCategories,
     totalBrands,
@@ -238,25 +245,50 @@ export const getReportStats = asyncHandler(async (req, res) => {
   }));
 
   // 6. Monthly Sales Trend (Last 6 Months)
-  const sixMonthsAgo = new Date();
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  // Monthly sales for the last 6 calendar months (current month included),
+  // bucketed by year+month in IST by payment date. Months without sales are
+  // filled with zero so the chart always shows 6 months in order.
+  const MONTHS = 6;
+  const SALES_TZ = "Asia/Kolkata";
+  const [curYear, curMonth] = new Intl.DateTimeFormat("en-CA", {
+    timeZone: SALES_TZ,
+    year: "numeric",
+    month: "2-digit",
+  })
+    .format(new Date())
+    .split("-")
+    .map(Number);
+  const monthKeys = [];
+  for (let i = MONTHS - 1; i >= 0; i--) {
+    const d = new Date(Date.UTC(curYear, curMonth - 1 - i, 1));
+    monthKeys.push(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`);
+  }
+  // Start of the first month in IST (UTC+5:30, no DST)
+  const [firstYear, firstMonth] = monthKeys[0].split("-").map(Number);
+  const monthsStart = new Date(Date.UTC(firstYear, firstMonth - 1, 1) - 330 * 60 * 1000);
 
-  const monthlySales = await Order.aggregate([
+  const monthlyAgg = await Order.aggregate([
     {
       $match: {
         isPaid: true,
-        createdAt: { $gte: sixMonthsAgo },
+        paidAt: { $gte: monthsStart },
       },
     },
     {
       $group: {
-        _id: { $month: "$createdAt" },
+        _id: { $dateToString: { format: "%Y-%m", date: "$paidAt", timezone: SALES_TZ } },
         revenue: { $sum: "$totalPrice" },
         orders: { $sum: 1 },
       },
     },
-    { $sort: { "_id": 1 } }
   ]);
+  const monthlyByKey = new Map(monthlyAgg.map((m) => [m._id, m]));
+  // _id is "YYYY-MM"
+  const monthlySales = monthKeys.map((key) => ({
+    _id: key,
+    revenue: monthlyByKey.get(key)?.revenue || 0,
+    orders: monthlyByKey.get(key)?.orders || 0,
+  }));
 
   res.json({
     totalRevenue,
@@ -302,24 +334,41 @@ export const getWalletStats = asyncHandler(async (req, res) => {
     .sort({ paidAt: -1 })
     .limit(50);
 
-  // 5. Revenue Trend (Daily for last 14 days)
-  const fourteenDaysAgo = new Date();
-  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+  // 5. Revenue Trend (daily for the last 14 days, today included). Days are
+  // bucketed in IST, and days without sales are filled with zero so the
+  // chart always shows 14 evenly spaced days.
+  const TREND_DAYS = 14;
+  const TREND_TZ = "Asia/Kolkata";
+  const toTzDay = (date) =>
+    new Intl.DateTimeFormat("en-CA", { timeZone: TREND_TZ }).format(date); // YYYY-MM-DD
+  const trendDays = [];
+  for (let i = TREND_DAYS - 1; i >= 0; i--) {
+    trendDays.push(toTzDay(new Date(Date.now() - i * 24 * 60 * 60 * 1000)));
+  }
+  // Start a day early so the first IST day is fully covered; extra days
+  // are dropped when matching against trendDays.
+  const trendStart = new Date(Date.now() - TREND_DAYS * 24 * 60 * 60 * 1000);
   const dailyRevenue = await Order.aggregate([
     {
       $match: {
         isPaid: true,
-        paidAt: { $gte: fourteenDaysAgo },
+        paidAt: { $gte: trendStart },
       },
     },
     {
       $group: {
-        _id: { $dateToString: { format: "%Y-%m-%d", date: "$paidAt" } },
+        _id: { $dateToString: { format: "%Y-%m-%d", date: "$paidAt", timezone: TREND_TZ } },
         revenue: { $sum: "$totalPrice" },
+        orders: { $sum: 1 },
       },
     },
-    { $sort: { _id: 1 } },
   ]);
+  const revenueByDay = new Map(dailyRevenue.map((d) => [d._id, d]));
+  const revenueTrend = trendDays.map((day) => ({
+    _id: day,
+    revenue: revenueByDay.get(day)?.revenue || 0,
+    orders: revenueByDay.get(day)?.orders || 0,
+  }));
 
   res.json({
     summary: {
@@ -337,7 +386,7 @@ export const getWalletStats = asyncHandler(async (req, res) => {
       status: "COMPLETED",
       type: "SALE"
     })),
-    revenueTrend: dailyRevenue,
+    revenueTrend,
   });
 });
 
@@ -355,17 +404,20 @@ export const getBulkUploadHistory = asyncHandler(async (req, res) => {
 // @route   GET /api/admin/notification-counts
 // @access  Private/Admin
 export const getNotificationCounts = asyncHandler(async (req, res) => {
-  const customersSeenAt = req.query.customersSeenAt
-    ? new Date(Number(req.query.customersSeenAt))
-    : new Date(0);
+  // Each badge only counts items created after the admin last opened that
+  // page (timestamps in ms, sent by the admin panel).
+  const seenSince = (param) => {
+    const ms = Number(req.query[param]);
+    return { $gt: Number.isFinite(ms) && ms > 0 ? new Date(ms) : new Date(0) };
+  };
 
   const [newOrders, newCustomers, newLeads, pendingReviews, newFormSubmissions] =
     await Promise.all([
-      Order.countDocuments({ status: "Pending" }),
-      Customer.countDocuments({ createdAt: { $gt: customersSeenAt } }),
-      Lead.countDocuments({ status: "New" }),
-      Review.countDocuments({ status: "Pending" }),
-      FormSubmission.countDocuments({ status: "New" }),
+      Order.countDocuments({ status: "Pending", createdAt: seenSince("ordersSeenAt") }),
+      Customer.countDocuments({ createdAt: seenSince("customersSeenAt") }),
+      Lead.countDocuments({ status: "New", createdAt: seenSince("leadsSeenAt") }),
+      Review.countDocuments({ status: "Pending", createdAt: seenSince("reviewsSeenAt") }),
+      FormSubmission.countDocuments({ status: "New", createdAt: seenSince("formSubmissionsSeenAt") }),
     ]);
 
   res.json({ newOrders, newCustomers, newLeads, pendingReviews, newFormSubmissions });

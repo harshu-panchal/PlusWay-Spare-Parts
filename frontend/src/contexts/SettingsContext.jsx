@@ -29,11 +29,6 @@ const DEFAULT_SETTINGS = {
     estimatedDelivery: "3-5 Business Days",
     taxPercentage: 0,
   },
-  payments: {
-    razorpayEnabled: true,
-    codEnabled: true,
-    bankTransferEnabled: false,
-  },
   seo: {
     metaTitle: "Plusway Spare Parts | Genuine Mobile Spare Parts Online",
     metaDescription: "Buy genuine mobile spare parts at best prices.",
@@ -64,7 +59,6 @@ export const SettingsProvider = ({ children }) => {
           contact:         { ...prev.contact,         ...data.contact },
           social:          { ...prev.social,          ...data.social },
           shipping:        { ...prev.shipping,        ...data.shipping },
-          payments:        { ...prev.payments,        ...data.payments },
           seo:             { ...prev.seo,             ...data.seo },
           productSidebar:  { ...prev.productSidebar,  ...data.productSidebar },
         }));
