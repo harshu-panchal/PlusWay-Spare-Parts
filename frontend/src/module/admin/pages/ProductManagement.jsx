@@ -2151,17 +2151,25 @@ const ProductManagement = () => {
         onClose={() => setIsBulkPriceModalOpen(false)}
         onSuccess={() => { fetchData(); setIsBulkPriceModalOpen(false); }}
         uploadEndpoint={API_ENDPOINTS.ADMIN_PRODUCTS_BULK_PRICE_UPDATE}
+        templateEndpoint={API_ENDPOINTS.ADMIN_PRODUCTS_BULK_PRICE_TEMPLATE}
+        // Only used if the backend template can't be downloaded
         templateColumns={[
           { header: "SKU *", key: "SKU", example: "PW-123456", example2: "PW-654321" },
-          { header: "Price *", key: "Price", example: "500", example2: "1500" },
+          { header: "Price", key: "Price", example: "500", example2: "1500" },
           { header: "MRP", key: "MRP", example: "600", example2: "1800" },
-          { header: "WholesalePrice", key: "WholesalePrice", example: "450", example2: "1350" },
-          { header: "WholesaleMinQty", key: "WholesaleMinQty", example: "10", example2: "5" }
+          { header: "WholesalePrice", key: "WholesalePrice", example: "450", example2: "" },
+          { header: "WholesaleMinQty", key: "WholesaleMinQty", example: "10", example2: "" },
+          {
+            header: "Country Prices",
+            key: "Country Prices",
+            example: "AE, United Arab Emirates, 25, 30 | US, United States, 7, 9",
+            example2: "DE, Germany, 17.5, 21 | SG, Singapore, 24",
+          },
         ]}
         templateSheetName="Bulk Price Update"
         templateFileName="plusway_bulk_price_update.xlsx"
         title="Bulk Update Prices"
-        description="Update prices for multiple products using their SKUs"
+        description="One row per product or variant. List its countries in one cell, like: AE, United Arab Emirates, 25, 30 | US, United States, 7, 9. Blank cells keep the current price."
       />
 
       {/* Bulk Update Products (any field) Modal — SKU-keyed, supports color variants */}

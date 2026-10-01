@@ -3,7 +3,7 @@ import multer from "multer";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
-import { authAdmin, getAdminProfile, getDashboardStats, getReportStats, getWalletStats, getBulkUploadHistory, getNotificationCounts } from "../controllers/adminController.js";
+import { authAdmin, getAdminProfile, getDashboardStats, getReportStats, getWalletStats, getWalletTransactions, getBulkUploadHistory, getNotificationCounts } from "../controllers/adminController.js";
 import {
   getCustomers,
   getCustomerById,
@@ -111,6 +111,7 @@ router.get("/profile", protect, admin, getAdminProfile);
 router.get("/dashboard-stats", protect, admin, getDashboardStats);
 router.get("/reports-stats", protect, admin, getReportStats);
 router.get("/wallet-stats", protect, admin, getWalletStats);
+router.get("/wallet-transactions", protect, admin, getWalletTransactions);
 router.get("/bulk-upload-history", protect, admin, getBulkUploadHistory);
 router.get("/notification-counts", protect, admin, getNotificationCounts);
 

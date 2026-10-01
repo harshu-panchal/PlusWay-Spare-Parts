@@ -1,6 +1,6 @@
 import Order from "../../../models/Order.js";
 import sendEmail from "../../../utils/sendEmail.js";
-import generateInvoice from "../../../utils/generateInvoice.js";
+import generateInvoice, { publicBaseUrl } from "../../../utils/generateInvoice.js";
 
 const escapeRegex = (value = "") =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -148,7 +148,7 @@ export const getOrderInvoice = async (req, res) => {
       "Content-Disposition",
       `attachment; filename=invoice-${order._id}.pdf`,
     );
-    generateInvoice(order, res);
+    await generateInvoice(order, res, publicBaseUrl(req));
   } else {
     res.status(404).json({ message: "Order not found" });
   }

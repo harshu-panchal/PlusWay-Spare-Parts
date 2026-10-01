@@ -48,6 +48,8 @@ export const API_ENDPOINTS = {
 
     // Home
     BANNERS: `${API_BASE_URL}/api/customer/banners`,
+    OFFERS: `${API_BASE_URL}/api/customer/offers`,
+    OFFER_DETAIL: (slug) => `${API_BASE_URL}/api/customer/offers/${encodeURIComponent(slug)}`,
     HOME_SECTIONS: `${API_BASE_URL}/api/customer/home-sections`,
 
     // Orders
@@ -55,6 +57,7 @@ export const API_ENDPOINTS = {
     MY_ORDERS: `${API_BASE_URL}/api/customer/orders/myorders`,
     MY_REVIEWS: `${API_BASE_URL}/api/customer/reviews`,
     ORDER_DETAIL: (id) => `${API_BASE_URL}/api/customer/orders/${id}`,
+    ORDER_INVOICE: (id) => `${API_BASE_URL}/api/customer/orders/${id}/invoice`,
     ORDER_PAY: (id) => `${API_BASE_URL}/api/customer/orders/${id}/pay`,
     RAZORPAY_CREATE_ORDER: (id) => `${API_BASE_URL}/api/customer/orders/${id}/razorpay`,
     RAZORPAY_VERIFY: (id) => `${API_BASE_URL}/api/customer/orders/${id}/razorpay/verify`,
@@ -86,6 +89,7 @@ export const API_ENDPOINTS = {
     ADMIN_DASHBOARD_STATS: `${API_BASE_URL}/api/admin/dashboard-stats`,
     ADMIN_REPORTS_STATS: `${API_BASE_URL}/api/admin/reports-stats`,
     ADMIN_WALLET_STATS: `${API_BASE_URL}/api/admin/wallet-stats`,
+    ADMIN_WALLET_TRANSACTIONS: `${API_BASE_URL}/api/admin/wallet-transactions`,
     ADMIN_NOTIFICATION_COUNTS: `${API_BASE_URL}/api/admin/notification-counts`,
 
     // Admin Products
@@ -108,6 +112,7 @@ export const API_ENDPOINTS = {
     ADMIN_PRODUCTS_BULK_DELETE: `${API_BASE_URL}/api/admin/products/bulk`,
     ADMIN_PRODUCTS_BACKUP: `${API_BASE_URL}/api/admin/products/export`,
     ADMIN_PRODUCTS_BULK_PRICE_UPDATE: `${API_BASE_URL}/api/admin/products/bulk-update-price`,
+    ADMIN_PRODUCTS_BULK_PRICE_TEMPLATE: `${API_BASE_URL}/api/admin/products/bulk-price-template`,
     ADMIN_PRODUCTS_BULK_UPDATE: `${API_BASE_URL}/api/admin/products/bulk-update`,
     ADMIN_PRODUCTS_BULK_UPDATE_TEMPLATE: `${API_BASE_URL}/api/admin/products/bulk-update-template`,
     ADMIN_PRODUCTS_BACKFILL_VARIANT_SKUS: `${API_BASE_URL}/api/admin/products/backfill-variant-skus`,
@@ -131,6 +136,8 @@ export const API_ENDPOINTS = {
     // Admin Banners
     ADMIN_BANNERS: `${API_BASE_URL}/api/admin/banners`,
     ADMIN_BANNER_DETAIL: (id) => `${API_BASE_URL}/api/admin/banners/${id}`,
+    ADMIN_OFFERS: `${API_BASE_URL}/api/admin/offers`,
+    ADMIN_OFFER_DETAIL: (id) => `${API_BASE_URL}/api/admin/offers/${id}`,
 
     // Admin Home Sections
     ADMIN_HOME_SECTIONS: `${API_BASE_URL}/api/admin/home-sections`,

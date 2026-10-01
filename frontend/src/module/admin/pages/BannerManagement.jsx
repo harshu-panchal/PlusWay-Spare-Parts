@@ -173,7 +173,7 @@ const BannerManagement = () => {
                         <div className="p-4">
                             <div className="flex items-center justify-between mb-2">
                                 <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
-                                    {banner.type === "main" ? "Main Banner" : "Sub Banner"}
+                                    {banner.type === "main" ? "Main Banner" : banner.type === "offer" ? "Offers Page Banner" : "Sub Banner"}
                                 </span>
                                 <label className="relative inline-flex items-center cursor-pointer">
                                     <input
@@ -218,6 +218,7 @@ const BannerManagement = () => {
                                         }>
                                         <option value="main">Main Promotional Banner</option>
                                         <option value="sub">Sub / Search Banner</option>
+                                        <option value="offer">Offers Page Banner</option>
                                     </select>
                                 </div>
                                 <div>

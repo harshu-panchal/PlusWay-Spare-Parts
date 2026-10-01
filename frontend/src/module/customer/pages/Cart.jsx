@@ -1,11 +1,21 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { Trash2, Plus, Minus, ChevronRight, ShieldCheck, Truck } from 'lucide-react';
+import { Trash2, Plus, Minus, ChevronRight, ShieldCheck, Truck, Flame } from 'lucide-react';
 import LazyImage from '../../../components/LazyImage';
+import { useSettings } from '../../../contexts/SettingsContext';
+import { computeOrderTotals } from '../../../utils/orderTotals';
 
 const Cart = () => {
     const { cartItems, removeFromCart, updateQuantity, cartTotal, fetchCart } = useCart();
+    const { settings } = useSettings();
+    const { shippingPrice, taxPrice, taxPercentage, orderTotal } =
+        computeOrderTotals(cartTotal, settings?.shipping || {});
+    // How much live offer deals take off the cart
+    const dealSavings = cartItems.reduce(
+        (sum, item) => sum + Math.max(0, ((item.originalPrice ?? item.price) - item.price) * item.quantity),
+        0
+    );
 
     // Refresh cart on mount to ensure latest data
     React.useEffect(() => {
@@ -59,7 +69,15 @@ const Cart = () => {
                                     <Link to={`/product/${item._id}`} className="font-bold text-secondary hover:text-primary transition-colors block mb-1 uppercase tracking-tight text-xs md:text-sm line-clamp-2">
                                         {item.name}
                                     </Link>
-                                    <p className="text-[9px] md:text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-2 md:mb-4">SKU: MAX-{item._id.slice(-6)}</p>
+                                    <p className="text-[9px] md:text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-2">SKU: MAX-{item._id.slice(-6)}</p>
+                                    {item.deal && (
+                                        <Link
+                                            to={`/offers/${item.deal.slug}`}
+                                            className="inline-flex items-center gap-1 mb-2 md:mb-4 px-2 py-0.5 rounded-full bg-red-50 text-red-600 text-[9px] md:text-[10px] font-black uppercase tracking-wider hover:bg-red-100">
+                                            <Flame size={11} /> {item.deal.percent}% off · {item.deal.title}
+                                        </Link>
+                                    )}
+                                    {!item.deal && <div className="mb-0 md:mb-2" />}
 
                                     {/* Mobile: Compact layout */}
                                     <div className="flex flex-col gap-2 md:hidden">
@@ -82,6 +100,9 @@ const Cart = () => {
                                             <div className="text-right">
                                                 <p className="text-base font-black text-secondary tracking-tighter">₹{(item.price * item.quantity).toLocaleString()}</p>
                                                 <p className="text-[9px] text-gray-400 font-bold">₹{item.price.toLocaleString()} / Unit</p>
+                                                {item.deal && item.originalPrice > item.price && (
+                                                    <p className="text-[9px] text-gray-400 font-bold line-through">₹{(item.originalPrice * item.quantity).toLocaleString()}</p>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -110,6 +131,9 @@ const Cart = () => {
                                         <div className="text-right">
                                             <p className="text-xl font-black text-secondary tracking-tighter italic">₹{(item.price * item.quantity).toLocaleString()}</p>
                                             <p className="text-[10px] text-gray-400 font-bold uppercase">₹{item.price.toLocaleString()} / Unit</p>
+                                                {item.deal && item.originalPrice > item.price && (
+                                                    <p className="text-[10px] text-gray-400 font-bold line-through">₹{(item.originalPrice * item.quantity).toLocaleString()}</p>
+                                                )}
                                         </div>
                                     </div>
                                 </div>
@@ -127,19 +151,27 @@ const Cart = () => {
                                     <span>Subtotal</span>
                                     <span className="text-secondary tracking-tighter">₹{cartTotal.toLocaleString()}</span>
                                 </div>
+                                {dealSavings > 0 && (
+                                    <div className="flex justify-between text-sm font-bold text-red-600 uppercase tracking-widest">
+                                        <span className="flex items-center gap-1"><Flame size={14} /> Deal savings</span>
+                                        <span className="tracking-tighter">-₹{dealSavings.toLocaleString()}</span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between text-sm font-bold text-gray-500 uppercase tracking-widest">
                                     <span>Shipping</span>
-                                    <span className="text-accent tracking-widest">FREE</span>
+                                    {shippingPrice === 0
+                                        ? <span className="text-accent tracking-widest">FREE</span>
+                                        : <span className="text-secondary tracking-tighter">₹{shippingPrice.toLocaleString()}</span>}
                                 </div>
                                 <div className="flex justify-between text-sm font-bold text-gray-500 uppercase tracking-widest">
-                                    <span>Tax (GST)</span>
-                                    <span className="text-secondary tracking-tighter">₹0.00</span>
+                                    <span>Tax (GST{taxPercentage > 0 ? ` ${taxPercentage}%` : ''})</span>
+                                    <span className="text-secondary tracking-tighter">₹{taxPrice.toLocaleString()}</span>
                                 </div>
                             </div>
 
                             <div className="flex justify-between items-end mb-8 pt-4 border-t border-gray-100">
                                 <span className="text-sm font-black text-secondary uppercase tracking-[0.2em]">Grand Total</span>
-                                <span className="text-3xl font-black text-primary italic tracking-tighter line-height-none">₹{cartTotal.toLocaleString()}</span>
+                                <span className="text-3xl font-black text-primary italic tracking-tighter line-height-none">₹{orderTotal.toLocaleString()}</span>
                             </div>
 
                             <Link to="/checkout" className="block w-full bg-secondary text-white font-black py-4 rounded-xl text-center shadow-lg hover:bg-black transition-all uppercase tracking-widest mb-4">

@@ -1,3 +1,4 @@
+import { attachDeals } from '../../../services/offerPricing.js';
 import HomeSection from '../../../models/HomeSection.js';
 
 const DISPLAY_TYPE_MODEL = {
@@ -83,6 +84,13 @@ export const getActiveHomeSections = async (req, res) => {
             }
             return plain;
         });
+
+        // Product sections carry live offer deals like any product listing
+        for (const section of filteredSections) {
+            if (section.displayType === 'products') {
+                section.categories = await attachDeals(section.categories || []);
+            }
+        }
 
         res.json(filteredSections);
     } catch (error) {

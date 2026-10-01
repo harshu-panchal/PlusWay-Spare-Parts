@@ -9,6 +9,7 @@ import axios from "axios";
 import { API_ENDPOINTS } from "../../../config/api";
 import LazyImage from "../../../components/LazyImage";
 import ProductCard from "../components/ProductCard";
+import OfferProductRail from "../components/OfferProductRail";
 import { usePageTranslation } from "../../../hooks/usePageTranslation";
 
 // Static texts for translation
@@ -61,6 +62,7 @@ const Home = () => {
   const [homeSections, setHomeSections] = useState([]);
   const [banners, setBanners] = useState({ main: [], sub: [] });
   const [recentlyViewed, setRecentlyViewed] = useState([]);
+  const [homeOffers, setHomeOffers] = useState([]);
   const [currentMainIndex, setCurrentMainIndex] = useState(0);
   const [currentSubIndex, setCurrentSubIndex] = useState(0);
 
@@ -95,6 +97,14 @@ const Home = () => {
     };
 
     fetchData();
+  }, []);
+
+  // Offers the admin chose to feature on the home page
+  useEffect(() => {
+    axios
+      .get(`${API_ENDPOINTS.OFFERS}?home=1`)
+      .then(({ data }) => setHomeOffers(Array.isArray(data) ? data : []))
+      .catch((error) => console.error("Error fetching offers:", error));
   }, []);
 
   const activeMainBanner = banners.main[currentMainIndex] || banners.main[0];
@@ -177,6 +187,15 @@ const Home = () => {
               </>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Featured offers / deals */}
+      {homeOffers.length > 0 && (
+        <div className="max-w-7xl mx-auto px-[2%] md:px-4 mt-4 md:mt-6 mb-6 space-y-6">
+          {homeOffers.map((offer) => (
+            <OfferProductRail key={offer._id} offer={offer} />
+          ))}
         </div>
       )}
 

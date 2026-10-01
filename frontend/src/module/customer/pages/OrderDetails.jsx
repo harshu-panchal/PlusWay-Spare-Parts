@@ -3,7 +3,7 @@ import axios from "axios";
 import { useParams, Link, useLocation } from "react-router-dom";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { API_ENDPOINTS } from "../../../config/api";
-import { CheckCircle2, Clock, Truck, Package, ChevronRight, MapPin, Phone, Loader2, AlertCircle, CreditCard } from 'lucide-react';
+import { CheckCircle2, Clock, Truck, Package, ChevronRight, MapPin, Phone, Loader2, AlertCircle, CreditCard, Download } from 'lucide-react';
 import LazyImage from '../../../components/LazyImage';
 import useOrderPayment, { toPaypalUsdAmount } from '../hooks/useOrderPayment';
 
@@ -73,6 +73,25 @@ const OrderDetails = () => {
         });
     };
 
+    const downloadInvoice = async () => {
+        try {
+            const { data } = await axios.get(API_ENDPOINTS.ORDER_INVOICE(id), {
+                ...getConfig(),
+                responseType: "blob",
+            });
+            const url = window.URL.createObjectURL(new Blob([data], { type: "application/pdf" }));
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `invoice-${id}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch {
+            alert("Failed to download invoice");
+        }
+    };
+
     if (loading)
         return (
             <div className="min-h-screen flex items-center justify-center bg-[#f4f4f4]">
@@ -93,6 +112,12 @@ const OrderDetails = () => {
                 <div className="max-w-7xl mx-auto px-4 py-4">
                     <h1 className="text-xl font-black text-secondary tracking-tight">ORDER DETAILS</h1>
                     <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Order ID: {order._id}</p>
+                    <button
+                        type="button"
+                        onClick={downloadInvoice}
+                        className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-xs font-black uppercase tracking-widest text-secondary hover:bg-gray-50">
+                        <Download size={14} /> Download Invoice
+                    </button>
                 </div>
             </div>
 
@@ -194,6 +219,14 @@ const OrderDetails = () => {
                                                 {item.qty} x ₹{item.price.toLocaleString()} = ₹
                                                 {(item.qty * item.price).toLocaleString()}
                                             </p>
+                                            {item.offer?.title && (
+                                                <p className="text-[11px] font-bold text-red-600">
+                                                    {item.offer.discountPercent}% off with {item.offer.title}
+                                                    {item.originalPrice > item.price && (
+                                                        <span className="text-gray-400 font-medium line-through ml-1">₹{item.originalPrice.toLocaleString()}</span>
+                                                    )}
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
                                 ))}

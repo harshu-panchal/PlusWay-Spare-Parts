@@ -45,6 +45,26 @@ const OrderDetail = () => {
         fetchOrder();
     }, [id]);
 
+    const handleDownloadInvoice = async () => {
+        try {
+            const token = localStorage.getItem("adminToken");
+            const { data } = await axios.get(API_ENDPOINTS.ADMIN_ORDER_INVOICE(id), {
+                headers: { Authorization: `Bearer ${token}` },
+                responseType: "blob",
+            });
+            const url = window.URL.createObjectURL(new Blob([data], { type: "application/pdf" }));
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `invoice-${id}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch {
+            alert("Failed to download invoice");
+        }
+    };
+
     const handleStatusUpdate = async () => {
         try {
             const token = localStorage.getItem("adminToken");
@@ -101,7 +121,7 @@ const OrderDetail = () => {
                     <p className="text-gray-500 text-sm">Placed on {new Date(order.createdAt).toLocaleString()}</p>
                 </div>
                 <div className="ml-auto flex gap-3">
-                    <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors font-bold text-gray-600">
+                    <button onClick={handleDownloadInvoice} className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors font-bold text-gray-600">
                         <Printer size={18} />
                         Print Invoice
                     </button>
@@ -134,6 +154,12 @@ const OrderDetail = () => {
                                             {item.name}
                                         </Link>
                                         <p className="text-sm text-gray-500">Unit Price: ₹{item.price}</p>
+                                        {item.offer?.title && (
+                                            <p className="text-xs font-semibold text-rose-600">
+                                                Offer: {item.offer.title} ({item.offer.discountPercent}% off
+                                                {item.originalPrice ? `, was ₹${item.originalPrice}` : ""})
+                                            </p>
+                                        )}
                                     </div>
                                     <div className="text-right">
                                         <p className="font-bold text-gray-800 text-lg">

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
@@ -13,9 +13,6 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Minus,
-  Clock,
-  ChevronDown,
-  Check,
   ExternalLink,
   AlertCircle,
   CheckCircle2,
@@ -24,106 +21,14 @@ import {
   Smartphone,
   Box,
 } from "lucide-react";
+import RangePicker from "../components/RangePicker";
+import { getChange, getRangeOption, getStoredRange, saveRange } from "../../../utils/dateRanges";
 
-// Period options; keys match the backend's ?range= values.
-const RANGE_OPTIONS = [
-  { key: "today", label: "Today", compareLabel: "vs yesterday, same time" },
-  { key: "yesterday", label: "Yesterday", compareLabel: "vs day before" },
-  { key: "7d", label: "Last 7 Days", compareLabel: "vs previous 7 days" },
-  { key: "30d", label: "Last 30 Days", compareLabel: "vs previous 30 days" },
-  { key: "90d", label: "Last 90 Days", compareLabel: "vs previous 90 days" },
-  { key: "this_month", label: "This Month", compareLabel: "vs same days last month" },
-  { key: "last_month", label: "Last Month", compareLabel: "vs the month before" },
-  { key: "this_year", label: "This Year", compareLabel: "vs same period last year" },
-  { key: "all", label: "All Time", compareLabel: "" },
-];
-const DEFAULT_RANGE = "30d";
 const RANGE_STORAGE_KEY = "adminDashboardRange";
-
-const getStoredRange = () => {
-  try {
-    const stored = localStorage.getItem(RANGE_STORAGE_KEY);
-    return RANGE_OPTIONS.some((o) => o.key === stored) ? stored : DEFAULT_RANGE;
-  } catch {
-    return DEFAULT_RANGE;
-  }
-};
-
-// Change vs the previous period: null when there is nothing to compare.
-const getChange = (current, previous) => {
-  if (previous === null || previous === undefined) return null;
-  if (previous === 0) {
-    return current === 0 ? { label: "0%", direction: 0 } : { label: "New", direction: 1 };
-  }
-  const pct = ((current - previous) / previous) * 100;
-  const rounded = Math.round(pct * 10) / 10;
-  return {
-    label: `${rounded > 0 ? "+" : ""}${rounded.toLocaleString(undefined, { maximumFractionDigits: 1 })}%`,
-    direction: Math.sign(rounded),
-  };
-};
-
-const RangePicker = ({ value, onChange, busy }) => {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  const selected = RANGE_OPTIONS.find((o) => o.key === value) || RANGE_OPTIONS[3];
-
-  useEffect(() => {
-    if (!open) return;
-    const onClickAway = (e) => {
-      if (!ref.current?.contains(e.target)) setOpen(false);
-    };
-    const onKey = (e) => e.key === "Escape" && setOpen(false);
-    document.addEventListener("mousedown", onClickAway);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onClickAway);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-600 shadow-sm hover:border-gray-300 transition-colors">
-        <Clock size={16} className={busy ? "animate-spin" : ""} />
-        {selected.label}
-        <ChevronDown size={16} className={`text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
-      {open && (
-        <ul
-          role="listbox"
-          aria-label="Dashboard period"
-          className="absolute right-0 mt-2 w-52 bg-white border border-gray-100 rounded-xl shadow-lg py-1 z-30">
-          {RANGE_OPTIONS.map((option) => (
-            <li key={option.key}>
-              <button
-                type="button"
-                role="option"
-                aria-selected={option.key === value}
-                onClick={() => {
-                  onChange(option.key);
-                  setOpen(false);
-                }}
-                className={`w-full flex items-center justify-between px-4 py-2 text-sm text-left hover:bg-gray-50 ${option.key === value ? "font-bold text-blue-600" : "text-gray-700"}`}>
-                {option.label}
-                {option.key === value && <Check size={14} />}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-};
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [range, setRange] = useState(getStoredRange);
+  const [range, setRange] = useState(() => getStoredRange(RANGE_STORAGE_KEY));
   const [data, setData] = useState({
     revenue: 0,
     orders: 0,
@@ -142,11 +47,7 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(RANGE_STORAGE_KEY, range);
-    } catch {
-      // Storage unavailable; the choice just won't be remembered.
-    }
+    saveRange(RANGE_STORAGE_KEY, range);
 
     let cancelled = false;
     const fetchData = async () => {
@@ -176,7 +77,7 @@ const Dashboard = () => {
     };
   }, [range]);
 
-  const rangeOption = RANGE_OPTIONS.find((o) => o.key === range) || RANGE_OPTIONS[3];
+  const rangeOption = getRangeOption(range);
   const previous = data.previous;
 
   // Metrics for the selected period, compared with the previous one

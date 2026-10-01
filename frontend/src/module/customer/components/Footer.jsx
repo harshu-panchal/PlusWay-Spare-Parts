@@ -1,16 +1,33 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Send } from "lucide-react";
+import SocialLinks from "./SocialLinks";
+import { useSettings } from "../../../contexts/SettingsContext";
 
 const Footer = () => {
+  const { settings } = useSettings();
+  const hasSocial = Object.values(settings?.social || {}).some((url) => String(url || "").trim());
+
   return (
+    <>
+    {/* Mobile: the full footer is hidden behind the bottom nav, so show just
+        the social links. pb-20 keeps them clear of the fixed bottom nav. */}
+    {hasSocial && (
+      <div className="md:hidden bg-secondary text-white px-4 pt-6 pb-20 flex flex-col items-center gap-3">
+        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/70">Follow us</p>
+        <SocialLinks variant="dark" />
+      </div>
+    )}
     <footer className="bg-white border-t border-gray-200 hidden md:block">
       {/* Stay Connected Banner */}
       <div className="bg-secondary py-8 text-white">
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6">
-          <h3 className="text-xl font-black uppercase tracking-tight">
-            Stay Connected
-          </h3>
+          <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
+            <h3 className="text-xl font-black uppercase tracking-tight">
+              Stay Connected
+            </h3>
+            <SocialLinks variant="dark" />
+          </div>
           <div className="flex w-full md:w-96 relative group">
             <input
               type="email"
@@ -196,6 +213,7 @@ const Footer = () => {
         </div>
       </div>
     </footer>
+    </>
   );
 };
 

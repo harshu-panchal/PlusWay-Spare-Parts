@@ -30,6 +30,8 @@ import { getMyReviews } from "../controllers/reviewController.js";
 import {
   addOrderItems,
   getOrderById,
+  getOrderInvoice,
+  getInvoiceByToken,
   updateOrderToPaid,
   getMyOrders,
 } from "../controllers/orderController.js";
@@ -41,6 +43,7 @@ import { getActiveCategories } from "../../admin/controllers/categoryController.
 import { getActiveBrands } from "../../admin/controllers/brandController.js";
 import { getActiveModels } from "../../admin/controllers/modelController.js";
 import { getActiveBanners } from "../../admin/controllers/bannerController.js";
+import { getLiveOffers, getOfferBySlug } from "../controllers/offerController.js";
 import { globalSearch } from "../controllers/searchController.js";
 import { createLead } from "../controllers/leadController.js";
 import { createFormSubmission } from "../controllers/formSubmissionController.js";
@@ -90,6 +93,8 @@ router.get("/models", getActiveModels);
 router.get("/categories", getActiveCategories);
 router.get("/brands", getActiveBrands);
 router.get("/banners", getActiveBanners);
+router.get("/offers", getLiveOffers);
+router.get("/offers/:slug", getOfferBySlug);
 
 // Review routes
 router.get("/reviews", protect, getMyReviews);
@@ -109,6 +114,8 @@ router
 router.route("/orders").post(protect, addOrderItems);
 router.route("/orders/myorders").get(protect, getMyOrders);
 router.route("/orders/:id").get(protect, getOrderById);
+router.route("/orders/:id/invoice").get(protect, getOrderInvoice);
+router.get("/invoice/:id/:token", getInvoiceByToken);
 router.route("/orders/:id/pay").put(protect, updateOrderToPaid);
 
 // Razorpay routes

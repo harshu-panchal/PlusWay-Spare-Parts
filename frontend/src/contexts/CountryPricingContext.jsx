@@ -154,7 +154,7 @@ export const CountryPricingProvider = ({ children }) => {
    *   isOverride: boolean,
    * }}
    */
-  const getPriceForCountry = (product, variant = null) => {
+  const getBasePriceForCountry = (product, variant = null) => {
     const code   = countryInfo?.countryCode || "IN";
     const sym    = countryInfo?.currencySymbol || "₹";
     const cur    = countryInfo?.currencyCode   || "INR";
@@ -222,6 +222,35 @@ export const CountryPricingProvider = ({ children }) => {
       countryName:     name,
       isConverted:     true,
       isOverride:      false,
+    };
+  };
+
+  /**
+   * Effective pricing including a live offer deal. The API attaches
+   * `product.deal` ({ percent, title, slug, endsAt, ... }) when a live offer
+   * contains the product; the percentage is applied to whichever price
+   * getBasePriceForCountry picked (variant, country override or converted).
+   *
+   * Extra fields: `priceBeforeDeal` and `deal` (null when no deal). `mrp` is
+   * at least the pre-deal price so the strike-through always shows the saving.
+   */
+  const getPriceForCountry = (product, variant = null) => {
+    const base = getBasePriceForCountry(product, variant);
+    const deal = product?.deal;
+    if (!deal || !(deal.percent > 0)) {
+      return { ...base, priceBeforeDeal: base.price, deal: null };
+    }
+    const factor = 1 - deal.percent / 100;
+    // INR deal prices are whole rupees, matching the server's order total
+    const price = base.currencyCode === "INR"
+      ? Math.round(base.price * factor)
+      : parseFloat((base.price * factor).toFixed(2));
+    return {
+      ...base,
+      price,
+      priceBeforeDeal: base.price,
+      mrp: Math.max(base.mrp || 0, base.price),
+      deal,
     };
   };
 

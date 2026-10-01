@@ -8,6 +8,7 @@ import {
   escapeRegex,
   tokenizeSearchQuery,
 } from "../../../utils/wildSearch.js";
+import { attachDeal, attachDeals } from "../../../services/offerPricing.js";
 
 // @desc    Get all products
 // @route   GET /api/customer/products
@@ -146,7 +147,7 @@ export const getProducts = asyncHandler(async (req, res) => {
             .skip(pageSize * (page - 1))
     ]);
 
-    res.json({ products, page, pages: Math.ceil(count / pageSize), total: count });
+    res.json({ products: await attachDeals(products), page, pages: Math.ceil(count / pageSize), total: count });
 });
 
 // @desc    Get product by ID
@@ -162,7 +163,7 @@ export const getProductById = asyncHandler(async (req, res) => {
         const productObj = product.toObject();
         // Only send approved reviews to the customer frontend
         productObj.reviews = productObj.reviews.filter(r => r.status === "Approved");
-        res.json(productObj);
+        res.json(await attachDeal(productObj));
     } else {
         res.status(404);
         throw new Error("Product not found");

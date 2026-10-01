@@ -11,7 +11,7 @@ import Lead from "../../../models/Lead.js";
 import FormSubmission from "../../../models/FormSubmission.js";
 import generateToken from "../../../utils/generateToken.js";
 import asyncHandler from "../../../middleware/asyncHandler.js";
-import { resolveDashboardRange } from "../../../utils/dateRange.js";
+import { resolveDashboardRange, resolveIstDayRange } from "../../../utils/dateRange.js";
 
 // @desc    Auth admin & get token
 // @route   POST /api/admin/login
@@ -147,102 +147,91 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
 // @route   GET /api/admin/reports-stats
 // @access  Private/Admin
 export const getReportStats = asyncHandler(async (req, res) => {
-  // 1. Total Revenue (sum of value of all paid orders)
-  const totalRevenueResult = await Order.aggregate([
-    { $match: { isPaid: true } },
-    { $group: { _id: null, total: { $sum: "$totalPrice" } } },
-  ]);
-  const totalRevenue = totalRevenueResult[0]?.total || 0;
+  // Period metrics follow ?range= (same options as the dashboard) and are
+  // compared with the previous period of the same length. The monthly sales
+  // trend below always covers the last 6 months.
+  const range = resolveDashboardRange(req.query.range);
+  const rangeEnd = new Date(range.end.getTime() + 1); // include "now"
 
-  // 2. Average Order Value
-  const paidOrdersCount = await Order.countDocuments({ isPaid: true });
-  const avgOrderValue = paidOrdersCount > 0 ? totalRevenue / paidOrdersCount : 0;
-
-  // 3. New Customers (last 30 days)
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const newCustomers = await Customer.countDocuments({
-    createdAt: { $gte: thirtyDaysAgo },
+  const paidBetween = (from, to) => ({
+    isPaid: true,
+    status: { $ne: "Cancelled" },
+    paidAt: { $gte: from, $lt: to },
   });
 
-  // 4. Sales by Category
-  const salesByCategory = await Order.aggregate([
-    { $match: { isPaid: true } },
+  const summaryFor = async (from, to) => {
+    const [agg, newCustomers] = await Promise.all([
+      Order.aggregate([
+        { $match: paidBetween(from, to) },
+        { $group: { _id: null, total: { $sum: "$totalPrice" }, count: { $sum: 1 } } },
+      ]),
+      Customer.countDocuments({ createdAt: { $gte: from, $lt: to } }),
+    ]);
+    const totalRevenue = agg[0]?.total || 0;
+    const paidOrders = agg[0]?.count || 0;
+    return {
+      totalRevenue,
+      paidOrders,
+      avgOrderValue: paidOrders > 0 ? totalRevenue / paidOrders : 0,
+      newCustomers,
+    };
+  };
+
+  // Paid order items joined to their product, then to `from` (categories/brands)
+  const itemsBy = (from, to, collection, field) => [
+    { $match: paidBetween(from, to) },
     { $unwind: "$orderItems" },
-    {
-      $lookup: {
-        from: "products",
-        localField: "orderItems.product",
-        foreignField: "_id",
-        as: "product",
-      },
-    },
+    { $lookup: { from: "products", localField: "orderItems.product", foreignField: "_id", as: "product" } },
     { $unwind: "$product" },
-    {
-      $lookup: {
-        from: "categories",
-        localField: "product.category",
-        foreignField: "_id",
-        as: "category",
-      },
-    },
-    { $unwind: "$category" },
-    {
-      $group: {
-        _id: "$category.name",
-        sales: { $sum: { $multiply: ["$orderItems.price", "$orderItems.qty"] } },
-      },
-    },
-    { $sort: { sales: -1 } },
-    { $limit: 5 },
+    { $lookup: { from: collection, localField: `product.${field}`, foreignField: "_id", as: "group" } },
+    { $unwind: "$group" },
+  ];
+
+  const [current, previous, salesByCategory, topBrands] = await Promise.all([
+    summaryFor(range.start, rangeEnd),
+    range.prevStart ? summaryFor(range.prevStart, range.prevEnd) : null,
+    Order.aggregate([
+      ...itemsBy(range.start, rangeEnd, "categories", "category"),
+      { $group: { _id: "$group.name", sales: { $sum: { $multiply: ["$orderItems.price", "$orderItems.qty"] } } } },
+      { $sort: { sales: -1 } },
+      { $limit: 5 },
+    ]),
+    Order.aggregate([
+      ...itemsBy(range.start, rangeEnd, "brands", "brand"),
+      // Order lines per brand ("popularity")
+      { $group: { _id: "$group._id", name: { $first: "$group.name" }, orders: { $sum: 1 } } },
+      { $sort: { orders: -1 } },
+      { $limit: 5 },
+    ]),
   ]);
 
-  // Calculate percentages for categories
   const totalCategorySales = salesByCategory.reduce((acc, curr) => acc + curr.sales, 0);
   const salesByCategoryWithPercentage = salesByCategory.map((cat) => ({
     name: cat._id,
     sales: cat.sales,
     percentage: totalCategorySales > 0 ? Math.round((cat.sales / totalCategorySales) * 100) : 0,
-    color: "bg-blue-500", // You might want to assign random colors or mapped colors here
+    color: "bg-blue-500",
   }));
 
-  // 5. Top Brands
-  const topBrands = await Order.aggregate([
-    { $match: { isPaid: true } },
-    { $unwind: "$orderItems" },
-    {
-      $lookup: {
-        from: "products",
-        localField: "orderItems.product",
-        foreignField: "_id",
-        as: "product",
-      },
-    },
-    { $unwind: "$product" },
-    {
-      $lookup: {
-        from: "brands",
-        localField: "product.brand",
-        foreignField: "_id",
-        as: "brand",
-      },
-    },
-    { $unwind: "$brand" },
-    {
-      $group: {
-        _id: "$brand.name",
-        orders: { $sum: 1 }, // Counting items sold per brand, or distinct orders? Let's count items for now as "popularity"
-      },
-    },
-    { $sort: { orders: -1 } },
-    { $limit: 5 },
-  ]);
-
-  const topBrandsFormatted = topBrands.map((brand) => ({
-    name: brand._id,
-    orders: brand.orders,
-    growth: "+0%", // Placeholder as we need historical data for growth
-  }));
+  // Brand growth: same brands' order lines in the previous period
+  let previousBrandOrders = new Map();
+  if (range.prevStart && topBrands.length) {
+    const prev = await Order.aggregate([
+      ...itemsBy(range.prevStart, range.prevEnd, "brands", "brand"),
+      { $match: { "group._id": { $in: topBrands.map((b) => b._id) } } },
+      { $group: { _id: "$group._id", orders: { $sum: 1 } } },
+    ]);
+    previousBrandOrders = new Map(prev.map((b) => [String(b._id), b.orders]));
+  }
+  const topBrandsFormatted = topBrands.map((brand) => {
+    const prevOrders = range.prevStart ? previousBrandOrders.get(String(brand._id)) || 0 : null;
+    let growth = null;
+    if (prevOrders !== null) {
+      growth = prevOrders === 0 ? "New" : `${Math.round(((brand.orders - prevOrders) / prevOrders) * 100)}%`;
+      if (/^\d/.test(growth)) growth = `+${growth}`;
+    }
+    return { name: brand.name, orders: brand.orders, previousOrders: prevOrders, growth };
+  });
 
   // 6. Monthly Sales Trend (Last 6 Months)
   // Monthly sales for the last 6 calendar months (current month included),
@@ -291,10 +280,15 @@ export const getReportStats = asyncHandler(async (req, res) => {
   }));
 
   res.json({
-    totalRevenue,
-    avgOrderValue,
-    newCustomers,
-    conversionRate: 2.5, // Mocked
+    range: {
+      key: range.key,
+      start: range.start,
+      end: range.end,
+      prevStart: range.prevStart,
+      prevEnd: range.prevEnd,
+    },
+    ...current,
+    previous,
     salesByCategory: salesByCategoryWithPercentage,
     topBrands: topBrandsFormatted,
     monthlySales
@@ -328,11 +322,7 @@ export const getWalletStats = asyncHandler(async (req, res) => {
   ]);
   const todayEarnings = todayEarningsResult[0]?.total || 0;
 
-  // 4. Transaction History (Last 50 transactions)
-  const transactions = await Order.find({ isPaid: true })
-    .populate("customer", "name email")
-    .sort({ paidAt: -1 })
-    .limit(50);
+  // 4. Transaction history is paged separately: GET /api/admin/wallet-transactions
 
   // 5. Revenue Trend (daily for the last 14 days, today included). Days are
   // bucketed in IST, and days without sales are filled with zero so the
@@ -377,16 +367,77 @@ export const getWalletStats = asyncHandler(async (req, res) => {
       todayEarnings,
       balance: totalEarnings, // For now balance is same as earnings
     },
-    transactions: transactions.map(t => ({
+    revenueTrend,
+  });
+});
+
+const WALLET_PAGE_SIZES = [10, 25, 50, 100];
+const WALLET_EXPORT_LIMIT = 10000;
+
+// @desc    Paid-order transactions for the wallet, newest first
+// @route   GET /api/admin/wallet-transactions?page=1&pageSize=10
+//          ?all=1 returns everything (up to WALLET_EXPORT_LIMIT) for export
+//          Optional period (by payment date, IST):
+//            ?range=30d (same keys as the dashboard), or
+//            ?from=2026-09-01&to=2026-09-30 (both days included)
+// @access  Private/Admin
+export const getWalletTransactions = asyncHandler(async (req, res) => {
+  const filter = { isPaid: true };
+
+  let period = null;
+  if (req.query.from || req.query.to) {
+    const custom = resolveIstDayRange(req.query.from, req.query.to);
+    if (custom.error) {
+      res.status(400);
+      throw new Error(custom.error);
+    }
+    period = custom;
+  } else if (req.query.range && req.query.range !== "all") {
+    const preset = resolveDashboardRange(req.query.range);
+    period = { start: preset.start, end: new Date(preset.end.getTime() + 1) };
+  }
+  if (period) filter.paidAt = { $gte: period.start, $lt: period.end };
+  const exportAll = req.query.all === "1";
+  const pageSize = WALLET_PAGE_SIZES.includes(Number(req.query.pageSize))
+    ? Number(req.query.pageSize)
+    : WALLET_PAGE_SIZES[0];
+
+  const [total, amountAgg] = await Promise.all([
+    Order.countDocuments(filter),
+    Order.aggregate([{ $match: filter }, { $group: { _id: null, sum: { $sum: "$totalPrice" } } }]),
+  ]);
+  const totalAmount = amountAgg[0]?.sum || 0;
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  const page = exportAll ? 1 : Math.min(Math.max(Math.floor(Number(req.query.page)) || 1, 1), pages);
+
+  // _id breaks ties so rows never repeat or vanish between pages
+  let query = Order.find(filter)
+    .select("customer totalPrice paymentMethod paidAt createdAt")
+    .populate("customer", "name")
+    .sort({ paidAt: -1, _id: -1 });
+  query = exportAll
+    ? query.limit(WALLET_EXPORT_LIMIT)
+    : query.skip((page - 1) * pageSize).limit(pageSize);
+  const orders = await query.lean();
+
+  res.json({
+    transactions: orders.map((t) => ({
       id: t._id,
       customer: t.customer?.name || "Guest",
       amount: t.totalPrice,
       method: t.paymentMethod,
       date: t.paidAt || t.createdAt,
       status: "COMPLETED",
-      type: "SALE"
+      type: "SALE",
     })),
-    revenueTrend,
+    page,
+    pages,
+    pageSize,
+    total,
+    totalAmount,
+    // Exported rows are capped; tell the client if some were left out
+    truncated: exportAll && total > WALLET_EXPORT_LIMIT,
+    period: period ? { start: period.start, end: period.end } : null,
   });
 });
 

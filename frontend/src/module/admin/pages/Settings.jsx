@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext, createContext } from "react";
 import axios from "axios";
 import { API_ENDPOINTS } from "../../../config/api";
 import {
@@ -32,6 +32,70 @@ const DEFAULTS = {
     keywords: "",
     searchIndexing: true,
   },
+};
+
+// Form field helpers live outside Settings: defined inside it they'd be new
+// component types on every render, so React would remount the inputs and
+// they'd lose focus after each keystroke. form/set come from context.
+const SettingsFormContext = createContext(null);
+
+const Field = ({ label, children }) => (
+  <div className="space-y-2">
+    <label className="text-sm font-bold text-gray-700">{label}</label>
+    {children}
+  </div>
+);
+
+const Input = ({ section, field, type = "text", icon: Icon, ...rest }) => {
+  const { form, set } = useContext(SettingsFormContext);
+  return (
+    <div className={Icon ? "relative" : undefined}>
+      {Icon && <Icon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />}
+      <input
+        type={type}
+        value={form[section][field] ?? ""}
+        onChange={(e) => set(section, field, type === "number" ? Number(e.target.value) : e.target.value)}
+        className={`w-full ${Icon ? "pl-10" : "px-4"} pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none`}
+        {...rest}
+      />
+    </div>
+  );
+};
+
+const Textarea = ({ section, field, icon: Icon, ...rest }) => {
+  const { form, set } = useContext(SettingsFormContext);
+  return (
+    <div className={Icon ? "relative" : undefined}>
+      {Icon && <Icon className="absolute left-3 top-3 text-gray-400" size={16} />}
+      <textarea
+        value={form[section][field] ?? ""}
+        onChange={(e) => set(section, field, e.target.value)}
+        className={`w-full ${Icon ? "pl-10" : "px-4"} pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none`}
+        {...rest}
+      />
+    </div>
+  );
+};
+
+const Toggle = ({ section, field, label, description }) => {
+  const { form, set } = useContext(SettingsFormContext);
+  return (
+    <div className="flex items-center justify-between p-4 border border-gray-100 rounded-xl bg-gray-50/50">
+      <div>
+        <h4 className="font-bold text-gray-800">{label}</h4>
+        {description && <p className="text-xs text-gray-500">{description}</p>}
+      </div>
+      <label className="relative inline-flex items-center cursor-pointer">
+        <input
+          type="checkbox"
+          className="sr-only peer"
+          checked={!!form[section][field]}
+          onChange={(e) => set(section, field, e.target.checked)}
+        />
+        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+      </label>
+    </div>
+  );
 };
 
 const Settings = () => {
@@ -88,56 +152,6 @@ const Settings = () => {
     { id: "seo",      name: "SEO Settings",      icon: Search },
   ];
 
-  const Field = ({ label, children }) => (
-    <div className="space-y-2">
-      <label className="text-sm font-bold text-gray-700">{label}</label>
-      {children}
-    </div>
-  );
-
-  const Input = ({ section, field, type = "text", icon: Icon, ...rest }) => (
-    <div className={Icon ? "relative" : undefined}>
-      {Icon && <Icon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />}
-      <input
-        type={type}
-        value={form[section][field] ?? ""}
-        onChange={(e) => set(section, field, type === "number" ? Number(e.target.value) : e.target.value)}
-        className={`w-full ${Icon ? "pl-10" : "px-4"} pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none`}
-        {...rest}
-      />
-    </div>
-  );
-
-  const Textarea = ({ section, field, icon: Icon, ...rest }) => (
-    <div className={Icon ? "relative" : undefined}>
-      {Icon && <Icon className="absolute left-3 top-3 text-gray-400" size={16} />}
-      <textarea
-        value={form[section][field] ?? ""}
-        onChange={(e) => set(section, field, e.target.value)}
-        className={`w-full ${Icon ? "pl-10" : "px-4"} pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none`}
-        {...rest}
-      />
-    </div>
-  );
-
-  const Toggle = ({ section, field, label, description }) => (
-    <div className="flex items-center justify-between p-4 border border-gray-100 rounded-xl bg-gray-50/50">
-      <div>
-        <h4 className="font-bold text-gray-800">{label}</h4>
-        {description && <p className="text-xs text-gray-500">{description}</p>}
-      </div>
-      <label className="relative inline-flex items-center cursor-pointer">
-        <input
-          type="checkbox"
-          className="sr-only peer"
-          checked={!!form[section][field]}
-          onChange={(e) => set(section, field, e.target.checked)}
-        />
-        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-      </label>
-    </div>
-  );
-
   if (fetchLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -147,6 +161,7 @@ const Settings = () => {
   }
 
   return (
+    <SettingsFormContext.Provider value={{ form, set }}>
     <div className="space-y-6">
       {/* Toast */}
       {toast && (
@@ -219,20 +234,23 @@ const Settings = () => {
                   { label: "Twitter",  field: "twitterUrl",  icon: Twitter,  color: "text-blue-400" },
                   { label: "Instagram",field: "instagramUrl",icon: Instagram, color: "text-pink-600" },
                   { label: "YouTube",  field: "youtubeUrl",  icon: Youtube,  color: "text-red-600" },
-                ].map(({ label, field, icon: Icon, color }) => (
-                  <Field key={field} label={`${label} URL`}>
-                    <div className="relative">
-                      <Icon className={`absolute left-3 top-1/2 -translate-y-1/2 ${color}`} size={16} />
-                      <input
-                        type="text"
-                        value={form.social[field] ?? ""}
-                        onChange={(e) => set("social", field, e.target.value)}
-                        placeholder={`https://${label.toLowerCase()}.com/yourpage`}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                      />
-                    </div>
-                  </Field>
-                ))}
+                ].map((network) => {
+                  const SocialIcon = network.icon;
+                  return (
+                    <Field key={network.field} label={`${network.label} URL`}>
+                      <div className="relative">
+                        <SocialIcon className={`absolute left-3 top-1/2 -translate-y-1/2 ${network.color}`} size={16} />
+                        <input
+                          type="text"
+                          value={form.social[network.field] ?? ""}
+                          onChange={(e) => set("social", network.field, e.target.value)}
+                          placeholder={`https://${network.label.toLowerCase()}.com/yourpage`}
+                          className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                      </div>
+                    </Field>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -288,6 +306,7 @@ const Settings = () => {
         </div>
       </div>
     </div>
+    </SettingsFormContext.Provider>
   );
 };
 

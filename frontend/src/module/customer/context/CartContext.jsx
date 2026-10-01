@@ -34,8 +34,12 @@ export const CartProvider = ({ children }) => {
             // Transform backend structure to frontend structure if needed
             // Backend returns { items: [{ product: {...}, quantity: 1 }] }
             // Frontend expects flat list mostly: [{ ...product, quantity: 1 }]
-            const formattedItems = (data.items || []).map(item => ({
+            const formattedItems = (data.items || []).filter(item => item.product).map(item => ({
                 ...item.product,
+                // Live offer deals set the price charged (the server applies
+                // the same price when the order is placed)
+                price: item.product.deal ? item.product.deal.price : item.product.price,
+                originalPrice: item.product.price,
                 quantity: item.quantity,
                 // Ensure image is accessible (product might have image string or images array)
                 image: item.product.image || (item.product.images && item.product.images[0]) || ''

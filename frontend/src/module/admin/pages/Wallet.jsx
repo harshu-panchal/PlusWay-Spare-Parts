@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import * as XLSX from "xlsx";
-import { saveAs } from "file-saver";
 import { API_ENDPOINTS } from "../../../config/api";
 import RevenueBars from "../components/RevenueBars";
 import { formatInr } from "../../../utils/formatInr";
+import Pagination from "../components/Pagination";
+import ExportStatementModal from "../components/ExportStatementModal";
+
+const TX_PAGE_SIZES = [10, 25, 50];
+
+const adminConfig = () => ({
+    headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
+});
 import {
     Wallet as WalletIcon,
     TrendingUp,
@@ -66,11 +72,33 @@ const Wallet = () => {
             todayEarnings: 0,
             balance: 0,
         },
-        transactions: [],
         revenueTrend: [],
     });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    // Transaction history, one page at a time. `tx.key` says which page the
+    // loaded rows belong to; it's loading while that differs from the request.
+    const [txPage, setTxPage] = useState(1);
+    const [txPageSize, setTxPageSize] = useState(TX_PAGE_SIZES[0]);
+    const [tx, setTx] = useState({ key: null, transactions: [], page: 1, pages: 1, total: 0, error: "" });
+    const [showExport, setShowExport] = useState(false);
+    const txKey = `${txPage}-${txPageSize}`;
+    const txLoading = tx.key !== txKey;
+
+    useEffect(() => {
+        let cancelled = false;
+        axios
+            .get(API_ENDPOINTS.ADMIN_WALLET_TRANSACTIONS, {
+                ...adminConfig(),
+                params: { page: txPage, pageSize: txPageSize },
+            })
+            .then(({ data }) => !cancelled && setTx({ key: txKey, ...data, error: "" }))
+            .catch(() => !cancelled && setTx((prev) => ({ ...prev, key: txKey, error: "Failed to load transactions" })));
+        return () => {
+            cancelled = true;
+        };
+    }, [txPage, txPageSize, txKey]);
 
     useEffect(() => {
         const fetchWalletData = async () => {
@@ -157,31 +185,6 @@ const Wallet = () => {
         },
     ];
 
-    const handleExport = () => {
-        if (!data.transactions || data.transactions.length === 0) return;
-
-        const exportData = data.transactions.map(t => ({
-            "Transaction ID": t.id,
-            "Date": new Date(t.date).toLocaleDateString(),
-            "Time": new Date(t.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            "Type": t.type,
-            "Amount (₹)": t.amount,
-            "Customer": t.customer,
-            "Method": t.method,
-            "Status": t.status
-        }));
-
-        const ws = XLSX.utils.json_to_sheet(exportData);
-        ws["!cols"] = [{ wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 10 }, { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 15 }];
-
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Transactions");
-
-        const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-        const blob = new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-        saveAs(blob, `Wallet_Statement_${new Date().toISOString().split('T')[0]}.xlsx`);
-    };
-
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Header */}
@@ -199,8 +202,8 @@ const Wallet = () => {
                 </div>
                 <div className="flex items-center gap-3">
                     <button 
-                        onClick={handleExport}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 shadow-sm hover:bg-gray-50 transition-all">
+                        onClick={() => setShowExport(true)}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 shadow-sm hover:bg-gray-50 transition-all disabled:opacity-60">
                         <Download size={18} />
                         EXPORT STATEMENT
                     </button>
@@ -244,6 +247,9 @@ const Wallet = () => {
                                     <History size={18} />
                                 </div>
                                 <h3 className="text-lg font-bold text-gray-900">Transaction History</h3>
+                                {tx.total > 0 && (
+                                    <span className="text-xs font-bold text-gray-400">{tx.total.toLocaleString()} total</span>
+                                )}
                             </div>
                             <div className="flex items-center gap-2">
                                 <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
@@ -263,9 +269,21 @@ const Wallet = () => {
                                         <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Status</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-50 text-sm">
-                                    {data.transactions.length > 0 ? (
-                                        data.transactions.map((t) => (
+                                <tbody className={`divide-y divide-gray-50 text-sm transition-opacity ${txLoading ? "opacity-50" : ""}`}>
+                                    {tx.error ? (
+                                        <tr>
+                                            <td colSpan="6" className="px-6 py-12 text-center text-rose-500 text-sm font-semibold">
+                                                {tx.error}
+                                            </td>
+                                        </tr>
+                                    ) : txLoading && tx.transactions.length === 0 ? (
+                                        <tr>
+                                            <td colSpan="6" className="px-6 py-12 text-center text-gray-400 text-sm">
+                                                Loading transactions…
+                                            </td>
+                                        </tr>
+                                    ) : tx.transactions.length > 0 ? (
+                                        tx.transactions.map((t) => (
                                             <tr key={t.id} className="hover:bg-gray-50/50 transition-colors group">
                                                 <td className="px-6 py-4">
                                                     <div className={`mx-auto w-8 h-8 rounded-full flex items-center justify-center ${t.type === 'SALE' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
@@ -305,12 +323,25 @@ const Wallet = () => {
                                 </tbody>
                             </table>
                         </div>
-                        <div className="p-4 border-t border-gray-50 bg-gray-50/30 text-center">
-                            <button className="text-xs font-bold text-blue-600 hover:underline">VIEW FULL HISTORY</button>
-                        </div>
+                        {tx.total > 0 && (
+                            <Pagination
+                                page={tx.page}
+                                pages={tx.pages}
+                                total={tx.total}
+                                pageSize={tx.pageSize || txPageSize}
+                                pageSizes={TX_PAGE_SIZES}
+                                disabled={txLoading}
+                                onPageChange={setTxPage}
+                                onPageSizeChange={(size) => {
+                                    setTxPageSize(size);
+                                    setTxPage(1);
+                                }}
+                            />
+                        )}
                     </div>
                 </div>
             </div>
+            {showExport && <ExportStatementModal onClose={() => setShowExport(false)} />}
         </div>
     );
 };

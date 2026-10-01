@@ -8,6 +8,7 @@ import { fileURLToPath } from "url";
 import customerRoutes from "./modules/customer/routes/customerRoutes.js";
 import adminRoutes from "./modules/admin/routes/adminRoutes.js";
 import bannerRoutes from "./modules/admin/routes/bannerRoutes.js";
+import offerRoutes from "./modules/admin/routes/offerRoutes.js";
 import uploadRoutes from "./modules/upload/routes/uploadRoutes.js";
 import configRoutes from "./modules/customer/routes/configRoutes.js";
 import homeSectionRoutes from "./modules/admin/routes/homeSectionRoutes.js";
@@ -101,6 +102,7 @@ app.use((req, res, next) => {
 app.use("/api/customer", customerRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/admin/banners", bannerRoutes);
+app.use("/api/admin/offers", offerRoutes);
 app.use("/api/admin/home-sections", homeSectionRoutes);
 app.use("/api/customer/home-sections", customerHomeSectionRoutes);
 app.use("/api/upload", uploadRoutes);

@@ -1,6 +1,19 @@
 import asyncHandler from "../../../middleware/asyncHandler.js";
 import Cart from "../../../models/Cart.js";
 import Product from "../../../models/Product.js";
+import { attachDeals } from "../../../services/offerPricing.js";
+
+// Populated cart as a plain object, with live offer deals on each product.
+// Items whose product was deleted are dropped.
+const withDeals = async (cart) => {
+    const plain = cart.toObject();
+    const products = await attachDeals(plain.items.map((item) => item.product).filter(Boolean));
+    const byId = new Map(products.map((p) => [String(p._id), p]));
+    plain.items = plain.items
+        .filter((item) => item.product)
+        .map((item) => ({ ...item, product: byId.get(String(item.product._id)) }));
+    return plain;
+};
 
 // @desc    Get current user's cart
 // @route   GET /api/customer/cart
@@ -14,7 +27,7 @@ export const getCart = asyncHandler(async (req, res) => {
         return res.json({ items: [] });
     }
 
-    res.json(cart);
+    res.json(await withDeals(cart));
 });
 
 // @desc    Add item to cart
@@ -68,7 +81,7 @@ export const addToCart = asyncHandler(async (req, res) => {
     // Populate to return full object immediately could be useful
     await cart.populate("items.product");
 
-    res.status(201).json(cart);
+    res.status(201).json(await withDeals(cart));
 });
 
 // @desc    Update cart item quantity
@@ -109,7 +122,7 @@ export const updateCartItem = asyncHandler(async (req, res) => {
         }
         await cart.save();
         await cart.populate("items.product");
-        res.json(cart);
+        res.json(await withDeals(cart));
     } else {
         res.status(404);
         throw new Error("Item not found in cart");
@@ -131,7 +144,7 @@ export const removeCartItem = asyncHandler(async (req, res) => {
 
         await cart.save();
         await cart.populate("items.product");
-        res.json(cart);
+        res.json(await withDeals(cart));
     } else {
         res.status(404);
         throw new Error("Cart not found");

@@ -24,6 +24,7 @@ import {
   ChevronRight,
   User,
   Image,
+  BadgePercent,
   Wallet,
   Sidebar,
   UserPlus,
@@ -68,6 +69,7 @@ const AdminLayout = () => {
         { name: "Orders", path: "/admin/orders", icon: ShoppingCart },
         { name: "Customers", path: "/admin/customers", icon: Users },
         { name: "Leads", path: "/admin/leads", icon: UserPlus },
+        { name: "Offers & Deals", path: "/admin/offers", icon: BadgePercent },
       ],
     },
     {

@@ -8,6 +8,7 @@ import axios from 'axios';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import { API_ENDPOINTS } from '../../../config/api';
 import { useSettings } from '../../../contexts/SettingsContext';
+import { computeOrderTotals } from '../../../utils/orderTotals';
 import useOrderPayment, { toPaypalUsdAmount } from '../hooks/useOrderPayment';
 
 const emptyAddressForm = {
@@ -19,16 +20,8 @@ const Checkout = () => {
     const { settings } = useSettings();
     const navigate = useNavigate();
 
-    const shippingConfig = settings?.shipping || {};
-    const standardShippingFee   = shippingConfig.standardShippingFee   ?? 0;
-    const freeShippingThreshold = shippingConfig.freeShippingThreshold  ?? 0;
-    const taxPercentage         = shippingConfig.taxPercentage          ?? 0;
-
-    const shippingPrice = (freeShippingThreshold > 0 && cartTotal >= freeShippingThreshold)
-      ? 0
-      : standardShippingFee;
-    const taxPrice = Math.round(cartTotal * (taxPercentage / 100) * 100) / 100;
-    const orderTotal = cartTotal + shippingPrice + taxPrice;
+    const { shippingPrice, taxPrice, taxPercentage, orderTotal } =
+        computeOrderTotals(cartTotal, settings?.shipping || {});
 
     const [savedAddresses, setSavedAddresses] = useState([]);
     const [addressesLoading, setAddressesLoading] = useState(true);
@@ -208,6 +201,9 @@ const Checkout = () => {
         } catch (error) {
             console.error("Place Order Error", error);
             setPaymentError(error.response?.data?.message || "Failed to place order");
+            // A deal started/ended or a price changed: reload the cart so the
+            // summary shows the total the server will charge.
+            if (error.response?.status === 409) fetchCart();
             return null;
         }
     };

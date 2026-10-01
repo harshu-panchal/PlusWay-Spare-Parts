@@ -8,7 +8,7 @@ const bannerSchema = new mongoose.Schema(
         },
         type: {
             type: String,
-            enum: ["main", "sub"],
+            enum: ["main", "sub", "offer"], // "offer": shown on the customer Offers page
             default: "main",
         },
         link: {

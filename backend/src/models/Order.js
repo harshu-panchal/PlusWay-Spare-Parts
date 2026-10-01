@@ -13,6 +13,14 @@ const orderSchema = new mongoose.Schema(
         qty: { type: Number, required: true },
         image: { type: String, required: true },
         price: { type: Number, required: true },
+        // Price before an offer discount (same as `price` when no offer)
+        originalPrice: { type: Number },
+        // The offer that set `price`, if any
+        offer: {
+          offerId: { type: mongoose.Schema.Types.ObjectId, ref: "Offer" },
+          title: { type: String },
+          discountPercent: { type: Number },
+        },
         product: {
           type: mongoose.Schema.Types.ObjectId,
           required: true,

@@ -95,3 +95,22 @@ export const resolveDashboardRange = (key, now = Date.now()) => {
     prevEnd: prevEnd === null ? null : new Date(prevEnd),
   };
 };
+
+// Custom range from "YYYY-MM-DD" dates, both days included, in IST.
+// Returns { start, end } (end exclusive) or { error }.
+export const resolveIstDayRange = (from, to) => {
+  const parse = (value) => {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || ""));
+    if (!match) return null;
+    const [, y, m, d] = match.map(Number);
+    const ms = istMidnight(y, m - 1, d);
+    // Reject impossible dates like 2026-02-31 (Date.UTC would roll them over)
+    const check = istParts(ms);
+    return check.y === y && check.m === m - 1 && check.day === d ? ms : null;
+  };
+  const start = parse(from);
+  const toStart = parse(to);
+  if (start === null || toStart === null) return { error: "Dates must be valid and in YYYY-MM-DD format" };
+  if (toStart < start) return { error: "The 'from' date must be on or before the 'to' date" };
+  return { start: new Date(start), end: new Date(toStart + DAY_MS) };
+};

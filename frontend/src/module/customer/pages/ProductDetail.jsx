@@ -26,8 +26,10 @@ import {
   ThumbsUp,
   ThumbsDown,
   Play,
+  Flame,
 } from "lucide-react";
 import LazyImage from "../../../components/LazyImage";
+import DealCountdown from "../components/DealCountdown";
 import ImageZoom from "../components/ImageZoom";
 import ImageLightbox from "../components/ImageLightbox";
 import ProductCard from "../components/ProductCard";
@@ -488,6 +490,31 @@ const ProductDetail = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Live offer deal */}
+              {pricing?.deal && (
+                <div className="flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-red-50 to-orange-50 border border-red-100 px-4 py-3 rounded-2xl">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 shrink-0 rounded-xl bg-gradient-to-br from-red-600 to-orange-500 text-white flex items-center justify-center shadow">
+                      <Flame size={18} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-black text-red-600 uppercase tracking-tight">
+                        Extra {pricing.deal.percent}% off
+                        <span className="text-gray-500 font-bold normal-case tracking-normal">
+                          {" "}· was {effectiveCurrencySymbol}{formatPrice(pricing.priceBeforeDeal)}
+                        </span>
+                      </p>
+                      <Link
+                        to={`/offers/${pricing.deal.slug}`}
+                        className="text-xs font-bold text-secondary hover:text-primary hover:underline truncate block">
+                        {pricing.deal.title} — see all deals
+                      </Link>
+                    </div>
+                  </div>
+                  <DealCountdown endsAt={pricing.deal.endsAt} />
+                </div>
+              )}
 
               {/* Country pricing info — shown only for non-Indian users */}
               {pricing?.currencyCode && pricing.currencyCode !== "INR" && (

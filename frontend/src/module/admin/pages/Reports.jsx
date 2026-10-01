@@ -1,23 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import {
-  BarChart3,
   TrendingUp,
   Users,
   ShoppingBag,
+  ShoppingCart,
   Download,
-  Calendar,
   ArrowUpRight,
   ArrowDownRight,
+  Minus,
   PieChart as PieChartIcon,
-  Filter
 } from 'lucide-react';
-import { brands, categories } from '../../customer/data/mockData';
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import axios from "axios";
 import { API_ENDPOINTS } from "../../../config/api";
 import RevenueBars from "../components/RevenueBars";
+import RangePicker from "../components/RangePicker";
 import { formatInr } from "../../../utils/formatInr";
+import { getChange, getRangeOption, getStoredRange, saveRange } from "../../../utils/dateRanges";
+
+const RANGE_STORAGE_KEY = "adminReportsRange";
 
 // Month key from the API: "YYYY-MM" (older backends sent just the month
 // number 1-12). Returns e.g. "Oct" or, with `long`, "October 2026".
@@ -30,66 +32,76 @@ const formatMonth = (key, long = false) => {
     : { month: "short" });
 };
 
+// Green up / red down / grey flat badge for a change vs the previous period
+const ChangeBadge = ({ change, title }) => {
+  if (!change) return null;
+  const color = change.direction > 0 ? 'text-green-500' : change.direction < 0 ? 'text-red-500' : 'text-gray-400';
+  const Icon = change.direction > 0 ? ArrowUpRight : change.direction < 0 ? ArrowDownRight : Minus;
+  return (
+    <div title={title} className={`flex items-center gap-1 text-sm font-bold ${color}`}>
+      <Icon size={16} />
+      {change.label}
+    </div>
+  );
+};
+
 const Reports = () => {
-  const [dateRange, setDateRange] = useState("7d");
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [range, setRange] = useState(() => getStoredRange(RANGE_STORAGE_KEY, "7d"));
+  // `result.range` says which period the loaded data is for; it's loading
+  // while that differs from the selected range.
+  const [result, setResult] = useState({ range: null, data: null, error: null });
+  const { data, error } = result;
+  const refreshing = result.range !== range;
+  const loading = refreshing && !data && !error;
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const token = localStorage.getItem("adminToken");
-        const config = {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        };
-
-        const { data } = await axios.get(
-          API_ENDPOINTS.ADMIN_REPORTS_STATS,
-          config
-        );
-
-        setData(data);
-        setLoading(false);
-      } catch (err) {
-        setError("Failed to fetch reports data");
-        setLoading(false);
-      }
+    saveRange(RANGE_STORAGE_KEY, range);
+    let cancelled = false;
+    axios
+      .get(API_ENDPOINTS.ADMIN_REPORTS_STATS, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` },
+        params: { range },
+      })
+      .then(({ data }) => !cancelled && setResult({ range, data, error: null }))
+      .catch(() => !cancelled && setResult((prev) => ({ ...prev, range, error: "Failed to fetch reports data" })));
+    return () => {
+      cancelled = true;
     };
+  }, [range]);
 
-    fetchData();
-  }, []);
+  const rangeOption = getRangeOption(range);
+  const previous = data?.previous || null;
+  const compareTitle = (format, key) =>
+    previous ? `${rangeOption.compareLabel}: ${format(previous[key] || 0)}` : undefined;
 
   const stats = [
     {
       name: "Total Revenue",
-      value: data ? `₹${data.totalRevenue.toLocaleString()}` : "₹0",
-      change: "+12.5%", // Keep mocked or calculate if history available
-      trend: "up",
+      value: formatInr(data?.totalRevenue || 0),
+      change: getChange(data?.totalRevenue || 0, previous?.totalRevenue),
+      title: compareTitle(formatInr, "totalRevenue"),
       icon: TrendingUp,
     },
     {
       name: "Average Order Value",
-      value: data ? `₹${Math.round(data.avgOrderValue).toLocaleString()}` : "₹0",
-      change: "+3.2%",
-      trend: "up",
+      value: formatInr(data?.avgOrderValue || 0),
+      change: getChange(Math.round(data?.avgOrderValue || 0), previous ? Math.round(previous.avgOrderValue || 0) : null),
+      title: compareTitle(formatInr, "avgOrderValue"),
       icon: ShoppingBag,
     },
     {
       name: "New Customers",
-      value: data ? data.newCustomers : 0,
-      change: "-2.1%",
-      trend: "down",
+      value: (data?.newCustomers || 0).toLocaleString(),
+      change: getChange(data?.newCustomers || 0, previous?.newCustomers),
+      title: compareTitle((v) => v.toLocaleString(), "newCustomers"),
       icon: Users,
     },
     {
-      name: "Conversion Rate",
-      value: data ? `${data.conversionRate}%` : "0%",
-      change: "+0.8%",
-      trend: "up",
-      icon: BarChart3,
+      name: "Paid Orders",
+      value: (data?.paidOrders || 0).toLocaleString(),
+      change: getChange(data?.paidOrders || 0, previous?.paidOrders),
+      title: compareTitle((v) => v.toLocaleString(), "paidOrders"),
+      icon: ShoppingCart,
     },
   ];
 
@@ -99,9 +111,9 @@ const Reports = () => {
     // 1. Overview Data
     const overviewData = stats.map(stat => ({
       Metric: stat.name,
+      Period: rangeOption.label,
       Value: stat.value,
-      Trend: stat.trend,
-      Change: stat.change
+      Change: stat.change?.label ?? ""
     }));
 
     // 2. Sales By Category
@@ -115,7 +127,7 @@ const Reports = () => {
     const brandData = (data.topBrands || []).map(brand => ({
       "Brand Name": brand.name,
       "Total Orders": brand.orders,
-      "Growth": brand.growth
+      "Growth": brand.growth ?? ""
     }));
 
     // 4. Monthly Sales
@@ -147,7 +159,7 @@ const Reports = () => {
     // Download
     const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
     const blob = new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-    saveAs(blob, `Analytics_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+    saveAs(blob, `Analytics_Report_${range}_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   if (loading) {
@@ -172,20 +184,7 @@ const Reports = () => {
           <p className="text-sm text-gray-500 font-medium">Monitor your business performance and sales trends.</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="relative">
-            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-            <select
-              className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white text-sm font-bold text-gray-700 cursor-pointer"
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
-            >
-              <option value="today">Today</option>
-              <option value="7d">Last 7 Days</option>
-              <option value="30d">Last 30 Days</option>
-              <option value="90d">Last 90 Days</option>
-              <option value="year">This Year</option>
-            </select>
-          </div>
+          <RangePicker value={range} onChange={setRange} busy={refreshing} />
           <button 
             onClick={handleExport}
             className="flex items-center gap-2 px-4 py-2 bg-secondary text-white rounded-lg hover:bg-black transition-all text-sm font-bold">
@@ -196,26 +195,25 @@ const Reports = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 transition-opacity ${refreshing ? "opacity-60" : ""}`}>
         {stats.map((stat, index) => (
           <div key={index} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div className="p-2 bg-gray-50 rounded-xl text-secondary">
                 <stat.icon size={24} />
               </div>
-              <div className={`flex items-center gap-1 text-sm font-bold ${stat.trend === 'up' ? 'text-green-500' : 'text-red-500'
-                }`}>
-                {stat.trend === 'up' ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
-                {stat.change}
-              </div>
+              <ChangeBadge change={stat.change} title={stat.title} />
             </div>
             <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-1">{stat.name}</p>
             <h3 className="text-2xl font-black text-secondary tracking-tighter">{stat.value}</h3>
+            <p className="text-[11px] text-gray-400 font-medium mt-2">
+              {previous ? rangeOption.compareLabel : rangeOption.label}
+            </p>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className={`grid grid-cols-1 lg:grid-cols-2 gap-6 transition-opacity ${refreshing ? "opacity-60" : ""}`}>
         {/* Sales by Category */}
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between mb-8">
@@ -226,6 +224,9 @@ const Reports = () => {
             <button className="text-primary hover:underline text-xs font-black uppercase tracking-widest">Details</button>
           </div>
           <div className="space-y-6">
+            {salesByCategory.length === 0 && (
+              <p className="text-sm text-gray-400 text-center py-6">No paid sales in this period.</p>
+            )}
             {salesByCategory.map((category, index) => (
               <div key={index} className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
@@ -262,14 +263,31 @@ const Reports = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
+                {topBrands.length === 0 && (
+                  <tr>
+                    <td colSpan="3" className="py-6 text-sm text-gray-400 text-center">No paid sales in this period.</td>
+                  </tr>
+                )}
                 {topBrands.map((brand, index) => (
                   <tr key={index} className="group hover:bg-gray-50/50 transition-colors">
                     <td className="py-4 font-bold text-secondary">{brand.name}</td>
                     <td className="py-4 text-center font-bold text-gray-600">{brand.orders}</td>
                     <td className="py-4 text-right">
-                      <span className="px-2 py-1 bg-green-50 text-green-600 rounded text-xs font-black tracking-tighter">
-                        {brand.growth}
-                      </span>
+                      {brand.growth ? (
+                        <span
+                          title={brand.previousOrders != null ? `${rangeOption.compareLabel}: ${brand.previousOrders} orders` : undefined}
+                          className={`px-2 py-1 rounded text-xs font-black tracking-tighter ${
+                            brand.growth.startsWith("-")
+                              ? "bg-red-50 text-red-600"
+                              : brand.growth === "+0%" || brand.growth === "0%"
+                                ? "bg-gray-100 text-gray-500"
+                                : "bg-green-50 text-green-600"
+                          }`}>
+                          {brand.growth}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-300">—</span>
+                      )}
                     </td>
                   </tr>
                 ))}

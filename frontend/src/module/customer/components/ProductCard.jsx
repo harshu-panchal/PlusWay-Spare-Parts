@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Flame } from 'lucide-react';
 import LazyImage from '../../../components/LazyImage';
 import { useCart } from '../context/CartContext';
 import { useCountryPricing } from '../../../contexts/CountryPricingContext';
@@ -58,7 +58,11 @@ const ProductCard = ({ product }) => {
                         <span className="bg-accent text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-widest">In Stock</span>
                     )}
                 </div>
-                {savingsPercent > 0 && !isOutOfStock && (
+                {pricing.deal && !isOutOfStock ? (
+                    <div className="absolute top-0 right-0 flex items-center gap-1 bg-gradient-to-r from-red-600 to-orange-500 text-[10px] text-white font-black px-2 py-1 rounded-bl-lg shadow-md uppercase tracking-wider">
+                        <Flame size={11} /><span className="hidden md:inline">Deal</span> -{pricing.deal.percent}%
+                    </div>
+                ) : savingsPercent > 0 && !isOutOfStock && (
                     <div className="absolute top-0 right-0 bg-red-600 text-[10px] text-white font-black px-2 py-1 rounded-bl-lg shadow-md">
                         Save {savingsPercent}%
                     </div>
@@ -66,7 +70,7 @@ const ProductCard = ({ product }) => {
             </Link>
 
             <div className="p-3 md:p-4 flex-1 flex flex-col">
-                <Link to={`/product/${product._id}`} className="font-bold text-secondary text-[11px] md:text-sm leading-snug mb-2 hover:text-primary transition-colors block line-clamp-2 min-h-[2.5em]">
+                <Link to={`/product/${product._id}`} className="font-bold text-secondary text-[11px] md:text-sm leading-snug mb-2 hover:text-primary transition-colors block line-clamp-3 overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }} title={product.name}>
                     {product.name}
                     {activeVariant?.colorName && (
                         <span className="text-gray-400 font-normal text-xs ml-1">({activeVariant.colorName})</span>
@@ -88,6 +92,13 @@ const ProductCard = ({ product }) => {
                                 <span className="text-[9px] font-black text-accent uppercase tracking-widest leading-none">Save {pricing.currencySymbol}{formatPrice(pricing.mrp - pricing.price)}</span>
                             )}
                         </div>
+                        {pricing.deal && (
+                            <Link
+                                to={`/offers/${pricing.deal.slug}`}
+                                className="mt-1 text-[9px] md:text-[10px] font-black text-red-600 uppercase tracking-wider truncate hover:underline">
+                                {pricing.deal.title}
+                            </Link>
+                        )}
                         {/* Show country label for non-Indian users */}
                         {pricing.currencyCode !== "INR" && (
                             <span className="text-[9px] text-gray-400 mt-0.5">

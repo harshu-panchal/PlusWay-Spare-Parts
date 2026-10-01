@@ -5,6 +5,7 @@ import {
   buildWildSearchMatch,
   tokenizeSearchQuery,
 } from "../../../utils/wildSearch.js";
+import { attachDeals } from "../../../services/offerPricing.js";
 
 const PRODUCT_SEARCH_FIELDS = [
   "name",
@@ -133,5 +134,10 @@ export const globalSearch = asyncHandler(async (req, res) => {
     searchProducts(query, limit),
   ]);
 
-  res.json({ models, products, query });
+  // Suggestions show a single price, so show the deal price when there is one
+  const productsWithDeals = (await attachDeals(products)).map((p) =>
+    p.deal ? { ...p, price: p.deal.price } : p,
+  );
+
+  res.json({ models, products: productsWithDeals, query });
 });

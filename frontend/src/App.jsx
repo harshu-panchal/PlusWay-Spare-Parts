@@ -36,6 +36,8 @@ const Cart = lazy(() => import("./module/customer/pages/Cart"));
 const Login = lazy(() => import("./module/customer/pages/Login"));
 const Signup = lazy(() => import("./module/customer/pages/Signup"));
 const Checkout = lazy(() => import("./module/customer/pages/Checkout"));
+const Offers = lazy(() => import("./module/customer/pages/Offers"));
+const OfferDetail = lazy(() => import("./module/customer/pages/OfferDetail"));
 const Profile = lazy(() => import("./module/customer/pages/Profile"));
 const Orders = lazy(() => import("./module/customer/pages/Orders"));
 const Addresses = lazy(() => import("./module/customer/pages/Addresses"));
@@ -77,6 +79,7 @@ const Reports = lazy(() => import("./module/admin/pages/Reports"));
 const Wallet = lazy(() => import("./module/admin/pages/Wallet"));
 const SupportManagement = lazy(() => import("./module/admin/pages/SupportManagement"));
 const BannerManagement = lazy(() => import("./module/admin/pages/BannerManagement"));
+const OfferManagement = lazy(() => import("./module/admin/pages/OfferManagement"));
 const HomeSectionManagement = lazy(() => import("./module/admin/pages/HomeSectionManagement"));
 const BulkUploadHistory = lazy(() => import("./module/admin/pages/BulkUploadHistory"));
 const LeadManagement = lazy(() => import("./module/admin/pages/LeadManagement"));
@@ -140,6 +143,8 @@ const App = () => {
               <Route path="login" element={<Login />} />
               <Route path="signup" element={<Signup />} />
               <Route path="checkout" element={<Checkout />} />
+              <Route path="offers" element={<Offers />} />
+              <Route path="offers/:slug" element={<OfferDetail />} />
               <Route path="profile" element={<Profile />} />
               <Route path="order/:id" element={<OrderDetails />} />
               <Route path="profile/orders" element={<Orders />} />
@@ -192,6 +197,7 @@ const App = () => {
               <Route path="settings" element={<Settings />} />
               <Route path="product-sidebar" element={<ProductSidebarSettings />} />
               <Route path="banners" element={<BannerManagement />} />
+              <Route path="offers" element={<OfferManagement />} />
               <Route path="home-sections" element={<HomeSectionManagement />} />
             </Route>
           </Routes>
