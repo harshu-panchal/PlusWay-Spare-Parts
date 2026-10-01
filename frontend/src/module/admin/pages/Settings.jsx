@@ -204,7 +204,6 @@ const Settings = () => {
               <Field label="Site Logo URL">
                 <Input section="general" field="siteLogoUrl" placeholder="https://example.com/logo.png" />
               </Field>
-              <Toggle section="header" field="showOffersLink" label="Show “Offers” in header" description="Display the Offers link in the storefront's navigation bar" />
             </div>
           )}
 
