@@ -128,10 +128,11 @@ export const CountryPricingProvider = ({ children }) => {
    */
   const formatPrice = (amount) => {
     if (amount === undefined || amount === null) return "0";
-    if (Number.isInteger(amount) || amount >= 100) {
-      return Math.round(amount).toLocaleString();
-    }
-    return amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const value = Number(amount);
+    return value.toLocaleString(undefined, {
+      minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
+      maximumFractionDigits: 2,
+    });
   };
 
   /**

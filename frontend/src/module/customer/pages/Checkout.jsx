@@ -8,6 +8,7 @@ import axios from 'axios';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import { API_ENDPOINTS } from '../../../config/api';
 import { useSettings } from '../../../contexts/SettingsContext';
+import { useCountryPricing } from '../../../contexts/CountryPricingContext';
 import { computeOrderTotals } from '../../../utils/orderTotals';
 import useOrderPayment, { toPaypalUsdAmount } from '../hooks/useOrderPayment';
 
@@ -18,10 +19,21 @@ const emptyAddressForm = {
 const Checkout = () => {
     const { cartTotal, cartItems, fetchCart } = useCart();
     const { settings } = useSettings();
+    const { countryInfo, convertFromINR, formatPrice } = useCountryPricing();
     const navigate = useNavigate();
 
     const { shippingPrice, taxPrice, taxPercentage, orderTotal } =
         computeOrderTotals(cartTotal, settings?.shipping || {});
+    const currencySymbol = countryInfo.currencySymbol;
+    const displaySubtotal = cartItems.reduce(
+        (sum, item) => sum + item.displayPrice * item.quantity,
+        0
+    );
+    const displayShippingPrice = countryInfo.currencyCode === 'INR'
+        ? shippingPrice
+        : convertFromINR(shippingPrice);
+    const displayTaxPrice = Math.round(displaySubtotal * (taxPercentage / 100) * 100) / 100;
+    const displayOrderTotal = displaySubtotal + displayShippingPrice + displayTaxPrice;
 
     const [savedAddresses, setSavedAddresses] = useState([]);
     const [addressesLoading, setAddressesLoading] = useState(true);
@@ -459,28 +471,28 @@ const Checkout = () => {
                                     {cartItems.map(item => (
                                         <div key={item._id} className="flex justify-between items-center text-xs">
                                             <span className="text-gray-500 font-bold truncate max-w-[150px]">{item.name} x {item.quantity}</span>
-                                            <span className="text-secondary font-black">₹{(item.price * item.quantity).toLocaleString()}</span>
+                                            <span className="text-secondary font-black">{item.currencySymbol}{formatPrice(item.displayPrice * item.quantity)}</span>
                                         </div>
                                     ))}
                                 </div>
                                 <div className="flex justify-between text-sm font-bold text-gray-500 uppercase tracking-widest">
                                     <span>Subtotal</span>
-                                    <span className="text-secondary tracking-tighter">₹{cartTotal.toLocaleString()}</span>
+                                    <span className="text-secondary tracking-tighter">{currencySymbol}{formatPrice(displaySubtotal)}</span>
                                 </div>
                                 <div className="flex justify-between text-sm font-bold text-gray-500 uppercase tracking-widest">
                                     <span>Shipping</span>
                                     {shippingPrice === 0
                                       ? <span className="text-accent tracking-widest">FREE</span>
-                                      : <span className="text-secondary tracking-tighter">₹{shippingPrice.toLocaleString()}</span>
+                                      : <span className="text-secondary tracking-tighter">{currencySymbol}{formatPrice(displayShippingPrice)}</span>
                                     }
                                 </div>
                                 <div className="flex justify-between text-sm font-bold text-gray-500 uppercase tracking-widest">
                                     <span>Tax (GST{taxPercentage > 0 ? ` ${taxPercentage}%` : ''})</span>
-                                    <span className="text-secondary tracking-tighter">₹{taxPrice.toLocaleString()}</span>
+                                    <span className="text-secondary tracking-tighter">{currencySymbol}{formatPrice(displayTaxPrice)}</span>
                                 </div>
                                 <div className="flex justify-between items-end mb-8 pt-4 border-t border-gray-100">
                                     <span className="text-sm font-black text-secondary uppercase tracking-[0.2em]">Total Payable</span>
-                                    <span className="text-3xl font-black text-primary italic tracking-tighter">₹{orderTotal.toLocaleString()}</span>
+                                    <span className="text-3xl font-black text-primary italic tracking-tighter">{currencySymbol}{formatPrice(displayOrderTotal)}</span>
                                 </div>
                             </div>
 
