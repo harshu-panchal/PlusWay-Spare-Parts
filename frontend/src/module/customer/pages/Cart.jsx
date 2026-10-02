@@ -1,19 +1,30 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { Trash2, Plus, Minus, ChevronRight, ShieldCheck, Truck, Flame } from 'lucide-react';
 import LazyImage from '../../../components/LazyImage';
 import { useSettings } from '../../../contexts/SettingsContext';
 import { computeOrderTotals } from '../../../utils/orderTotals';
+import { useCountryPricing } from '../../../contexts/CountryPricingContext';
 
 const Cart = () => {
     const { cartItems, removeFromCart, updateQuantity, cartTotal, fetchCart } = useCart();
     const { settings } = useSettings();
-    const { shippingPrice, taxPrice, taxPercentage, orderTotal } =
+    const { countryInfo, convertFromINR, formatPrice } = useCountryPricing();
+    const { shippingPrice, taxPercentage } =
         computeOrderTotals(cartTotal, settings?.shipping || {});
-    // How much live offer deals take off the cart
+    const currencySymbol = countryInfo.currencySymbol;
+    const displaySubtotal = cartItems.reduce(
+        (sum, item) => sum + item.displayPrice * item.quantity,
+        0
+    );
+    const displayShippingPrice = countryInfo.currencyCode === 'INR'
+        ? shippingPrice
+        : convertFromINR(shippingPrice);
+    const displayTaxPrice = Math.round(displaySubtotal * (taxPercentage / 100) * 100) / 100;
+    const displayOrderTotal = displaySubtotal + displayShippingPrice + displayTaxPrice;
     const dealSavings = cartItems.reduce(
-        (sum, item) => sum + Math.max(0, ((item.originalPrice ?? item.price) - item.price) * item.quantity),
+        (sum, item) => sum + Math.max(0, (item.displayOriginalPrice - item.displayPrice) * item.quantity),
         0
     );
 
@@ -98,10 +109,10 @@ const Cart = () => {
                                                 </button>
                                             </div>
                                             <div className="text-right">
-                                                <p className="text-base font-black text-secondary tracking-tighter">₹{(item.price * item.quantity).toLocaleString()}</p>
-                                                <p className="text-[9px] text-gray-400 font-bold">₹{item.price.toLocaleString()} / Unit</p>
-                                                {item.deal && item.originalPrice > item.price && (
-                                                    <p className="text-[9px] text-gray-400 font-bold line-through">₹{(item.originalPrice * item.quantity).toLocaleString()}</p>
+                                                <p className="text-base font-black text-secondary tracking-tighter">{item.currencySymbol}{formatPrice(item.displayPrice * item.quantity)}</p>
+                                                <p className="text-[9px] text-gray-400 font-bold">{item.currencySymbol}{formatPrice(item.displayPrice)} / Unit</p>
+                                                {item.deal && item.displayOriginalPrice > item.displayPrice && (
+                                                    <p className="text-[9px] text-gray-400 font-bold line-through">{item.currencySymbol}{formatPrice(item.displayOriginalPrice * item.quantity)}</p>
                                                 )}
                                             </div>
                                         </div>
@@ -129,10 +140,10 @@ const Cart = () => {
                                         </div>
 
                                         <div className="text-right">
-                                            <p className="text-xl font-black text-secondary tracking-tighter italic">₹{(item.price * item.quantity).toLocaleString()}</p>
-                                            <p className="text-[10px] text-gray-400 font-bold uppercase">₹{item.price.toLocaleString()} / Unit</p>
-                                                {item.deal && item.originalPrice > item.price && (
-                                                    <p className="text-[10px] text-gray-400 font-bold line-through">₹{(item.originalPrice * item.quantity).toLocaleString()}</p>
+                                            <p className="text-xl font-black text-secondary tracking-tighter italic">{item.currencySymbol}{formatPrice(item.displayPrice * item.quantity)}</p>
+                                            <p className="text-[10px] text-gray-400 font-bold uppercase">{item.currencySymbol}{formatPrice(item.displayPrice)} / Unit</p>
+                                                {item.deal && item.displayOriginalPrice > item.displayPrice && (
+                                                    <p className="text-[10px] text-gray-400 font-bold line-through">{item.currencySymbol}{formatPrice(item.displayOriginalPrice * item.quantity)}</p>
                                                 )}
                                         </div>
                                     </div>
@@ -149,29 +160,29 @@ const Cart = () => {
                             <div className="space-y-4 mb-8">
                                 <div className="flex justify-between text-sm font-bold text-gray-500 uppercase tracking-widest">
                                     <span>Subtotal</span>
-                                    <span className="text-secondary tracking-tighter">₹{cartTotal.toLocaleString()}</span>
+                                    <span className="text-secondary tracking-tighter">{currencySymbol}{formatPrice(displaySubtotal)}</span>
                                 </div>
                                 {dealSavings > 0 && (
                                     <div className="flex justify-between text-sm font-bold text-red-600 uppercase tracking-widest">
                                         <span className="flex items-center gap-1"><Flame size={14} /> Deal savings</span>
-                                        <span className="tracking-tighter">-₹{dealSavings.toLocaleString()}</span>
+                                        <span className="tracking-tighter">-{currencySymbol}{formatPrice(dealSavings)}</span>
                                     </div>
                                 )}
                                 <div className="flex justify-between text-sm font-bold text-gray-500 uppercase tracking-widest">
                                     <span>Shipping</span>
                                     {shippingPrice === 0
                                         ? <span className="text-accent tracking-widest">FREE</span>
-                                        : <span className="text-secondary tracking-tighter">₹{shippingPrice.toLocaleString()}</span>}
+                                        : <span className="text-secondary tracking-tighter">{currencySymbol}{formatPrice(displayShippingPrice)}</span>}
                                 </div>
                                 <div className="flex justify-between text-sm font-bold text-gray-500 uppercase tracking-widest">
                                     <span>Tax (GST{taxPercentage > 0 ? ` ${taxPercentage}%` : ''})</span>
-                                    <span className="text-secondary tracking-tighter">₹{taxPrice.toLocaleString()}</span>
+                                    <span className="text-secondary tracking-tighter">{currencySymbol}{formatPrice(displayTaxPrice)}</span>
                                 </div>
                             </div>
 
                             <div className="flex justify-between items-end mb-8 pt-4 border-t border-gray-100">
                                 <span className="text-sm font-black text-secondary uppercase tracking-[0.2em]">Grand Total</span>
-                                <span className="text-3xl font-black text-primary italic tracking-tighter line-height-none">₹{orderTotal.toLocaleString()}</span>
+                                <span className="text-3xl font-black text-primary italic tracking-tighter line-height-none">{currencySymbol}{formatPrice(displayOrderTotal)}</span>
                             </div>
 
                             <Link to="/checkout" className="block w-full bg-secondary text-white font-black py-4 rounded-xl text-center shadow-lg hover:bg-black transition-all uppercase tracking-widest mb-4">
