@@ -28,7 +28,8 @@ import {
 } from "../controllers/productController.js";
 import { getMyReviews } from "../controllers/reviewController.js";
 import {
-  addOrderItems,
+  createCheckout,
+  completePaypalCheckout,
   getOrderById,
   getOrderInvoice,
   getInvoiceByToken,
@@ -38,6 +39,8 @@ import {
 import {
   createRazorpayOrder,
   verifyRazorpayPayment,
+  createRazorpayCheckout,
+  verifyRazorpayCheckout,
 } from "../controllers/paymentController.js";
 import { getActiveCategories } from "../../admin/controllers/categoryController.js";
 import { getActiveBrands } from "../../admin/controllers/brandController.js";
@@ -111,7 +114,12 @@ router
   .delete(protect, removeCartItem);
 
 // Order routes
-router.route("/orders").post(protect, addOrderItems);
+// Checkout: the order is created only after a payment succeeds, so there is
+// no direct "create order" route.
+router.post("/checkout", protect, createCheckout);
+router.post("/checkout/:id/paypal/complete", protect, completePaypalCheckout);
+router.post("/checkout/:id/razorpay", protect, createRazorpayCheckout);
+router.post("/checkout/:id/razorpay/verify", protect, verifyRazorpayCheckout);
 router.route("/orders/myorders").get(protect, getMyOrders);
 router.route("/orders/:id").get(protect, getOrderById);
 router.route("/orders/:id/invoice").get(protect, getOrderInvoice);

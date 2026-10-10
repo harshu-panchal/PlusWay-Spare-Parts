@@ -46,7 +46,7 @@ const Checkout = () => {
     const paypalOrderRef = useRef(null);
     const addressSectionRef = useRef(null);
 
-    const { paypalClientId, capturePaypal, startRazorpay } = useOrderPayment();
+    const { paypalClientId, completePaypalCheckout, startRazorpay } = useOrderPayment();
 
     const getToken = () => {
         const userInfo = localStorage.getItem('userInfo');
@@ -162,15 +162,19 @@ const Checkout = () => {
     };
 
     // Leave checkout for the order page. The backend empties the cart when
-    // the order is created, so refresh the cart count on the way out.
+    // the (paid) order is created, so refresh the cart count on the way out.
     const goToOrder = (orderId, state) => {
         fetchCart();
         navigate(`/order/${orderId}`, { state });
     };
 
-    // Create the order for the chosen gateway. Returns the created order, or
+    const CANCELLED_MESSAGE = 'Payment cancelled. No order was placed and your cart is unchanged.';
+
+    // Price the cart for the chosen gateway. NO order exists yet: the server
+    // creates it only after the payment succeeds, so cancelling leaves nothing
+    // behind. Returns the checkout ({ _id, totalPrice, shippingAddress }), or
     // null if the address is invalid or the request failed.
-    const createOrder = async (paymentMethod) => {
+    const createCheckout = async (paymentMethod) => {
         setPaymentError('');
         try {
             const token = getToken();
@@ -208,11 +212,11 @@ const Checkout = () => {
                 totalPrice: orderTotal
             };
 
-            const { data } = await axios.post(API_ENDPOINTS.ORDERS, orderData, config);
+            const { data } = await axios.post(API_ENDPOINTS.CHECKOUT, orderData, config);
             return data;
         } catch (error) {
-            console.error("Place Order Error", error);
-            setPaymentError(error.response?.data?.message || "Failed to place order");
+            console.error("Checkout Error", error);
+            setPaymentError(error.response?.data?.message || "Failed to start payment");
             // A deal started/ended or a price changed: reload the cart so the
             // summary shows the total the server will charge.
             if (error.response?.status === 409) fetchCart();
@@ -223,17 +227,24 @@ const Checkout = () => {
     const handleRazorpay = async () => {
         if (processing) return;
         setProcessing(true);
-        const order = await createOrder('razorpay');
-        if (!order) {
+        const checkout = await createCheckout('razorpay');
+        if (!checkout) {
             setProcessing(false);
             return;
         }
-        await startRazorpay(order, {
+        await startRazorpay(checkout, {
+            forCheckout: true,
             onSuccess: (paidOrder) => goToOrder(paidOrder._id, { justPaid: true }),
-            // The order exists now, so a closed checkout continues on the
-            // order page, where payment can be completed later.
-            onDismiss: () => goToOrder(order._id, { paymentCancelled: true }),
-            onError: (message) => goToOrder(order._id, { paymentError: message }),
+            // No order exists unless the payment went through, so a closed
+            // or failed payment just returns the customer to checkout.
+            onDismiss: () => {
+                setProcessing(false);
+                setPaymentError(CANCELLED_MESSAGE);
+            },
+            onError: (message) => {
+                setProcessing(false);
+                setPaymentError(message);
+            },
         });
     };
 
@@ -247,39 +258,43 @@ const Checkout = () => {
     };
 
     const handlePaypalCreateOrder = async (data, actions) => {
-        const order = await createOrder('paypal');
-        if (!order) throw new Error('Order could not be created');
-        paypalOrderRef.current = order;
+        const checkout = await createCheckout('paypal');
+        if (!checkout) throw new Error('Checkout could not be started');
+        paypalOrderRef.current = checkout;
         return actions.order.create({
             purchase_units: [{
-                amount: { currency_code: 'USD', value: toPaypalUsdAmount(order.totalPrice) }
+                amount: { currency_code: 'USD', value: toPaypalUsdAmount(checkout.totalPrice) }
             }]
         });
     };
 
     const handlePaypalApprove = async (data, actions) => {
-        const orderId = paypalOrderRef.current._id;
+        const checkoutId = paypalOrderRef.current._id;
         const details = await actions.order.capture();
         try {
-            const paidOrder = await capturePaypal(orderId, details);
+            // The server creates the (paid) order now
+            const paidOrder = await completePaypalCheckout(checkoutId, details);
             goToOrder(paidOrder._id, { justPaid: true });
         } catch (err) {
-            goToOrder(orderId, { paymentError: err.response?.data?.message || 'Payment failed' });
+            // The money was taken but the order could not be saved: keep the
+            // PayPal reference visible so support can match it.
+            setPaymentError(
+                `${err.response?.data?.message || 'We could not save your order.'} ` +
+                `Your PayPal payment reference is ${details?.id}. Please contact support before paying again.`
+            );
         }
     };
 
     const handlePaypalCancel = () => {
-        if (paypalOrderRef.current) {
-            goToOrder(paypalOrderRef.current._id, { paymentCancelled: true });
-        }
+        paypalOrderRef.current = null;
+        setPaymentError(CANCELLED_MESSAGE);
     };
 
     const handlePaypalError = (err) => {
         console.error('PayPal Error', err);
-        if (paypalOrderRef.current) {
-            goToOrder(paypalOrderRef.current._id, { paymentError: 'PayPal payment failed' });
-        }
-        // Otherwise createOrder already showed why the order wasn't placed.
+        // If the checkout could not even be started, createCheckout already showed why.
+        if (paypalOrderRef.current) setPaymentError('PayPal payment failed. No order was placed.');
+        paypalOrderRef.current = null;
     };
 
     return (

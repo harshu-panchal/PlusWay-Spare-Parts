@@ -53,7 +53,10 @@ export const API_ENDPOINTS = {
     HOME_SECTIONS: `${API_BASE_URL}/api/customer/home-sections`,
 
     // Orders
-    ORDERS: `${API_BASE_URL}/api/customer/orders`,
+    CHECKOUT: `${API_BASE_URL}/api/customer/checkout`,
+    CHECKOUT_PAYPAL_COMPLETE: (id) => `${API_BASE_URL}/api/customer/checkout/${id}/paypal/complete`,
+    CHECKOUT_RAZORPAY_CREATE: (id) => `${API_BASE_URL}/api/customer/checkout/${id}/razorpay`,
+    CHECKOUT_RAZORPAY_VERIFY: (id) => `${API_BASE_URL}/api/customer/checkout/${id}/razorpay/verify`,
     MY_ORDERS: `${API_BASE_URL}/api/customer/orders/myorders`,
     MY_REVIEWS: `${API_BASE_URL}/api/customer/reviews`,
     ORDER_DETAIL: (id) => `${API_BASE_URL}/api/customer/orders/${id}`,

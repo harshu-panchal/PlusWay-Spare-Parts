@@ -1,6 +1,7 @@
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import Order from "../../../models/Order.js";
+import { finalizeCheckout, loadOwnCheckout } from "./orderController.js";
 
 // Helper to get Razorpay instance
 const getRazorpayInstance = () => {
@@ -13,7 +14,72 @@ const getRazorpayInstance = () => {
   });
 };
 
-// @desc    Create Razorpay Order
+// @desc    Create the Razorpay order for a checkout (no store order exists yet)
+// @route   POST /api/customer/checkout/:id/razorpay
+// @access  Private
+export const createRazorpayCheckout = async (req, res) => {
+  try {
+    const checkout = await loadOwnCheckout(req, res);
+    if (!checkout) return;
+
+    const razorpay = getRazorpayInstance();
+    const razorpayOrder = await razorpay.orders.create({
+      amount: Math.round(checkout.totalPrice * 100),
+      currency: "INR",
+      receipt: checkout._id.toString(),
+    });
+
+    checkout.razorpayOrderId = razorpayOrder.id;
+    await checkout.save();
+
+    res.json({ ...razorpayOrder, key_id: process.env.RAZORPAY_KEY_ID });
+  } catch (error) {
+    console.error("Razorpay Create Checkout Error:", error);
+    const errorMsg = error?.error?.description || error?.message || "Unable to create Razorpay order";
+    res.status(500).json({ message: errorMsg });
+  }
+};
+
+// @desc    Verify the Razorpay payment and create the order
+// @route   POST /api/customer/checkout/:id/razorpay/verify
+// @access  Private
+export const verifyRazorpayCheckout = async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+    const checkout = await loadOwnCheckout(req, res);
+    if (!checkout) return;
+
+    // The payment must be for the Razorpay order created for THIS checkout
+    if (!checkout.razorpayOrderId || checkout.razorpayOrderId !== razorpay_order_id) {
+      return res.status(400).json({ message: "Payment does not match this checkout" });
+    }
+
+    const generated_signature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(razorpay_order_id + "|" + razorpay_payment_id)
+      .digest("hex");
+
+    if (generated_signature !== razorpay_signature) {
+      return res.status(400).json({ message: "Invalid signature" });
+    }
+
+    const order = await finalizeCheckout(checkout, {
+      paymentMethod: "razorpay",
+      paymentResult: {
+        id: razorpay_payment_id,
+        status: "completed",
+        update_time: String(Date.now()),
+        email_address: req.user.email,
+      },
+    });
+    res.status(201).json(order);
+  } catch (error) {
+    console.error("Razorpay Verify Checkout Error:", error);
+    res.status(500).json({ message: "Payment verification failed" });
+  }
+};
+
+// @desc    Create Razorpay Order (for an order left unpaid before payment-first checkout)
 // @route   POST /api/customer/orders/:id/razorpay
 // @access  Private
 export const createRazorpayOrder = async (req, res) => {
@@ -22,6 +88,9 @@ export const createRazorpayOrder = async (req, res) => {
 
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
+    }
+    if (order.customer.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ message: "Not authorized to pay this order" });
     }
 
     if (order.isPaid) {
@@ -60,6 +129,9 @@ export const verifyRazorpayPayment = async (req, res) => {
 
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
+    }
+    if (order.customer.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ message: "Not authorized to pay this order" });
     }
 
     const generated_signature = crypto

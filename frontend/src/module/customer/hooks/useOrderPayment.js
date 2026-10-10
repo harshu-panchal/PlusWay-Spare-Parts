@@ -68,9 +68,24 @@ const useOrderPayment = () => {
         return data;
     };
 
-    // Open the Razorpay checkout for an order. `onSuccess` gets the updated
-    // (paid) order; `onDismiss` runs if the customer closes the checkout.
-    const startRazorpay = async (order, { onSuccess, onDismiss, onError }) => {
+    // Confirm a PayPal payment for a checkout; the server creates the order.
+    const completePaypalCheckout = async (checkoutId, details) => {
+        const { data } = await axios.post(
+            API_ENDPOINTS.CHECKOUT_PAYPAL_COMPLETE(checkoutId),
+            details,
+            getAuthConfig()
+        );
+        return data;
+    };
+
+    // Open the Razorpay checkout. `order` is either an existing unpaid order
+    // (default) or, with `forCheckout`, a checkout that has no order yet — the
+    // server then creates the order once the payment is verified.
+    // `onSuccess` gets the paid order; `onDismiss` runs if the customer closes
+    // the checkout.
+    const startRazorpay = async (order, { onSuccess, onDismiss, onError, forCheckout = false }) => {
+        const createUrl = forCheckout ? API_ENDPOINTS.CHECKOUT_RAZORPAY_CREATE : API_ENDPOINTS.RAZORPAY_CREATE_ORDER;
+        const verifyUrl = forCheckout ? API_ENDPOINTS.CHECKOUT_RAZORPAY_VERIFY : API_ENDPOINTS.RAZORPAY_VERIFY;
         const loaded = await loadRazorpay();
         if (!loaded) {
             onError?.("Razorpay failed to load. Please check your connection and try again.");
@@ -79,7 +94,7 @@ const useOrderPayment = () => {
 
         try {
             const { data: rzpOrder } = await axios.post(
-                API_ENDPOINTS.RAZORPAY_CREATE_ORDER(order._id),
+                createUrl(order._id),
                 {},
                 getAuthConfig()
             );
@@ -94,7 +109,7 @@ const useOrderPayment = () => {
                 handler: async (response) => {
                     try {
                         const { data } = await axios.post(
-                            API_ENDPOINTS.RAZORPAY_VERIFY(order._id),
+                            verifyUrl(order._id),
                             {
                                 razorpay_order_id: response.razorpay_order_id,
                                 razorpay_payment_id: response.razorpay_payment_id,
@@ -122,7 +137,7 @@ const useOrderPayment = () => {
         }
     };
 
-    return { paypalClientId, capturePaypal, startRazorpay };
+    return { paypalClientId, capturePaypal, completePaypalCheckout, startRazorpay };
 };
 
 export default useOrderPayment;
