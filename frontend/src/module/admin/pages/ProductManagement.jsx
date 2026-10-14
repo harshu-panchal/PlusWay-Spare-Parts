@@ -718,8 +718,22 @@ const ProductManagement = () => {
       link.click();
       document.body.removeChild(link);
     } catch (error) {
-      console.error(error);
-      alert("Failed to export products backup");
+      // responseType is 'blob', so an error response's JSON body also comes
+      // back as a Blob — parse it so the real server message is visible
+      // instead of a generic alert for every failure mode.
+      let serverMessage = "";
+      const blob = error?.response?.data;
+      if (blob instanceof Blob) {
+        try {
+          const text = await blob.text();
+          const parsed = JSON.parse(text);
+          serverMessage = parsed?.error || parsed?.message || "";
+        } catch {
+          // non-JSON blob body; ignore and fall back to generic message
+        }
+      }
+      console.error(error, serverMessage);
+      alert(serverMessage ? `Failed to export products backup: ${serverMessage}` : "Failed to export products backup");
     }
   };
 
