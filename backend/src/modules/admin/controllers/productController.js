@@ -1424,17 +1424,17 @@ export const exportProductsBackup = async (req, res) => {
       Brand.find({}, "name").sort({ name: 1 }),
       Category.find({}, "name").sort({ name: 1 }),
       Model.find({}, "name").sort({ name: 1 }),
-      // Newest first by upload date so the most recent products are at the
-      // top of the export. _id is a deterministic tiebreaker for products
-      // that were created in the same millisecond (rare, but possible during
-      // bulk uploads).
-      // allowDiskUse: the catalog has grown past MongoDB's 32MB in-memory
-      // sort limit, so this sort must be allowed to spill to disk.
+      // Newest first so the most recent products are at the top of the
+      // export. Sorting by _id alone (instead of createdAt) lets MongoDB
+      // use the default _id index instead of an in-memory/disk sort — the
+      // catalog is now large enough that sorting on an unindexed field blew
+      // past the 32MB in-memory sort limit even with allowDiskUse. ObjectIds
+      // embed their creation timestamp, so _id order matches createdAt order.
       Product.find({})
         .populate("brand", "name")
         .populate("category", "name")
         .populate("model", "name")
-        .sort({ createdAt: -1, _id: -1 })
+        .sort({ _id: -1 })
         .allowDiskUse(true),
     ]);
 
