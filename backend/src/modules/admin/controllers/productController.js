@@ -1428,11 +1428,14 @@ export const exportProductsBackup = async (req, res) => {
       // top of the export. _id is a deterministic tiebreaker for products
       // that were created in the same millisecond (rare, but possible during
       // bulk uploads).
+      // allowDiskUse: the catalog has grown past MongoDB's 32MB in-memory
+      // sort limit, so this sort must be allowed to spill to disk.
       Product.find({})
         .populate("brand", "name")
         .populate("category", "name")
         .populate("model", "name")
-        .sort({ createdAt: -1, _id: -1 }),
+        .sort({ createdAt: -1, _id: -1 })
+        .allowDiskUse(true),
     ]);
 
     const workbook = new ExcelJS.Workbook();
