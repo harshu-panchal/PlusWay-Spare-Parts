@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   FileSpreadsheet,
   Wand2,
+  Loader2,
 } from "lucide-react";
 import ImageUpload from "../../../components/ImageUpload";
 import MultiImageUpload from "../../../components/MultiImageUpload";
@@ -701,13 +702,26 @@ const ProductManagement = () => {
     }
   };
 
+  const [isExportingBackup, setIsExportingBackup] = useState(false);
+  // null while the server hasn't sent a Content-Length (it streams the xlsx
+  // without one), so the button falls back to an indeterminate "Processing…"
+  // label instead of a stuck 0%.
+  const [exportProgress, setExportProgress] = useState(null);
+
   const handleExportBackup = async () => {
+    setIsExportingBackup(true);
+    setExportProgress(null);
     try {
       const config = {
         headers: {
           Authorization: `Bearer ${JSON.parse(localStorage.getItem("adminInfo"))?.token}`,
         },
         responseType: 'blob',
+        onDownloadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            setExportProgress(Math.round((progressEvent.loaded / progressEvent.total) * 100));
+          }
+        },
       };
       const response = await axios.get(API_ENDPOINTS.ADMIN_PRODUCTS_BACKUP, config);
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -734,6 +748,9 @@ const ProductManagement = () => {
       }
       console.error(error, serverMessage);
       alert(serverMessage ? `Failed to export products backup: ${serverMessage}` : "Failed to export products backup");
+    } finally {
+      setIsExportingBackup(false);
+      setExportProgress(null);
     }
   };
 
@@ -859,10 +876,29 @@ const ProductManagement = () => {
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
           <button
             onClick={handleExportBackup}
-            className="flex items-center gap-1.5 px-3 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all text-xs font-bold shadow-sm"
+            disabled={isExportingBackup}
+            className="relative flex items-center gap-1.5 px-3 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all text-xs font-bold shadow-sm disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden"
             title="Download a full backup in the bulk-upload format. If the catalog is wiped, restore everything via Admin → Products → Bulk (Upload).">
-            <Save size={14} className="text-gray-500" />
-            <span className="hidden lg:inline">Export</span>
+            {isExportingBackup && exportProgress !== null && (
+              <span
+                className="absolute inset-y-0 left-0 bg-indigo-100 transition-all"
+                style={{ width: `${exportProgress}%` }}
+              />
+            )}
+            <span className="relative flex items-center gap-1.5">
+              {isExportingBackup ? (
+                <Loader2 size={14} className="text-gray-500 animate-spin" />
+              ) : (
+                <Save size={14} className="text-gray-500" />
+              )}
+              <span className="hidden lg:inline">
+                {isExportingBackup
+                  ? exportProgress !== null
+                    ? `Processing… ${exportProgress}%`
+                    : "Processing…"
+                  : "Export"}
+              </span>
+            </span>
           </button>
           <button
             onClick={handleBackfillVariantSkus}
