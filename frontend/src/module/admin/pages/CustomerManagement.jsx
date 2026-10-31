@@ -19,6 +19,8 @@ import {
   X,
   Save,
   UserPlus,
+  Download,
+  Loader2,
 } from "lucide-react";
 
 import { useNavigate } from "react-router-dom";
@@ -34,6 +36,7 @@ const CustomerManagement = () => {
   const [pages, setPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
@@ -157,6 +160,50 @@ const CustomerManagement = () => {
     setPage(p);
   };
 
+  const handleExportCustomers = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
+
+    try {
+      const token = JSON.parse(localStorage.getItem("adminInfo"))?.token;
+      const params = {};
+      if (searchTerm) params.search = searchTerm;
+      if (statusFilter && statusFilter !== "All") params.status = statusFilter;
+
+      const response = await axios.get(API_ENDPOINTS.ADMIN_CUSTOMERS_EXPORT, {
+        headers: { Authorization: `Bearer ${token}` },
+        params,
+        responseType: "blob",
+      });
+
+      const disposition = response.headers["content-disposition"] || "";
+      const fileNameMatch = disposition.match(/filename="?([^";]+)"?/i);
+      const fileName = fileNameMatch?.[1] || "plusway_customers.xlsx";
+      const url = window.URL.createObjectURL(response.data);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      let message = "Failed to export customers";
+      if (error.response?.data instanceof Blob) {
+        try {
+          const body = JSON.parse(await error.response.data.text());
+          message = body.message || message;
+        } catch {
+          // Keep the generic message for non-JSON error responses.
+        }
+      }
+      console.error("Failed to export customers", error);
+      alert(message);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case "Active":
@@ -196,6 +243,20 @@ const CustomerManagement = () => {
             <option value="Inactive">Inactive</option>
             <option value="Blocked">Blocked</option>
           </select>
+
+          <button
+            type="button"
+            onClick={handleExportCustomers}
+            disabled={isExporting || loading}
+            title="Export all customers matching the current search and status filters"
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed">
+            {isExporting ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : (
+              <Download size={18} />
+            )}
+            <span>{isExporting ? "Exporting..." : "Export Excel"}</span>
+          </button>
 
           <button
             onClick={() => handleOpenModal()}
