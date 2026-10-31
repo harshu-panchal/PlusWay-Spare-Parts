@@ -802,6 +802,7 @@ const ProductManagement = () => {
     { header: "brand *", key: "brand", example: "Samsung", example2: "Apple" },
     { header: "model *", key: "model", example: "Samsung Galaxy S23 Ultra", example2: "Apple iPhone 14 Pro" },
     { header: "category *", key: "category", example: "LCD Display", example2: "Battery" },
+    { header: "deviceType", key: "deviceType", example: "Mobile, Spare Parts", example2: "Mobile" },
     { header: "SKU", key: "SKU", example: "", example2: "PW-BAT-IP14P-001" },
     { header: "price", key: "price", example: "", example2: 2500 },
     { header: "mrp", key: "mrp", example: "", example2: 3000 },

@@ -911,6 +911,7 @@ export const downloadProductTemplate = async (req, res) => {
       { header: "brand *", key: "brand", example: "Samsung", example2: "Apple" },
       { header: "model *", key: "model", example: "Samsung Galaxy S23 Ultra", example2: "Apple iPhone 14 Pro" },
       { header: "category *", key: "category", example: "LCD Display", example2: "Battery" },
+      { header: "deviceType", key: "deviceType", example: "Mobile, Spare Parts", example2: "Mobile" },
       { header: "SKU", key: "SKU", example: "", example2: "PW-BAT-IP14P-001" },
       { header: "price", key: "price", example: "", example2: 2500 },
       { header: "mrp", key: "mrp", example: "", example2: 3000 },
@@ -991,14 +992,20 @@ export const downloadProductTemplate = async (req, res) => {
       };
     });
 
-    // Data validations for brand (col C), model (col D), category (col E)
+    // Resolve validation columns from the schema so adding or reordering
+    // template fields cannot move a dropdown onto the wrong column.
     const brandEnd = Math.max(2, brands.length + 1);
     const categoryEnd = Math.max(2, categories.length + 1);
     const modelEnd = Math.max(2, models.length + 1);
+    const columnLetterFor = (key) =>
+      _colLetter(columns.findIndex((column) => column.key === key) + 1);
+    const brandCol = columnLetterFor("brand");
+    const modelCol = columnLetterFor("model");
+    const categoryCol = columnLetterFor("category");
+    const statusCol = columnLetterFor("status");
 
     for (let i = 2; i <= 1000; i++) {
-      // Column B: Brand
-      ws.getCell(`B${i}`).dataValidation = {
+      ws.getCell(`${brandCol}${i}`).dataValidation = {
         type: "list",
         allowBlank: true,
         formulae: [`_Lists!$A$2:$A$${brandEnd}`],
@@ -1006,8 +1013,7 @@ export const downloadProductTemplate = async (req, res) => {
         errorTitle: "Invalid Brand",
         error: "Please select a Brand from the dropdown list."
       };
-      // Column C: Model
-      ws.getCell(`C${i}`).dataValidation = {
+      ws.getCell(`${modelCol}${i}`).dataValidation = {
         type: "list",
         allowBlank: true,
         formulae: [`_Lists!$C$2:$C$${modelEnd}`],
@@ -1015,8 +1021,7 @@ export const downloadProductTemplate = async (req, res) => {
         errorTitle: "Invalid Model",
         error: "Please select a Model from the dropdown list."
       };
-      // Column D: Category
-      ws.getCell(`D${i}`).dataValidation = {
+      ws.getCell(`${categoryCol}${i}`).dataValidation = {
         type: "list",
         allowBlank: true,
         formulae: [`_Lists!$B$2:$B$${categoryEnd}`],
@@ -1024,8 +1029,8 @@ export const downloadProductTemplate = async (req, res) => {
         errorTitle: "Invalid Category",
         error: "Please select a Category from the dropdown list."
       };
-      // Column Z: Status (last column — blank defaults to Published)
-      ws.getCell(`Z${i}`).dataValidation = {
+      // Status is the final column; blank defaults to Published.
+      ws.getCell(`${statusCol}${i}`).dataValidation = {
         type: "list",
         allowBlank: true,
         formulae: ['"Draft,Published"'],
@@ -1053,6 +1058,7 @@ export const downloadProductTemplate = async (req, res) => {
       ["", "Leave sku blank inside a variant to auto-generate."],
       ["", ""],
       ["brand / model / category", "Must match existing names in the admin (case-insensitive). Use the dropdowns provided."],
+      ["deviceType (Optional)", "Comma-separated device types, e.g. Mobile, Spare Parts or Accessories, Tools. Leave blank to default to Mobile."],
       ["brand / model (Optional for Accessories/Tools)", "If deviceType is ONLY Accessories and/or Tools (no Mobile/Spare Parts), brand and model may be left blank — these products aren't tied to a specific phone."],
       ["images", "Pipe-separated full URLs -> url1|url2|url3"],
       ["specs", "key:value pairs, pipe-separated -> Color:Black|RAM:8GB"],

@@ -134,6 +134,7 @@ export const API_ENDPOINTS = {
 
     // Admin Customers
     ADMIN_CUSTOMERS: `${API_BASE_URL}/api/admin/customers`,
+    ADMIN_CUSTOMERS_EXPORT: `${API_BASE_URL}/api/admin/customers/export`,
     ADMIN_CUSTOMER_DETAIL: (id) => `${API_BASE_URL}/api/admin/customers/${id}`,
 
     // Admin Banners

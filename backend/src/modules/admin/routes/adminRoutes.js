@@ -6,6 +6,7 @@ import fs from "fs";
 import { authAdmin, getAdminProfile, getDashboardStats, getReportStats, getWalletStats, getWalletTransactions, getBulkUploadHistory, getNotificationCounts } from "../controllers/adminController.js";
 import {
   getCustomers,
+  exportCustomers,
   getCustomerById,
   createCustomer as createCustomerAdmin,
   updateCustomer as updateCustomerAdmin,
@@ -163,6 +164,7 @@ router
   .delete(protect, admin, deleteLead);
 
 // Customer routes
+router.get("/customers/export", protect, admin, exportCustomers);
 router
   .route("/customers")
   .get(protect, admin, getCustomers)
